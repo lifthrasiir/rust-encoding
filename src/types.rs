@@ -172,17 +172,17 @@ pub trait DecoderTrap<T:Encoding> {
     pub fn decoder_trap(&mut self, encoding: &T, input: &[u8]) -> Option<~str>;
 }
 
-impl<'self,T:Encoding> EncoderTrap<T> for &'self fn(&T,&str) -> Option<~[u8]> {
+impl<'self,T:Encoding> EncoderTrap<T> for &'self fn(&str) -> ~[u8] {
     #[inline(always)]
-    pub fn encoder_trap(&mut self, encoding: &T, input: &str) -> Option<~[u8]> {
-        (*self)(encoding, input)
+    pub fn encoder_trap(&mut self, _encoding: &T, input: &str) -> Option<~[u8]> {
+        Some((*self)(input))
     }
 }
 
-impl<'self,T:Encoding> DecoderTrap<T> for &'self fn(&T,&[u8]) -> Option<~str> {
+impl<'self,T:Encoding> DecoderTrap<T> for &'self fn(&[u8]) -> ~str {
     #[inline(always)]
-    pub fn decoder_trap(&mut self, encoding: &T, input: &[u8]) -> Option<~str> {
-        (*self)(encoding, input)
+    pub fn decoder_trap(&mut self, _encoding: &T, input: &[u8]) -> Option<~str> {
+        Some((*self)(input))
     }
 }
 

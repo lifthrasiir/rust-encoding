@@ -9,3 +9,4 @@
 *.exe
 build
 Makefile
+*-test

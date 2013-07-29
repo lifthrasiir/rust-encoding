@@ -1,4 +1,4 @@
-rust-encoding
+Rust-encoding
 =============
 
 Character encoding support for Rust.
@@ -18,32 +18,34 @@ all::ISO_8859_2.encode("caf\xe9", Strict); // => Ok(~[99,97,102,233])
 To encode a string with unrepresentable characters:
 
 ~~~~ {.rust}
-use encoding::*;
 all::ISO_8859_2.encode("Acme\xa9", Strict); // => Err(...)
 all::ISO_8859_2.encode("Acme\xa9", Replace); // => Ok(~[65,99,109,101,63])
 all::ISO_8859_2.encode("Acme\xa9", Ignore); // => Ok(~[65,99,109,101])
+
+let trap: &fn(&str) -> ~[u8] = |_| ~[1,2,3]; // custom encoder trap
+all::ISO_8859_2.encode("Acme\xa9", trap); // => Ok(~[65,99,109,101,1,2,3])
 ~~~~
 
 To decode a byte sequence:
 
 ~~~~ {.rust}
-use encoding::*;
 all::ISO_8859_2.decode([99,97,102,233], Strict); // => Ok(~"caf\xe9")
 ~~~~
 
 To decode a byte sequence with invalid sequences:
 
 ~~~~ {.rust}
-use encoding::*;
 all::ISO_8859_6.decode([65,99,109,101,169], Strict); // => Err(...)
 all::ISO_8859_6.decode([65,99,109,101,169], Replace); // => Ok(~"Acme\ufffd")
 all::ISO_8859_6.decode([65,99,109,101,169], Ignore); // => Ok(~"Acme")
+
+let trap: &fn(&[u8]) -> ~str = |_| ~"whatever"; // custom decoder trap
+all::ISO_8859_6.decode([65,99,109,101,169], trap); // => Ok(~"Acmewhatever")
 ~~~~
 
 To get an encoding from a string label:
 
 ~~~~ {.rust}
-use encoding::*;
 let latin2 = label::get_encoding("Latin2").unwrap();
 latin2.name(); // => ~"iso-8859-2"
 latin2.encode("caf\xe9", Strict); // => Ok(~[99,97,102,233])
