@@ -1,0 +1,11 @@
+*~
+*#
+*.o
+*.so
+*.dylib
+*.dSYM
+*.dll
+*.dummy
+*.exe
+build
+Makefile
