@@ -49,3 +49,6 @@ singlebyte!(var=WINDOWS_1257, mod=windows_1257, name="windows-1257")
 singlebyte!(var=WINDOWS_1258, mod=windows_1258, name="windows-1258")
 singlebyte!(var=X_MAC_CYRILLIC, mod=x_mac_cyrillic, name="x-mac-cyrillic")
 
+pub static UTF_8: &'static codec::utf_8::UTF8Encoding =
+    &codec::utf_8::UTF8Encoding;
+

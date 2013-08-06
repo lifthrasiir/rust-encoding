@@ -43,6 +43,38 @@ let trap: &fn(&[u8]) -> ~str = |_| ~"whatever"; // custom decoder trap
 all::ISO_8859_6.decode([65,99,109,101,169], trap); // => Ok(~"Acmewhatever")
 ~~~~
 
+A practical example of custom encoder/decoder traps
+(a la Python's [PEP-0383](http://www.python.org/dev/peps/pep-0383/)):
+
+~~~~ {.rust}
+pub struct SurrogateEscape;
+impl<T:Encoding> DecoderTrap<T> for SurrogateEscape {
+    // converts invalid single bytes 80..FF to invalid surrogates U+DC80..DCFF
+    pub fn decoder_trap(&mut self, _encoding: &T, input: &[u8]) -> Option<~str> {
+        let chars: ~[char] =
+            input.iter().transform(|&c| (c as uint + 0xdc00) as char).collect();
+        Some(str::from_chars(chars))
+    }
+}
+impl<T:Encoding> EncoderTrap<T> for SurrogateEscape {
+    // converts invalid surrogates U+DC80..DCFF back to single bytes 80..FF
+    // this is an illustrative example, the actual routine would be a bit more complex.
+    pub fn encoder_trap(&mut self, _encoding: &T, input: &str) -> Option<~[u8]> {
+        let chars: ~[char] = input.iter().collect();
+        if chars.len() == 1 && '\udc80' <= chars[0] && chars[0] <= '\udcff' {
+            Some(~[(chars[0] as uint - 0xdc00) as u8])
+        } else {
+            None
+        }
+    }
+}
+
+let orig = ~[0xea,0xb0,0x80,0xfe,0x20];
+let decoded = all::UTF_8.decode(orig, SurrogateEscape).unwrap(); // => ~"\uac00\udcfe\u0020"
+let encoded = all::UTF_8.encode(decoded, SurrogateEscape).unwrap();
+assert_eq!(orig, encoded);
+~~~~
+
 To get an encoding from a string label:
 
 ~~~~ {.rust}
@@ -57,12 +89,15 @@ Supported Encodings
 Rust-encoding is a work in progress and this list will certainly be updated.
 
 * 7-bit strict ASCII (`ascii`)
+* UTF-8 (`utf-8`)
 * All single byte encoding in WHATWG Encoding Standard:
     * IBM code page 866
     * ISO-8859-{2,3,4,5,6,7,8,10,13,14,15,16}
     * KOI8-R, KOI8-U
     * MacRoman (`macintosh`), Macintosh Cyrillic encoding (`x-mac-cyrillic`)
-    * Windows code page 874, 1250, 1251, 1252 (instead of ISO-8859-1), 1253, 1254 (instead of ISO-8859-9), 1255, 1256, 1257, 1258
+    * Windows code page 874, 1250, 1251, 1252 (instead of ISO-8859-1), 1253,
+      1254 (instead of ISO-8859-9), 1255, 1256, 1257, 1258
 
-Note that `label::get_encoding` does not cover every available encoding as it was designed for HTML's loose processing.
+Note that `label::get_encoding` does not cover every available encoding
+as it was designed for HTML's loose processing.
 

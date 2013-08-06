@@ -11,12 +11,10 @@ use types;
 /// algorithm.
 pub fn get_encoding(label: &str) -> Option<~types::Encoding> {
     match label.trim().to_ascii().to_lower().to_str_ascii() {
-        /*
         ~"unicode-1-1-utf-8" |
         ~"utf-8" |
         ~"utf8" =>
             Some(~all::UTF_8.clone() as ~types::Encoding),
-        */
         ~"866" |
         ~"cp866" |
         ~"csibm866" |
