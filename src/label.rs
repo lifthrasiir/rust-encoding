@@ -246,6 +246,7 @@ pub fn get_encoding(label: &str) -> Option<~types::Encoding> {
         ~"windows-31j" |
         ~"x-sjis" =>
             Some(~all::SHIFT_JIS.clone() as ~types::Encoding),
+        */
         ~"cseuckr" |
         ~"csksc56011987" |
         ~"euc-kr" |
@@ -256,7 +257,8 @@ pub fn get_encoding(label: &str) -> Option<~types::Encoding> {
         ~"ksc5601" |
         ~"ksc_5601" |
         ~"windows-949" =>
-            Some(~all::EUC_KR.clone() as ~types::Encoding),
+            Some(~all::WINDOWS_949.clone() as ~types::Encoding),
+        /*
         ~"csiso2022kr" |
         ~"iso-2022-kr" =>
             Some(~all::ISO_2022_KR.clone() as ~types::Encoding),

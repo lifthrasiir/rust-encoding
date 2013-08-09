@@ -97,6 +97,8 @@ Rust-encoding is a work in progress and this list will certainly be updated.
     * MacRoman (`macintosh`), Macintosh Cyrillic encoding (`x-mac-cyrillic`)
     * Windows code page 874, 1250, 1251, 1252 (instead of ISO-8859-1), 1253,
       1254 (instead of ISO-8859-9), 1255, 1256, 1257, 1258
+* Multi byte encodings in WHATWG Encoding Standard:
+    * Windows code page 949 (`euc-kr`, since the strict EUC-KR is hardly used)
 
 Note that `label::get_encoding` does not cover every available encoding
 as it was designed for HTML's loose processing.

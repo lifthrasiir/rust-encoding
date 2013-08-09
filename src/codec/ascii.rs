@@ -62,7 +62,7 @@ impl Decoder for ASCIIDecoder {
                 ret.push_char(input[i] as char);
             } else {
                 return (ret, Some(CodecError {
-                    remaining: input.slice(i+1, input.len()),
+                    remaining: input.slice(i+1, len),
                     problem: ~[input[i]],
                     cause: ~"invalid sequence",
                 }));

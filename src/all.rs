@@ -6,8 +6,11 @@
 
 use super::{index, codec};
 
-pub static ASCII: &'static codec::ascii::ASCIIEncoding =
-    &codec::ascii::ASCIIEncoding;
+macro_rules! unique(
+    (var=$var:ident, mod=$module:ident, val=$val:ident) => (
+        pub static $var: &'static codec::$module::$val = &codec::$module::$val;
+    )
+)
 
 macro_rules! singlebyte(
     (var=$var:ident, mod=$module:ident, name=$name:expr) => (
@@ -20,6 +23,7 @@ macro_rules! singlebyte(
     )
 )
 
+unique!(var=ASCII, mod=ascii, val=ASCIIEncoding)
 singlebyte!(var=IBM866, mod=ibm866, name="ibm866")
 singlebyte!(var=ISO_8859_2, mod=iso_8859_2, name="iso-8859-2")
 singlebyte!(var=ISO_8859_3, mod=iso_8859_3, name="iso-8859-3")
@@ -48,7 +52,6 @@ singlebyte!(var=WINDOWS_1256, mod=windows_1256, name="windows-1256")
 singlebyte!(var=WINDOWS_1257, mod=windows_1257, name="windows-1257")
 singlebyte!(var=WINDOWS_1258, mod=windows_1258, name="windows-1258")
 singlebyte!(var=X_MAC_CYRILLIC, mod=x_mac_cyrillic, name="x-mac-cyrillic")
-
-pub static UTF_8: &'static codec::utf_8::UTF8Encoding =
-    &codec::utf_8::UTF8Encoding;
+unique!(var=UTF_8, mod=utf_8, val=UTF8Encoding)
+unique!(var=WINDOWS_949, mod=korean, val=Windows949Encoding)
 
