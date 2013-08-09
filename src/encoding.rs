@@ -52,6 +52,11 @@ pub mod index {
     pub mod windows_1257;
     pub mod windows_1258;
     pub mod x_mac_cyrillic;
+    pub mod big5;
+    pub mod euc_kr;
+    pub mod gbk;
+    pub mod jis0208;
+    pub mod jis0212;
 }
 
 /// Codec implementations.

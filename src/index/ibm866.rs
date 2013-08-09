@@ -53,3 +53,17 @@ pub fn backward(code: u16) -> u8 {
         9632 => 126, 160 => 127, _ => 255
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::u8;
+    use super::{forward, backward};
+
+    #[test]
+    fn test_correct_table() {
+        for u8::range(0, 128) |i| {
+            let j = forward(i);
+            if j != 0xffff { assert_eq!(backward(j), i); }
+        }
+    }
+}
