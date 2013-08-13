@@ -65,6 +65,7 @@ pub mod codec {
     pub mod singlebyte;
     pub mod utf_8;
     pub mod korean;
+    pub mod japanese;
 }
 
 pub mod all;

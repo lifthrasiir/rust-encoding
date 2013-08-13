@@ -231,13 +231,16 @@ pub fn get_encoding(label: &str) -> Option<~types::Encoding> {
         ~"csbig5" |
         ~"x-x-big5" =>
             Some(~all::BIG5.clone() as ~types::Encoding),
+        */
         ~"cseucpkdfmtjapanese" |
         ~"euc-jp" |
         ~"x-euc-jp" =>
             Some(~all::EUC_JP.clone() as ~types::Encoding),
+        /*
         ~"csiso2022jp" |
         ~"iso-2022-jp" =>
             Some(~all::ISO_2022_JP.clone() as ~types::Encoding),
+        */
         ~"csshiftjis" |
         ~"ms_kanji" |
         ~"shift-jis" |
@@ -246,7 +249,6 @@ pub fn get_encoding(label: &str) -> Option<~types::Encoding> {
         ~"windows-31j" |
         ~"x-sjis" =>
             Some(~all::SHIFT_JIS.clone() as ~types::Encoding),
-        */
         ~"cseuckr" |
         ~"csksc56011987" |
         ~"euc-kr" |

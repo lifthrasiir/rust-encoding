@@ -193,6 +193,7 @@ mod euckr_tests {
     fn test_encoder_invalid() {
         let mut e = Windows949Encoding.encoder();
         assert_result!(e.feed("\uffff"), (~[], Some(("", ~"\uffff"))));
+        assert_result!(e.feed("?\uffff!"), (~[0x3f], Some(("!", ~"\uffff"))));
         assert_result!(e.flush(), (~[], None));
     }
 

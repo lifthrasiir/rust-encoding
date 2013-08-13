@@ -54,4 +54,6 @@ singlebyte!(var=WINDOWS_1258, mod=windows_1258, name="windows-1258")
 singlebyte!(var=X_MAC_CYRILLIC, mod=x_mac_cyrillic, name="x-mac-cyrillic")
 unique!(var=UTF_8, mod=utf_8, val=UTF8Encoding)
 unique!(var=WINDOWS_949, mod=korean, val=Windows949Encoding)
+unique!(var=EUC_JP, mod=japanese, val=EUCJPEncoding)
+unique!(var=SHIFT_JIS, mod=japanese, val=ShiftJISEncoding)
 
