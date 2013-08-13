@@ -10,9 +10,9 @@ RUSTFLAGS ?= -O
 RUST_SRC=$(shell find $(VPATH)/src/. -type f -name '*.rs')
 
 .PHONY: all
-all:	librustencoding.dummy
+all:	libencoding.dummy
 
-librustencoding.dummy: src/encoding.rs $(RUST_SRC)
+libencoding.dummy: src/encoding.rs $(RUST_SRC)
 	$(RUSTC) $(RUSTFLAGS) $< -o $@
 	touch $@
 
