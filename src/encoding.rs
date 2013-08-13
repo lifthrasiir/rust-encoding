@@ -61,6 +61,7 @@ pub mod index {
 
 /// Codec implementations.
 pub mod codec {
+    pub mod error;
     pub mod ascii;
     pub mod singlebyte;
     pub mod utf_8;
@@ -70,7 +71,7 @@ pub mod codec {
 
 pub mod all;
 
-pub mod label;
+pub mod whatwg;
 
 #[cfg(test)]
 mod tests {
@@ -92,10 +93,6 @@ mod tests {
         assert_eq!(all::ISO_8859_6.decode([65,99,109,101,169], Ignore), Ok(~"Acme"));
         let trap: &fn(&[u8]) -> ~str = |_| ~"whatever";
         assert_eq!(all::ISO_8859_6.decode([65,99,109,101,169], trap), Ok(~"Acmewhatever"));
-
-        let latin2 = label::get_encoding("Latin2").unwrap();
-        assert_eq!(latin2.name(), ~"iso-8859-2");
-        assert_eq!(latin2.encode("caf\xe9", Strict), Ok(~[99,97,102,233]));
     }
 
     #[test]
@@ -127,6 +124,23 @@ mod tests {
         assert_eq!(decoded.clone(), ~"\uac00\udcfe\u0020");
         let encoded = all::UTF_8.encode(decoded, SurrogateEscape).unwrap();
         assert_eq!(orig, encoded);
+    }
+
+    #[test]
+    fn test_readme_whatwg() {
+        let mut euckr = whatwg::TextDecoder::new(Some(~"euc-kr")).unwrap();
+        assert_eq!(euckr.encoding(), ~"euc-kr"); // although it is actually windows-949
+        let broken = &[0xbf, 0xec, 0xbf, 0xcd, 0xff, 0xbe, 0xd3];
+        assert_eq!(euckr.decode_buffer(Some(broken)), Ok(~"\uc6b0\uc640\ufffd\uc559"));
+
+        // this is different from rust-encoding's default behavior:
+        let decoded = all::WINDOWS_949.decode(broken, Replace);
+        assert_eq!(decoded, Ok(~"\uc6b0\uc640\ufffd\ufffd"));
+
+        // explanation:
+        //   what WHATWG expects:        [BF EC] [BF CD] [FF]* [BE D3]
+        //   what rust-encoding expects: [BF EC] [BF CD] [FF BE]* [D3]*
+        //   sequences marked * are considered invalid and replaced by U+FFFD.
     }
 }
 

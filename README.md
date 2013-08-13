@@ -75,12 +75,18 @@ let encoded = all::UTF_8.encode(decoded, SurrogateEscape).unwrap();
 assert_eq!(orig, encoded);
 ~~~~
 
-To get an encoding from a string label:
+An alternative API compatible to WHATWG Encoding standard, also demonstrating
+getting the encoding from the string label:
 
 ~~~~ {.rust}
-let latin2 = label::get_encoding("Latin2").unwrap();
-latin2.name(); // => ~"iso-8859-2"
-latin2.encode("caf\xe9", Strict); // => Ok(~[99,97,102,233])
+use encoding::whatwg;
+let mut euckr = whatwg::TextDecoder::new(Some(~"euc-kr")).unwrap();
+euckr.encoding(); // => ~"euc-kr"
+let broken = &[0xbf, 0xec, 0xbf, 0xcd, 0xff, 0xbe, 0xd3];
+euckr.decode_buffer(Some(broken)); // => Ok(~"\uc6b0\uc640\ufffd\uc559")
+
+// this is different from rust-encoding's default behavior:
+let decoded = all::WINDOWS_949.decode(broken, Replace); // => Ok(~"\uc6b0\uc640\ufffd\ufffd")
 ~~~~
 
 Supported Encodings
@@ -99,7 +105,5 @@ Rust-encoding is a work in progress and this list will certainly be updated.
       1254 (instead of ISO-8859-9), 1255, 1256, 1257, 1258
 * Multi byte encodings in WHATWG Encoding Standard:
     * Windows code page 949 (`euc-kr`, since the strict EUC-KR is hardly used)
-
-Note that `label::get_encoding` does not cover every available encoding
-as it was designed for HTML's loose processing.
+    * EUC-JP and Shift_JIS
 
