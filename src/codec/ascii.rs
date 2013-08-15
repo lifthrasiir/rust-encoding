@@ -24,12 +24,11 @@ pub struct ASCIIEncoder;
 impl Encoder for ASCIIEncoder {
     pub fn encoding(&self) -> ~Encoding { ~ASCIIEncoding as ~Encoding }
 
-    pub fn feed<'r>(&mut self, input: &'r str) -> (~[u8],Option<EncoderError<'r>>) {
-        let mut ret = ~[];
+    pub fn feed<'r>(&mut self, input: &'r str, output: &mut ~[u8]) -> Option<EncoderError<'r>> {
         let mut err = None;
         for input.index_iter().advance |((_,j), ch)| {
             if ch <= '\u007f' {
-                ret.push(ch as u8);
+                output.push(ch as u8);
             } else {
                 err = Some(CodecError {
                     remaining: input.slice_from(j),
@@ -39,11 +38,11 @@ impl Encoder for ASCIIEncoder {
                 break;
             }
         }
-        (ret, err)
+        err
     }
 
-    pub fn flush(~self) -> (~[u8],Option<EncoderError<'static>>) {
-        (~[], None)
+    pub fn flush(&mut self, _output: &mut ~[u8]) -> Option<EncoderError<'static>> {
+        None
     }
 }
 
@@ -53,27 +52,26 @@ pub struct ASCIIDecoder;
 impl Decoder for ASCIIDecoder {
     pub fn encoding(&self) -> ~Encoding { ~ASCIIEncoding as ~Encoding }
 
-    pub fn feed<'r>(&mut self, input: &'r [u8]) -> (~str,Option<DecoderError<'r>>) {
-        let mut ret = ~"";
+    pub fn feed<'r>(&mut self, input: &'r [u8], output: &mut ~str) -> Option<DecoderError<'r>> {
         let mut i = 0;
         let len = input.len();
         while i < len {
             if input[i] <= 0x7f {
-                ret.push_char(input[i] as char);
+                output.push_char(input[i] as char);
             } else {
-                return (ret, Some(CodecError {
+                return Some(CodecError {
                     remaining: input.slice(i+1, len),
                     problem: ~[input[i]],
                     cause: ~"invalid sequence",
-                }));
+                });
             }
             i += 1;
         }
-        (ret, None)
+        None
     }
 
-    pub fn flush(~self) -> (~str,Option<DecoderError<'static>>) {
-        (~"", None)
+    pub fn flush(&mut self, _output: &mut ~str) -> Option<DecoderError<'static>> {
+        None
     }
 }
 
@@ -98,21 +96,21 @@ mod tests {
     #[test]
     fn test_encoder() {
         let mut e = ASCIIEncoding.encoder();
-        assert_result!(e.feed("A"), (~[0x41], None));
-        assert_result!(e.feed("BC"), (~[0x42, 0x43], None));
-        assert_result!(e.feed(""), (~[], None));
-        assert_result!(e.feed("\xa0"), (~[], Some(("", ~"\xa0"))));
-        assert_result!(e.flush(), (~[], None));
+        assert_result!(e.test_feed("A"), (~[0x41], None));
+        assert_result!(e.test_feed("BC"), (~[0x42, 0x43], None));
+        assert_result!(e.test_feed(""), (~[], None));
+        assert_result!(e.test_feed("\xa0"), (~[], Some(("", ~"\xa0"))));
+        assert_result!(e.test_flush(), (~[], None));
     }
 
     #[test]
     fn test_decoder() {
         let mut d = ASCIIEncoding.decoder();
-        assert_result!(d.feed(&[0x41]), (~"A", None));
-        assert_result!(d.feed(&[0x42, 0x43]), (~"BC", None));
-        assert_result!(d.feed(&[]), (~"", None));
-        assert_result!(d.feed(&[0xa0]), (~"", Some((&[], ~[0xa0]))));
-        assert_result!(d.flush(), (~"", None));
+        assert_result!(d.test_feed(&[0x41]), (~"A", None));
+        assert_result!(d.test_feed(&[0x42, 0x43]), (~"BC", None));
+        assert_result!(d.test_feed(&[]), (~"", None));
+        assert_result!(d.test_feed(&[0xa0]), (~"", Some((&[], ~[0xa0]))));
+        assert_result!(d.test_flush(), (~"", None));
     }
 }
 
