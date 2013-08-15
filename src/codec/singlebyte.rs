@@ -43,19 +43,21 @@ impl Encoder for SingleByteEncoder {
         for input.index_iter().advance |((_,j), ch)| {
             if ch <= '\u007f' {
                 ret.push(ch as u8);
-            } else if ch <= '\uffff' {
+                loop
+            }
+            if ch <= '\uffff' {
                 let index = (self.encoding.index_backward)(ch as u16);
                 if index != 0xff {
                     ret.push((index + 0x80) as u8);
-                } else {
-                    err = Some(CodecError {
-                        remaining: input.slice_from(j),
-                        problem: str::from_char(ch),
-                        cause: ~"unrepresentable character",
-                    });
-                    break;
+                    loop
                 }
             }
+            err = Some(CodecError {
+                remaining: input.slice_from(j),
+                problem: str::from_char(ch),
+                cause: ~"unrepresentable character",
+            });
+            break;
         }
         (ret, err)
     }
@@ -102,3 +104,10 @@ impl Decoder for SingleByteDecoder {
     }
 }
 
+
+#[test]
+fn test_non_bmp() {
+    use all;
+    assert_eq!(all::ISO_8859_2.encode("A\uFFFFB", Replace).unwrap(), ~[0x41, 0x3F, 0x42]);
+    assert_eq!(all::ISO_8859_2.encode("A\U00010000B", Replace).unwrap(), ~[0x41, 0x3F, 0x42]);
+}
