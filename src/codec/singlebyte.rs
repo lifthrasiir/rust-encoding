@@ -38,6 +38,7 @@ impl Encoder for SingleByteEncoder {
     pub fn encoding(&self) -> ~Encoding { ~self.encoding.clone() as ~Encoding }
 
     pub fn feed<'r>(&mut self, input: &'r str, output: &mut ~[u8]) -> Option<EncoderError<'r>> {
+        { let new_len = output.len() + input.len(); output.reserve_at_least(new_len) }
         let mut err = None;
         for input.index_iter().advance |((_,j), ch)| {
             if ch <= '\u007f' {
@@ -75,6 +76,7 @@ impl Decoder for SingleByteDecoder {
     pub fn encoding(&self) -> ~Encoding { ~self.encoding.clone() as ~Encoding }
 
     pub fn feed<'r>(&mut self, input: &'r [u8], output: &mut ~str) -> Option<DecoderError<'r>> {
+        { let new_len = output.len() + input.len(); output.reserve_at_least(new_len) }
         let mut i = 0;
         let len = input.len();
         while i < len {
