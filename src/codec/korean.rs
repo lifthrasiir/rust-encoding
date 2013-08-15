@@ -25,12 +25,11 @@ pub struct Windows949Encoder;
 impl Encoder for Windows949Encoder {
     pub fn encoding(&self) -> ~Encoding { ~Windows949Encoding as ~Encoding }
 
-    pub fn feed<'r>(&mut self, input: &'r str) -> (~[u8],Option<EncoderError<'r>>) {
-        let mut ret = ~[];
+    pub fn feed_into<'r>(&mut self, input: &'r str, output: &mut ~[u8]) -> Option<EncoderError<'r>> {
         let mut err = None;
         for input.index_iter().advance |((_,j), ch)| {
             if ch <= '\u007f' {
-                ret.push(ch as u8);
+                output.push(ch as u8);
             } else {
                 let ptr = index::backward(ch as u32);
                 if ptr == 0xffff {
@@ -44,22 +43,22 @@ impl Encoder for Windows949Encoder {
                     let lead = ptr / (26 + 26 + 126) + 0x81;
                     let trail = ptr % (26 + 26 + 126);
                     let offset = if trail < 26 {0x41} else if trail < 26 + 26 {0x47} else {0x4d};
-                    ret.push(lead as u8);
-                    ret.push((trail + offset) as u8);
+                    output.push(lead as u8);
+                    output.push((trail + offset) as u8);
                 } else {
                     let ptr = ptr - (26 + 26 + 126) * (0xc7 - 0x81);
                     let lead = ptr / 94 + 0xc7;
                     let trail = ptr % 94 + 0xa1;
-                    ret.push(lead as u8);
-                    ret.push(trail as u8);
+                    output.push(lead as u8);
+                    output.push(trail as u8);
                 }
             }
         }
-        (ret, err)
+        err
     }
 
-    pub fn flush(~self) -> (~[u8],Option<EncoderError<'static>>) {
-        (~[], None)
+    pub fn flush(&mut self) -> Option<EncoderError<'static>> {
+        None
     }
 }
 
@@ -71,8 +70,7 @@ pub struct Windows949Decoder {
 impl Decoder for Windows949Decoder {
     pub fn encoding(&self) -> ~Encoding { ~Windows949Encoding as ~Encoding }
 
-    pub fn feed<'r>(&mut self, input: &'r [u8]) -> (~str,Option<DecoderError<'r>>) {
-        let mut ret = ~"";
+    pub fn feed_into<'r>(&mut self, input: &'r [u8], output: &mut ~str) -> Option<DecoderError<'r>> {
         let mut i = 0;
         let len = input.len();
 
@@ -94,13 +92,13 @@ impl Decoder for Windows949Decoder {
                 0xffff => {
                     self.lead = 0;
                     let inclusive = (trail >= 0x80); // true if the trail byte is in the problem
-                    return (ret, Some(CodecError {
+                    return Some(CodecError {
                         remaining: input.slice(if inclusive {i+1} else {i}, len),
                         problem: if inclusive {~[lead as u8, trail as u8]} else {~[lead as u8]},
                         cause: ~"invalid sequence",
-                    }));
+                    });
                 }
-                ch => { ret.push_char(ch as char); }
+                ch => { output.push_char(ch as char); }
             }
             i += 1;
         }
@@ -108,7 +106,7 @@ impl Decoder for Windows949Decoder {
         self.lead = 0;
         while i < len {
             if input[i] < 0x80 {
-                ret.push_char(input[i] as char);
+                output.push_char(input[i] as char);
             } else {
                 i += 1;
                 if i >= len { // we wait for a trail byte even if the lead is obviously invalid
@@ -132,28 +130,28 @@ impl Decoder for Windows949Decoder {
                 match index::forward(index as u16) {
                     0xffff => {
                         let inclusive = (trail >= 0x80); // true if the trail byte is in the problem
-                        return (ret, Some(CodecError {
+                        return Some(CodecError {
                             remaining: input.slice(if inclusive {i+1} else {i}, len),
                             problem: if inclusive {~[lead as u8, trail as u8]}
                                              else {~[lead as u8]},
                             cause: ~"invalid sequence",
-                        }));
+                        });
                     }
-                    ch => { ret.push_char(ch as char); }
+                    ch => { output.push_char(ch as char); }
                 }
             }
             i += 1;
         }
-        (ret, None)
+        None
     }
 
-    pub fn flush(~self) -> (~str,Option<DecoderError<'static>>) {
+    pub fn flush(&mut self) -> Option<DecoderError<'static>> {
         if self.lead != 0 {
-            (~"", Some(CodecError { remaining: &[],
-                                    problem: ~[self.lead],
-                                    cause: ~"incomplete sequence" }))
+            Some(CodecError { remaining: &[],
+                              problem: ~[self.lead],
+                              cause: ~"incomplete sequence" })
         } else {
-            (~"", None)
+            None
         }
     }
 }
@@ -186,7 +184,7 @@ mod euckr_tests {
         assert_result!(e.feed("\uac00"), (~[0xb0, 0xa1], None));
         assert_result!(e.feed("\ub098\ub2e4"), (~[0xb3, 0xaa, 0xb4, 0xd9], None));
         assert_result!(e.feed("\ubdc1\u314b\ud7a3"), (~[0x94, 0xee, 0xa4, 0xbb, 0xc6, 0x52], None));
-        assert_result!(e.flush(), (~[], None));
+        assert_result!(((), e.flush()), ((), None));
     }
 
     #[test]
@@ -194,7 +192,7 @@ mod euckr_tests {
         let mut e = Windows949Encoding.encoder();
         assert_result!(e.feed("\uffff"), (~[], Some(("", ~"\uffff"))));
         assert_result!(e.feed("?\uffff!"), (~[0x3f], Some(("!", ~"\uffff"))));
-        assert_result!(e.flush(), (~[], None));
+        assert_result!(((), e.flush()), ((), None));
     }
 
     #[test]
@@ -207,7 +205,7 @@ mod euckr_tests {
         assert_result!(d.feed(&[0xb3, 0xaa, 0xb4, 0xd9]), (~"\ub098\ub2e4", None));
         assert_result!(d.feed(&[0x94, 0xee, 0xa4, 0xbb, 0xc6, 0x52]),
                        (~"\ubdc1\u314b\ud7a3", None));
-        assert_result!(d.flush(), (~"", None));
+        assert_result!(((), d.flush()), ((), None));
     }
 
     #[test]
@@ -218,7 +216,7 @@ mod euckr_tests {
         assert_result!(d.feed(&[0xb3, 0xaa, 0xb4]), (~"\ub098", None));
         assert_result!(d.feed(&[0xd9, 0x94]), (~"\ub2e4", None));
         assert_result!(d.feed(&[0xee, 0xa4, 0xbb, 0xc6, 0x52]), (~"\ubdc1\u314b\ud7a3", None));
-        assert_result!(d.flush(), (~"", None));
+        assert_result!(((), d.flush()), ((), None));
     }
 
     #[test]
@@ -227,7 +225,7 @@ mod euckr_tests {
             let i = i as u8;
             let mut d = Windows949Encoding.decoder();
             assert_result!(d.feed(&[i]), (~"", None)); // wait for a trail
-            assert_result!(d.flush(), (~"", Some((&[], ~[i]))));
+            assert_result!(((), d.flush()), ((), Some((&[], ~[i]))));
         }
     }
 
@@ -237,7 +235,7 @@ mod euckr_tests {
             let i = i as u8;
             let mut d = Windows949Encoding.decoder();
             assert_result!(d.feed(&[i, 0x20]), (~"", Some((&[0x20], ~[i]))));
-            assert_result!(d.flush(), (~"", None));
+            assert_result!(((), d.flush()), ((), None));
         }
     }
 
@@ -248,7 +246,7 @@ mod euckr_tests {
             let mut d = Windows949Encoding.decoder();
             assert_result!(d.feed(&[i, 0x80]), (~"", Some((&[], ~[i, 0x80]))));
             assert_result!(d.feed(&[i, 0xff]), (~"", Some((&[], ~[i, 0xff]))));
-            assert_result!(d.flush(), (~"", None));
+            assert_result!(((), d.flush()), ((), None));
         }
     }
 
@@ -260,7 +258,7 @@ mod euckr_tests {
         let mut d = Windows949Encoding.decoder();
         assert_result!(d.feed(&[0xc6]), (~"", None));
         assert_result!(d.feed(&[0x53]), (~"", Some((&[0x53], ~[0xc6]))));
-        assert_result!(d.flush(), (~"", None));
+        assert_result!(((), d.flush()), ((), None));
     }
 }
 

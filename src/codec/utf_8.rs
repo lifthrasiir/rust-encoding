@@ -137,13 +137,17 @@ mod scan {
             Scanner { queuelen: 0, queue: [0, ..6], state: INITIAL_STATE }
         }
 
-        pub fn feed<'r>(&mut self, input: &'r [u8]) -> (~[u8],Option<CodecError<&'r [u8],~[u8]>>) {
+        pub fn feed<'r>(&mut self, input: &'r [u8]) -> (~[u8], Option<CodecError<&'r [u8],~[u8]>>) {
+            let mut output = ~[];
+            let err = self.feed_into(input, |s| output.push_all(s));
+            (output, err)
+        }
+        pub fn feed_into<'r>(&mut self, input: &'r [u8], push: &fn(&[u8])) -> Option<CodecError<&'r [u8],~[u8]>> {
             let mut queuelen = self.queuelen;
             let mut queue = self.queue;
             let mut state = self.state;
             let mut i = 0;
             let len = input.len();
-            let mut ret = ~[];
 
             // valid states do not make the use of `queue` (so that the internal loop is tighter),
             // but it may contain the bytes from the prior sequence, so we first get rid of them.
@@ -155,7 +159,7 @@ mod scan {
                         self.queuelen = queuelen;
                         self.queue = queue;
                         self.state = state;
-                        return (~[], None);
+                        return None;
                     }
 
                     let ch = input[i];
@@ -170,7 +174,7 @@ mod scan {
                     i += 1;
                     if state == INITIAL_STATE {
                         // we know the `queue` contains the entire valid sequence.
-                        ret.push_all(queue.slice(0, queuelen));
+                        push(queue.slice(0, queuelen));
                         queuelen = 0;
                         validstart = i;
                         break;
@@ -194,8 +198,8 @@ mod scan {
                         self.queuelen = queuelen;
                         self.queue = queue;
                         self.state = state;
-                        ret.push_all(input.slice(validstart, len - queuelen));
-                        return (ret, None);
+                        push(input.slice(validstart, len - queuelen));
+                        return None;
                     }
 
                     let ch = input[i];
@@ -223,8 +227,8 @@ mod scan {
                     self.queuelen = queuelen;
                     self.queue = queue;
                     self.state = state;
-                    ret.push_all(input.slice(validstart, invalidstart));
-                    return (ret, None);
+                    push(input.slice(validstart, invalidstart));
+                    return None;
                 }
 
                 let ch = input[i];
@@ -239,13 +243,13 @@ mod scan {
             // the current invalid sequence finished, immediately switch to the initial state
             self.state = INITIAL_STATE;
             self.queuelen = 0;
-            ret.push_all(input.slice(validstart, invalidstart));
-            (ret, Some(CodecError { remaining: input.slice(i, len),
-                                    problem: queue.slice(0, queuelen).to_owned(),
-                                    cause: ~"invalid byte sequence" }))
+            push(input.slice(validstart, invalidstart));
+            Some(CodecError { remaining: input.slice(i, len),
+                              problem: queue.slice(0, queuelen).to_owned(),
+                              cause: ~"invalid byte sequence" })
         }
 
-        pub fn flush(&mut self) -> (~[u8],Option<CodecError<&'static [u8],~[u8]>>) {
+        pub fn flush(&mut self) -> Option<CodecError<&'static [u8],~[u8]>> {
             let queuelen = self.queuelen;
             let queue = self.queue;
             let state = self.state;
@@ -253,13 +257,13 @@ mod scan {
             self.state = INITIAL_STATE;
 
             if state == INITIAL_STATE {
-                (~[], None)
+                None
             } else {
                 let cause = if is_error_state!(state) {~"invalid byte sequence"}
                                                  else {~"incomplete byte sequence"};
-                (~[], Some(CodecError { remaining: &[],
-                                        problem: queue.slice(0, queuelen).to_owned(),
-                                        cause: cause }))
+                Some(CodecError { remaining: &[],
+                                  problem: queue.slice(0, queuelen).to_owned(),
+                                  cause: cause })
             }
         }
     }
@@ -294,7 +298,7 @@ mod scan {
             assert_result!(s.feed("BC".as_bytes()), (~[0x42, 0x43], None));
             assert_result!(s.feed("".as_bytes()), (~[], None));
             assert_result!(s.feed("DEF".as_bytes()), (~[0x44, 0x45, 0x46], None));
-            assert_result!(s.flush(), (~[], None));
+            assert_result!(((), s.flush()), ((), None));
 
             // two bytes
             let mut s = Scanner::new();
@@ -304,7 +308,7 @@ mod scan {
             assert_result!(s.feed("\u0561\u0575\u0562\u0578\u0582\u0562\u0565\u0576".as_bytes()),
                            (~[0xd5, 0xa1, 0xd5, 0xb5, 0xd5, 0xa2, 0xd5, 0xb8, 0xd6, 0x82,
                               0xd5, 0xa2, 0xd5, 0xa5, 0xd5, 0xb6], None));
-            assert_result!(s.flush(), (~[], None));
+            assert_result!(((), s.flush()), ((), None));
 
             // three bytes
             let mut s = Scanner::new();
@@ -314,56 +318,56 @@ mod scan {
             assert_result!(s.feed("".as_bytes()), (~[], None));
             assert_result!(s.feed("\u0259\u0254\u0250".as_bytes()),
                            (~[0xc9, 0x99, 0xc9, 0x94, 0xc9, 0x90], None));
-            assert_result!(s.flush(), (~[], None));
+            assert_result!(((), s.flush()), ((), None));
 
             // four bytes
             let mut s = Scanner::new();
             assert_result!(s.feed("\U00010082".as_bytes()), (~[0xf0, 0x90, 0x82, 0x82], None));
             assert_result!(s.feed("".as_bytes()), (~[], None));
-            assert_result!(s.flush(), (~[], None));
+            assert_result!(((), s.flush()), ((), None));
         }
 
         #[test]
         fn test_valid_boundary() {
             let mut s = Scanner::new();
             assert_result!(s.feed("\x00".as_bytes()), (~[0x00], None));
-            assert_result!(s.flush(), (~[], None));
+            assert_result!(((), s.flush()), ((), None));
 
             let mut s = Scanner::new();
             assert_result!(s.feed("\x7f".as_bytes()), (~[0x7f], None));
-            assert_result!(s.flush(), (~[], None));
+            assert_result!(((), s.flush()), ((), None));
 
             let mut s = Scanner::new();
             assert_result!(s.feed("\x80".as_bytes()), (~[0xc2, 0x80], None));
-            assert_result!(s.flush(), (~[], None));
+            assert_result!(((), s.flush()), ((), None));
 
             let mut s = Scanner::new();
             assert_result!(s.feed("\u07ff".as_bytes()), (~[0xdf, 0xbf], None));
-            assert_result!(s.flush(), (~[], None));
+            assert_result!(((), s.flush()), ((), None));
 
             let mut s = Scanner::new();
             assert_result!(s.feed("\u0800".as_bytes()), (~[0xe0, 0xa0, 0x80], None));
-            assert_result!(s.flush(), (~[], None));
+            assert_result!(((), s.flush()), ((), None));
 
             let mut s = Scanner::new();
             assert_result!(s.feed("\ud7ff".as_bytes()), (~[0xed, 0x9f, 0xbf], None));
-            assert_result!(s.flush(), (~[], None));
+            assert_result!(((), s.flush()), ((), None));
 
             let mut s = Scanner::new();
             assert_result!(s.feed("\ue000".as_bytes()), (~[0xee, 0x80, 0x80], None));
-            assert_result!(s.flush(), (~[], None));
+            assert_result!(((), s.flush()), ((), None));
 
             let mut s = Scanner::new();
             assert_result!(s.feed("\uffff".as_bytes()), (~[0xef, 0xbf, 0xbf], None));
-            assert_result!(s.flush(), (~[], None));
+            assert_result!(((), s.flush()), ((), None));
 
             let mut s = Scanner::new();
             assert_result!(s.feed("\U00010000".as_bytes()), (~[0xf0, 0x90, 0x80, 0x80], None));
-            assert_result!(s.flush(), (~[], None));
+            assert_result!(((), s.flush()), ((), None));
 
             let mut s = Scanner::new();
             assert_result!(s.feed("\U0010ffff".as_bytes()), (~[0xf4, 0x8f, 0xbf, 0xbf], None));
-            assert_result!(s.flush(), (~[], None));
+            assert_result!(((), s.flush()), ((), None));
         }
 
         #[test]
@@ -374,12 +378,12 @@ mod scan {
             assert_result!(s.feed(&[0x82]), (~[], None));
             assert_result!(s.feed(&[0x82, 0xed]), (~[0xf0, 0x90, 0x82, 0x82], None));
             assert_result!(s.feed(&[0x92, 0x89]), (~[0xed, 0x92, 0x89], None));
-            assert_result!(s.flush(), (~[], None));
+            assert_result!(((), s.flush()), ((), None));
 
             let mut s = Scanner::new();
             assert_result!(s.feed(&[0xc2]), (~[], None));
             assert_result!(s.feed(&[0xa9, 0x20]), (~[0xc2, 0xa9, 0x20], None));
-            assert_result!(s.flush(), (~[], None));
+            assert_result!(((), s.flush()), ((), None));
         }
 
         #[test]
@@ -387,15 +391,15 @@ mod scan {
             for u8::range(0x80, 0xc0) |c| {
                 let mut s = Scanner::new();
                 assert_result!(s.feed(&[c]), (~[], Some((~[c], &[]))));
-                assert_result!(s.flush(), (~[], None));
+                assert_result!(((), s.flush()), ((), None));
 
                 let mut s = Scanner::new();
                 assert_result!(s.feed(&[c, c]), (~[], Some((~[c], &[c]))));
-                assert_result!(s.flush(), (~[], None));
+                assert_result!(((), s.flush()), ((), None));
 
                 let mut s = Scanner::new();
                 assert_result!(s.feed(&[c, c, c]), (~[], Some((~[c], &[c, c]))));
-                assert_result!(s.flush(), (~[], None));
+                assert_result!(((), s.flush()), ((), None));
             }
         }
 
@@ -403,31 +407,31 @@ mod scan {
         fn test_invalid_surrogate() {
             let mut s = Scanner::new();
             assert_result!(s.feed(&[0xed, 0xa0, 0x80]), (~[], Some((~[0xed, 0xa0, 0x80], &[]))));
-            assert_result!(s.flush(), (~[], None));
+            assert_result!(((), s.flush()), ((), None));
 
             let mut s = Scanner::new();
             assert_result!(s.feed(&[0xed, 0xad, 0xbf]), (~[], Some((~[0xed, 0xad, 0xbf], &[]))));
-            assert_result!(s.flush(), (~[], None));
+            assert_result!(((), s.flush()), ((), None));
 
             let mut s = Scanner::new();
             assert_result!(s.feed(&[0xed, 0xae, 0x80]), (~[], Some((~[0xed, 0xae, 0x80], &[]))));
-            assert_result!(s.flush(), (~[], None));
+            assert_result!(((), s.flush()), ((), None));
 
             let mut s = Scanner::new();
             assert_result!(s.feed(&[0xed, 0xaf, 0xbf]), (~[], Some((~[0xed, 0xaf, 0xbf], &[]))));
-            assert_result!(s.flush(), (~[], None));
+            assert_result!(((), s.flush()), ((), None));
 
             let mut s = Scanner::new();
             assert_result!(s.feed(&[0xed, 0xb0, 0x80]), (~[], Some((~[0xed, 0xb0, 0x80], &[]))));
-            assert_result!(s.flush(), (~[], None));
+            assert_result!(((), s.flush()), ((), None));
 
             let mut s = Scanner::new();
             assert_result!(s.feed(&[0xed, 0xbe, 0x80]), (~[], Some((~[0xed, 0xbe, 0x80], &[]))));
-            assert_result!(s.flush(), (~[], None));
+            assert_result!(((), s.flush()), ((), None));
 
             let mut s = Scanner::new();
             assert_result!(s.feed(&[0xed, 0xbf, 0xbf]), (~[], Some((~[0xed, 0xbf, 0xbf], &[]))));
-            assert_result!(s.flush(), (~[], None));
+            assert_result!(((), s.flush()), ((), None));
         }
 
         #[test]
@@ -435,7 +439,7 @@ mod scan {
             let mut s = Scanner::new();
             assert_result!(s.feed(&[0xf4, 0x90, 0x90, 0x90]), // U+110000
                            (~[], Some((~[0xf4, 0x90, 0x90, 0x90], &[]))));
-            assert_result!(s.flush(), (~[], None));
+            assert_result!(((), s.flush()), ((), None));
         }
 
         #[test]
@@ -446,9 +450,9 @@ mod scan {
                 let mut s = Scanner::new();
                 // XXX invalid starts signals an error too late
                 //assert_result!(s.feed(&[c]), (~[], Some((~[c], &[]))));
-                //assert_result!(s.flush(), (~[], None));
+                //assert_result!(((), s.flush()), ((), None));
                 assert_result!(s.feed(&[c]), (~[], None));
-                assert_result!(s.flush(), (~[], Some((~[c], &[]))));
+                assert_result!(((), s.flush()), ((), Some((~[c], &[]))));
             }
         }
 
@@ -459,7 +463,7 @@ mod scan {
 
                 let mut s = Scanner::new();
                 assert_result!(s.feed(&[c, 0x20]), (~[], Some((~[c], &[0x20]))));
-                assert_result!(s.flush(), (~[], None));
+                assert_result!(((), s.flush()), ((), None));
 
                 let mut s = Scanner::new();
                 // XXX invalid starts signals an error too late
@@ -467,7 +471,7 @@ mod scan {
                 //assert_result!(s.feed(&[0x20]), (~[0x20], None));
                 assert_result!(s.feed(&[c]), (~[], None));
                 assert_result!(s.feed(&[0x20]), (~[], Some((~[c], &[0x20]))));
-                assert_result!(s.flush(), (~[], None));
+                assert_result!(((), s.flush()), ((), None));
             }
         }
 
@@ -476,7 +480,7 @@ mod scan {
             for u8::range(0xc2, 0xf5) |c| {
                 let mut s = Scanner::new();
                 assert_result!(s.feed(&[c]), (~[], None)); // wait for cont. bytes
-                assert_result!(s.flush(), (~[], Some((~[c], &[]))));
+                assert_result!(((), s.flush()), ((), Some((~[c], &[]))));
             }
         }
 
@@ -485,12 +489,12 @@ mod scan {
             for u8::range(0xc2, 0xf5) |c| {
                 let mut s = Scanner::new();
                 assert_result!(s.feed(&[c, 0x20]), (~[], Some((~[c], &[0x20]))));
-                assert_result!(s.flush(), (~[], None));
+                assert_result!(((), s.flush()), ((), None));
 
                 let mut s = Scanner::new();
                 assert_result!(s.feed(&[c]), (~[], None)); // wait for cont. bytes
                 assert_result!(s.feed(&[0x20]), (~[], Some((~[c], &[0x20]))));
-                assert_result!(s.flush(), (~[], None));
+                assert_result!(((), s.flush()), ((), None));
             }
         }
 
@@ -501,23 +505,23 @@ mod scan {
 
                 let mut s = Scanner::new();
                 assert_result!(s.feed(&[c, d, 0x20]), (~[], Some((~[c, d], &[0x20]))));
-                assert_result!(s.flush(), (~[], None));
+                assert_result!(((), s.flush()), ((), None));
 
                 let mut s = Scanner::new();
                 assert_result!(s.feed(&[c, d]), (~[], None)); // wait for cont. bytes
                 assert_result!(s.feed(&[0x20]), (~[], Some((~[c, d], &[0x20]))));
-                assert_result!(s.flush(), (~[], None));
+                assert_result!(((), s.flush()), ((), None));
 
                 let mut s = Scanner::new();
                 assert_result!(s.feed(&[c]), (~[], None)); // wait for cont. bytes
                 assert_result!(s.feed(&[d, 0x20]), (~[], Some((~[c, d], &[0x20]))));
-                assert_result!(s.flush(), (~[], None));
+                assert_result!(((), s.flush()), ((), None));
 
                 let mut s = Scanner::new();
                 assert_result!(s.feed(&[c]), (~[], None)); // wait for cont. bytes
                 assert_result!(s.feed(&[d]), (~[], None)); // wait for cont. bytes
                 assert_result!(s.feed(&[0x20]), (~[], Some((~[c, d], &[0x20]))));
-                assert_result!(s.flush(), (~[], None));
+                assert_result!(((), s.flush()), ((), None));
             }
         }
 
@@ -529,24 +533,24 @@ mod scan {
 
                 let mut s = Scanner::new();
                 assert_result!(s.feed(&[c, d, e, 0x20]), (~[], Some((~[c, d, e], &[0x20]))));
-                assert_result!(s.flush(), (~[], None));
+                assert_result!(((), s.flush()), ((), None));
 
                 let mut s = Scanner::new();
                 assert_result!(s.feed(&[c]), (~[], None)); // wait for cont. bytes
                 assert_result!(s.feed(&[d]), (~[], None)); // wait for cont. bytes
                 assert_result!(s.feed(&[e]), (~[], None)); // wait for cont. bytes
                 assert_result!(s.feed(&[0x20]), (~[], Some((~[c, d, e], &[0x20]))));
-                assert_result!(s.flush(), (~[], None));
+                assert_result!(((), s.flush()), ((), None));
 
                 let mut s = Scanner::new();
                 assert_result!(s.feed(&[c, d]), (~[], None)); // wait for cont. bytes
                 assert_result!(s.feed(&[e, 0x20]), (~[], Some((~[c, d, e], &[0x20]))));
-                assert_result!(s.flush(), (~[], None));
+                assert_result!(((), s.flush()), ((), None));
 
                 let mut s = Scanner::new();
                 assert_result!(s.feed(&[c, d, e]), (~[], None)); // wait for cont. bytes
                 assert_result!(s.feed(&[0x20]), (~[], Some((~[c, d, e], &[0x20]))));
-                assert_result!(s.flush(), (~[], None));
+                assert_result!(((), s.flush()), ((), None));
             }
         }
 
@@ -554,36 +558,36 @@ mod scan {
         fn test_invalid_too_many_cont_bytes() {
             let mut s = Scanner::new();
             assert_result!(s.feed(&[0xc2, 0x80, 0x80]), (~[0xc2, 0x80], Some((~[0x80], &[]))));
-            assert_result!(s.flush(), (~[], None));
+            assert_result!(((), s.flush()), ((), None));
 
             let mut s = Scanner::new();
             assert_result!(s.feed(&[0xe0, 0xa0, 0x80, 0x80]),
                            (~[0xe0, 0xa0, 0x80], Some((~[0x80], &[]))));
-            assert_result!(s.flush(), (~[], None));
+            assert_result!(((), s.flush()), ((), None));
 
             let mut s = Scanner::new();
             assert_result!(s.feed(&[0xf0, 0x90, 0x80, 0x80, 0x80]),
                            (~[0xf0, 0x90, 0x80, 0x80], Some((~[0x80], &[]))));
-            assert_result!(s.flush(), (~[], None));
+            assert_result!(((), s.flush()), ((), None));
 
             let mut s = Scanner::new();
             assert_result!(s.feed(&[0xf8, 0x88, 0x80, 0x80, 0x80, 0x80]),
                            (~[], Some((~[0xf8, 0x88, 0x80, 0x80, 0x80], &[0x80]))));
-            assert_result!(s.flush(), (~[], None));
+            assert_result!(((), s.flush()), ((), None));
 
             let mut s = Scanner::new();
             assert_result!(s.feed(&[0xfc, 0x84, 0x80, 0x80, 0x80, 0x80, 0x80]),
                            (~[], Some((~[0xfc, 0x84, 0x80, 0x80, 0x80, 0x80], &[0x80]))));
-            assert_result!(s.flush(), (~[], None));
+            assert_result!(((), s.flush()), ((), None));
 
             // no continuation byte is consumed after FE/FF
             let mut s = Scanner::new();
             assert_result!(s.feed(&[0xfe, 0x80]), (~[], Some((~[0xfe], &[0x80]))));
-            assert_result!(s.flush(), (~[], None));
+            assert_result!(((), s.flush()), ((), None));
 
             let mut s = Scanner::new();
             assert_result!(s.feed(&[0xff, 0x80]), (~[], Some((~[0xff], &[0x80]))));
-            assert_result!(s.flush(), (~[], None));
+            assert_result!(((), s.flush()), ((), None));
         }
 
         #[test]
@@ -591,30 +595,30 @@ mod scan {
             let mut s = Scanner::new();
             assert_result!(s.feed(&[0xc2]), (~[], None));
             assert_result!(s.feed(&[0x80, 0x80]), (~[0xc2, 0x80], Some((~[0x80], &[]))));
-            assert_result!(s.flush(), (~[], None));
+            assert_result!(((), s.flush()), ((), None));
 
             let mut s = Scanner::new();
             assert_result!(s.feed(&[0xe0, 0xa0]), (~[], None));
             assert_result!(s.feed(&[0x80, 0x80]), (~[0xe0, 0xa0, 0x80], Some((~[0x80], &[]))));
-            assert_result!(s.flush(), (~[], None));
+            assert_result!(((), s.flush()), ((), None));
 
             let mut s = Scanner::new();
             assert_result!(s.feed(&[0xf0, 0x90, 0x80]), (~[], None));
             assert_result!(s.feed(&[0x80, 0x80]),
                            (~[0xf0, 0x90, 0x80, 0x80], Some((~[0x80], &[]))));
-            assert_result!(s.flush(), (~[], None));
+            assert_result!(((), s.flush()), ((), None));
 
             let mut s = Scanner::new();
             assert_result!(s.feed(&[0xf8, 0x88, 0x80, 0x80]), (~[], None));
             assert_result!(s.feed(&[0x80, 0x80]),
                            (~[], Some((~[0xf8, 0x88, 0x80, 0x80, 0x80], &[0x80]))));
-            assert_result!(s.flush(), (~[], None));
+            assert_result!(((), s.flush()), ((), None));
 
             let mut s = Scanner::new();
             assert_result!(s.feed(&[0xfc, 0x84, 0x80, 0x80, 0x80]), (~[], None));
             assert_result!(s.feed(&[0x80, 0x80]),
                            (~[], Some((~[0xfc, 0x84, 0x80, 0x80, 0x80, 0x80], &[0x80]))));
-            assert_result!(s.flush(), (~[], None));
+            assert_result!(((), s.flush()), ((), None));
 
             // no continuation byte is consumed after FE/FF
             let mut s = Scanner::new();
@@ -623,7 +627,7 @@ mod scan {
             //assert_result!(s.feed(&[0x80]), (~[], Some((~[0x80], &[]))));
             assert_result!(s.feed(&[0xfe]), (~[], None));
             assert_result!(s.feed(&[0x80]), (~[], Some((~[0xfe], &[0x80]))));
-            assert_result!(s.flush(), (~[], None));
+            assert_result!(((), s.flush()), ((), None));
 
             let mut s = Scanner::new();
             // XXX invalid starts signals an error too late
@@ -631,39 +635,39 @@ mod scan {
             //assert_result!(s.feed(&[0x80]), (~[], Some((~[0x80], &[]))));
             assert_result!(s.feed(&[0xff]), (~[], None));
             assert_result!(s.feed(&[0x80]), (~[], Some((~[0xff], &[0x80]))));
-            assert_result!(s.flush(), (~[], None));
+            assert_result!(((), s.flush()), ((), None));
         }
 
         #[test]
         fn test_invalid_overlong_minimal() {
             let mut s = Scanner::new();
             assert_result!(s.feed(&[0xc0, 0x80]), (~[], Some((~[0xc0, 0x80], &[]))));
-            assert_result!(s.flush(), (~[], None));
+            assert_result!(((), s.flush()), ((), None));
 
             let mut s = Scanner::new();
             assert_result!(s.feed(&[0xe0, 0x80, 0x80]), (~[], Some((~[0xe0, 0x80, 0x80], &[]))));
-            assert_result!(s.flush(), (~[], None));
+            assert_result!(((), s.flush()), ((), None));
 
             let mut s = Scanner::new();
             assert_result!(s.feed(&[0xf0, 0x80, 0x80, 0x80]),
                            (~[], Some((~[0xf0, 0x80, 0x80, 0x80], &[]))));
-            assert_result!(s.flush(), (~[], None));
+            assert_result!(((), s.flush()), ((), None));
         }
 
         #[test]
         fn test_invalid_overlong_maximal() {
             let mut s = Scanner::new();
             assert_result!(s.feed(&[0xc1, 0xbf]), (~[], Some((~[0xc1, 0xbf], &[]))));
-            assert_result!(s.flush(), (~[], None));
+            assert_result!(((), s.flush()), ((), None));
 
             let mut s = Scanner::new();
             assert_result!(s.feed(&[0xe0, 0x9f, 0xbf]), (~[], Some((~[0xe0, 0x9f, 0xbf], &[]))));
-            assert_result!(s.flush(), (~[], None));
+            assert_result!(((), s.flush()), ((), None));
 
             let mut s = Scanner::new();
             assert_result!(s.feed(&[0xf0, 0x8f, 0xbf, 0xbf]),
                            (~[], Some((~[0xf0, 0x8f, 0xbf, 0xbf], &[]))));
-            assert_result!(s.flush(), (~[], None));
+            assert_result!(((), s.flush()), ((), None));
         }
     }
 }
@@ -702,16 +706,15 @@ fn u8_error_to_str_error<'r>(err: CodecError<&'r [u8],~[u8]>) -> CodecError<&'r 
 impl Encoder for UTF8Encoder {
     pub fn encoding(&self) -> ~Encoding { ~UTF8Encoding as ~Encoding }
 
-    pub fn feed<'r>(&mut self, input: &'r str) -> (~[u8],Option<EncoderError<'r>>) {
+    pub fn feed_into<'r>(&mut self, input: &'r str, output: &mut ~[u8]) -> Option<EncoderError<'r>> {
         // in theory `input` should be a valid UTF-8 string, but in reality it may not.
-        let (ret, err) = self.scanner.feed(input.as_bytes());
-        (ret, err.map_consume(|err| u8_error_to_str_error(err)))
+        let err = self.scanner.feed_into(input.as_bytes(), |s| output.push_all(s));
+        err.map_consume(u8_error_to_str_error)
     }
 
-    pub fn flush(~self) -> (~[u8],Option<EncoderError<'static>>) {
+    pub fn flush(&mut self) -> Option<EncoderError<'static>> {
         let mut scanner = self.scanner;
-        let (ret, err) = scanner.flush();
-        (ret, err.map_consume(|err| u8_error_to_str_error(err)))
+        scanner.flush().map_consume(u8_error_to_str_error)
     }
 }
 
@@ -723,15 +726,13 @@ pub struct UTF8Decoder {
 impl Decoder for UTF8Decoder {
     pub fn encoding(&self) -> ~Encoding { ~UTF8Encoding as ~Encoding }
 
-    pub fn feed<'r>(&mut self, input: &'r [u8]) -> (~str,Option<DecoderError<'r>>) {
-        let (ret, err) = self.scanner.feed(input);
-        (str::from_bytes_owned(ret), err)
+    pub fn feed_into<'r>(&mut self, input: &'r [u8], output: &mut ~str) -> Option<DecoderError<'r>> {
+        self.scanner.feed_into(input, |s| output.push_str(str::from_bytes(s)))
     }
 
-    pub fn flush(~self) -> (~str,Option<DecoderError<'static>>) {
+    pub fn flush(&mut self) -> Option<DecoderError<'static>> {
         let mut scanner = self.scanner;
-        let (ret, err) = scanner.flush();
-        (str::from_bytes_owned(ret), err)
+        scanner.flush()
     }
 }
 

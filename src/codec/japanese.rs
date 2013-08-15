@@ -26,17 +26,16 @@ pub struct EUCJPEncoder;
 impl Encoder for EUCJPEncoder {
     pub fn encoding(&self) -> ~Encoding { ~EUCJPEncoding as ~Encoding }
 
-    pub fn feed<'r>(&mut self, input: &'r str) -> (~[u8],Option<EncoderError<'r>>) {
-        let mut ret = ~[];
+    pub fn feed_into<'r>(&mut self, input: &'r str, output: &mut ~[u8]) -> Option<EncoderError<'r>> {
         let mut err = None;
         for input.index_iter().advance |((_,j), ch)| {
             match ch {
-                '\u0000'..'\u007f' => { ret.push(ch as u8); }
-                '\u00a5' => { ret.push(0x5c); }
-                '\u203e' => { ret.push(0x7e); }
+                '\u0000'..'\u007f' => { output.push(ch as u8); }
+                '\u00a5' => { output.push(0x5c); }
+                '\u203e' => { output.push(0x7e); }
                 '\uff61'..'\uff9f' => {
-                    ret.push(0x8e);
-                    ret.push((ch as uint - 0xff61 + 0xa1) as u8);
+                    output.push(0x8e);
+                    output.push((ch as uint - 0xff61 + 0xa1) as u8);
                 }
                 _ => {
                     let ptr = index0208::backward(ch as u32);
@@ -50,17 +49,17 @@ impl Encoder for EUCJPEncoder {
                     } else {
                         let lead = ptr / 94 + 0xa1;
                         let trail = ptr % 94 + 0xa1;
-                        ret.push(lead as u8);
-                        ret.push(trail as u8);
+                        output.push(lead as u8);
+                        output.push(trail as u8);
                     }
                 }
             }
         }
-        (ret, err)
+        err
     }
 
-    pub fn flush(~self) -> (~[u8],Option<EncoderError<'static>>) {
-        (~[], None)
+    pub fn flush(&mut self) -> Option<EncoderError<'static>> {
+        None
     }
 }
 
@@ -73,8 +72,7 @@ pub struct EUCJPDecoder {
 impl Decoder for EUCJPDecoder {
     pub fn encoding(&self) -> ~Encoding { ~EUCJPEncoding as ~Encoding }
 
-    pub fn feed<'r>(&mut self, input: &'r [u8]) -> (~str,Option<DecoderError<'r>>) {
-        let mut ret = ~"";
+    pub fn feed_into<'r>(&mut self, input: &'r [u8], output: &mut ~str) -> Option<DecoderError<'r>> {
         let mut i = 0;
         let len = input.len();
 
@@ -83,7 +81,7 @@ impl Decoder for EUCJPDecoder {
             let trail = input[i] as uint;
             match (lead, trail) {
                 (0x8e, 0xa1..0xdf) => {
-                    ret.push_char((0xff61 + trail - 0xa1) as char);
+                    output.push_char((0xff61 + trail - 0xa1) as char);
                 }
                 (0x8f, _) => {
                     self.first = 0;
@@ -99,14 +97,14 @@ impl Decoder for EUCJPDecoder {
                         0xffff => {
                             self.first = 0;
                             let inclusive = (trail >= 0x80);
-                            return (ret, Some(CodecError {
+                            return Some(CodecError {
                                 remaining: input.slice(if inclusive {i+1} else {i}, len),
                                 problem: if inclusive {~[lead as u8, trail as u8]}
                                                  else {~[lead as u8]},
                                 cause: ~"invalid sequence",
-                            }));
+                            });
                         }
-                        ch => { ret.push_char(ch as char); }
+                        ch => { output.push_char(ch as char); }
                     }
                 }
             }
@@ -124,14 +122,14 @@ impl Decoder for EUCJPDecoder {
                 0xffff => {
                     self.second = 0;
                     let inclusive = (byte >= 0x80);
-                    return (ret, Some(CodecError {
+                    return Some(CodecError {
                         remaining: input.slice(if inclusive {i+1} else {i}, len),
                         problem: if inclusive {~[0x8f, trail as u8, byte as u8]}
                                          else {~[0x8f, trail as u8]},
                         cause: ~"invalid sequence",
-                    }));
+                    });
                 }
-                ch => { ret.push_char(ch as char); }
+                ch => { output.push_char(ch as char); }
             }
             i += 1;
         }
@@ -140,7 +138,7 @@ impl Decoder for EUCJPDecoder {
         self.second = 0;
         while i < len {
             if input[i] < 0x80 {
-                ret.push_char(input[i] as char);
+                output.push_char(input[i] as char);
             } else {
                 i += 1;
                 if i >= len { // we wait for a trail byte even if the lead is obviously invalid
@@ -152,7 +150,7 @@ impl Decoder for EUCJPDecoder {
                 let trail = input[i] as uint;
                 match (lead, trail) {
                     (0x8e, 0xa1..0xdf) => {
-                        ret.push_char((0xff61 + trail - 0xa1) as char);
+                        output.push_char((0xff61 + trail - 0xa1) as char);
                     }
                     (0x8f, _) => { // JIS X 0212 three-byte sequence
                         i += 1;
@@ -168,14 +166,14 @@ impl Decoder for EUCJPDecoder {
                         match index0212::forward(index as u16) {
                             0xffff => {
                                 let inclusive = (byte >= 0x80);
-                                return (ret, Some(CodecError {
+                                return Some(CodecError {
                                     remaining: input.slice(if inclusive {i+1} else {i}, len),
                                     problem: if inclusive {~[0x8f, trail as u8, byte as u8]}
                                                      else {~[0x8f, trail as u8]},
                                     cause: ~"invalid sequence",
-                                }));
+                                });
                             }
-                            ch => { ret.push_char(ch as char); }
+                            ch => { output.push_char(ch as char); }
                         }
                     }
                     (_, _) => {
@@ -186,34 +184,34 @@ impl Decoder for EUCJPDecoder {
                         match index0208::forward(index as u16) {
                             0xffff => {
                                 let inclusive = (trail >= 0x80);
-                                return (ret, Some(CodecError {
+                                return Some(CodecError {
                                     remaining: input.slice(if inclusive {i+1} else {i}, len),
                                     problem: if inclusive {~[lead as u8, trail as u8]}
                                                      else {~[lead as u8]},
                                     cause: ~"invalid sequence",
-                                }));
+                                });
                             }
-                            ch => { ret.push_char(ch as char); }
+                            ch => { output.push_char(ch as char); }
                         }
                     }
                 }
             }
             i += 1;
         }
-        (ret, None)
+        None
     }
 
-    pub fn flush(~self) -> (~str,Option<DecoderError<'static>>) {
+    pub fn flush(&mut self) -> Option<DecoderError<'static>> {
         if self.second != 0 {
-            (~"", Some(CodecError { remaining: &[],
-                                    problem: ~[0x8f, self.second],
-                                    cause: ~"incomplete sequence" }))
+            Some(CodecError { remaining: &[],
+                              problem: ~[0x8f, self.second],
+                              cause: ~"incomplete sequence" })
         } else if self.first != 0 {
-            (~"", Some(CodecError { remaining: &[],
-                                    problem: ~[self.first],
-                                    cause: ~"incomplete sequence" }))
+            Some(CodecError { remaining: &[],
+                              problem: ~[self.first],
+                              cause: ~"incomplete sequence" })
         } else {
-            (~"", None)
+            None
         }
     }
 }
@@ -247,7 +245,7 @@ mod eucjp_tests {
         assert_result!(e.feed("\u306b\u307b\u3093"), (~[0xa4, 0xcb, 0xa4, 0xdb, 0xa4, 0xf3], None));
         assert_result!(e.feed("\uff86\uff8e\uff9d"), (~[0x8e, 0xc6, 0x8e, 0xce, 0x8e, 0xdd], None));
         assert_result!(e.feed("\u65e5\u672c"), (~[0xc6, 0xfc, 0xcb, 0xdc], None));
-        assert_result!(e.flush(), (~[], None));
+        assert_result!(((), e.flush()), ((), None));
     }
 
     #[test]
@@ -257,7 +255,7 @@ mod eucjp_tests {
         assert_result!(e.feed("?\uffff!"), (~[0x3f], Some(("!", ~"\uffff"))));
         // JIS X 0212 is not supported in the encoder
         assert_result!(e.feed("\u736c\u8c78"), (~[], Some(("\u8c78", ~"\u736c"))));
-        assert_result!(e.flush(), (~[], None));
+        assert_result!(((), e.flush()), ((), None));
     }
 
     #[test]
@@ -274,7 +272,7 @@ mod eucjp_tests {
                        (~"\uff86\uff8e\uff9d", None));
         assert_result!(d.feed(&[0xc6, 0xfc, 0xcb, 0xdc]), (~"\u65e5\u672c", None));
         assert_result!(d.feed(&[0x8f, 0xcb, 0xc6, 0xec, 0xb8]), (~"\u736c\u8c78", None));
-        assert_result!(d.flush(), (~"", None));
+        assert_result!(((), d.flush()), ((), None));
     }
 
     // TODO more tests
@@ -296,15 +294,14 @@ pub struct ShiftJISEncoder;
 impl Encoder for ShiftJISEncoder {
     pub fn encoding(&self) -> ~Encoding { ~ShiftJISEncoding as ~Encoding }
 
-    pub fn feed<'r>(&mut self, input: &'r str) -> (~[u8],Option<EncoderError<'r>>) {
-        let mut ret = ~[];
+    pub fn feed_into<'r>(&mut self, input: &'r str, output: &mut ~[u8]) -> Option<EncoderError<'r>> {
         let mut err = None;
         for input.index_iter().advance |((_,j), ch)| {
             match ch {
-                '\u0000'..'\u0080' => { ret.push(ch as u8); }
-                '\u00a5' => { ret.push(0x5c); }
-                '\u203e' => { ret.push(0x7e); }
-                '\uff61'..'\uff9f' => { ret.push((ch as uint - 0xff61 + 0xa1) as u8); }
+                '\u0000'..'\u0080' => { output.push(ch as u8); }
+                '\u00a5' => { output.push(0x5c); }
+                '\u203e' => { output.push(0x7e); }
+                '\uff61'..'\uff9f' => { output.push((ch as uint - 0xff61 + 0xa1) as u8); }
                 _ => {
                     let ptr = index0208::backward(ch as u32);
                     if ptr == 0xffff {
@@ -319,17 +316,17 @@ impl Encoder for ShiftJISEncoder {
                         let leadoffset = if lead < 0x1f {0x81} else {0xc1};
                         let trail = ptr % 188;
                         let trailoffset = if trail < 0x3f {0x40} else {0x41};
-                        ret.push((lead + leadoffset) as u8);
-                        ret.push((trail + trailoffset) as u8);
+                        output.push((lead + leadoffset) as u8);
+                        output.push((trail + trailoffset) as u8);
                     }
                 }
             }
         }
-        (ret, err)
+        err
     }
 
-    pub fn flush(~self) -> (~[u8],Option<EncoderError<'static>>) {
-        (~[], None)
+    pub fn flush(&mut self) -> Option<EncoderError<'static>> {
+        None
     }
 }
 
@@ -341,8 +338,7 @@ pub struct ShiftJISDecoder {
 impl Decoder for ShiftJISDecoder {
     pub fn encoding(&self) -> ~Encoding { ~ShiftJISEncoding as ~Encoding }
 
-    pub fn feed<'r>(&mut self, input: &'r [u8]) -> (~str,Option<DecoderError<'r>>) {
-        let mut ret = ~"";
+    pub fn feed_into<'r>(&mut self, input: &'r [u8], output: &mut ~str) -> Option<DecoderError<'r>> {
         let mut i = 0;
         let len = input.len();
 
@@ -362,13 +358,13 @@ impl Decoder for ShiftJISDecoder {
                 0xffff => {
                     self.lead = 0;
                     let inclusive = (trail >= 0x80);
-                    return (ret, Some(CodecError {
+                    return Some(CodecError {
                         remaining: input.slice(if inclusive {i+1} else {i}, len),
                         problem: if inclusive {~[lead as u8, trail as u8]} else {~[lead as u8]},
                         cause: ~"invalid sequence",
-                    }));
+                    });
                 }
-                ch => { ret.push_char(ch as char); }
+                ch => { output.push_char(ch as char); }
             }
             i += 1;
         }
@@ -377,10 +373,10 @@ impl Decoder for ShiftJISDecoder {
         while i < len {
             match input[i] {
                 0x00..0x7f => {
-                    ret.push_char(input[i] as char);
+                    output.push_char(input[i] as char);
                 }
                 0xa1..0xdf => {
-                    ret.push_char((0xff61 + (input[i] as uint) - 0xa1) as char);
+                    output.push_char((0xff61 + (input[i] as uint) - 0xa1) as char);
                 }
                 _ => {
                     i += 1;
@@ -403,29 +399,29 @@ impl Decoder for ShiftJISDecoder {
                     match index0208::forward(index as u16) {
                         0xffff => {
                             let inclusive = (trail >= 0x80);
-                            return (ret, Some(CodecError {
+                            return Some(CodecError {
                                 remaining: input.slice(if inclusive {i+1} else {i}, len),
                                 problem: if inclusive {~[lead as u8, trail as u8]}
                                                  else {~[lead as u8]},
                                 cause: ~"invalid sequence",
-                            }));
+                            });
                         }
-                        ch => { ret.push_char(ch as char); }
+                        ch => { output.push_char(ch as char); }
                     }
                 }
             }
             i += 1;
         }
-        (ret, None)
+        None
     }
 
-    pub fn flush(~self) -> (~str,Option<DecoderError<'static>>) {
+    pub fn flush(&mut self) -> Option<DecoderError<'static>> {
         if self.lead != 0 {
-            (~"", Some(CodecError { remaining: &[],
-                                    problem: ~[self.lead],
-                                    cause: ~"incomplete sequence" }))
+            Some(CodecError { remaining: &[],
+                              problem: ~[self.lead],
+                              cause: ~"incomplete sequence" })
         } else {
-            (~"", None)
+            None
         }
     }
 }
@@ -459,7 +455,7 @@ mod shiftjis_tests {
         assert_result!(e.feed("\u306b\u307b\u3093"), (~[0x82, 0xc9, 0x82, 0xd9, 0x82, 0xf1], None));
         assert_result!(e.feed("\uff86\uff8e\uff9d"), (~[0xc6, 0xce, 0xdd], None));
         assert_result!(e.feed("\u65e5\u672c"), (~[0x93, 0xfa, 0x96, 0x7b], None));
-        assert_result!(e.flush(), (~[], None));
+        assert_result!(((), e.flush()), ((), None));
     }
 
     #[test]
@@ -468,7 +464,7 @@ mod shiftjis_tests {
         assert_result!(e.feed("\uffff"), (~[], Some(("", ~"\uffff"))));
         assert_result!(e.feed("?\uffff!"), (~[0x3f], Some(("!", ~"\uffff"))));
         assert_result!(e.feed("\u736c\u8c78"), (~[], Some(("\u8c78", ~"\u736c"))));
-        assert_result!(e.flush(), (~[], None));
+        assert_result!(((), e.flush()), ((), None));
     }
 
     #[test]
@@ -483,7 +479,7 @@ mod shiftjis_tests {
                        (~"\u306b\u307b\u3093", None));
         assert_result!(d.feed(&[0xc6, 0xce, 0xdd]), (~"\uff86\uff8e\uff9d", None));
         assert_result!(d.feed(&[0x93, 0xfa, 0x96, 0x7b]), (~"\u65e5\u672c", None));
-        assert_result!(d.flush(), (~"", None));
+        assert_result!(((), d.flush()), ((), None));
     }
 
     // TODO more tests

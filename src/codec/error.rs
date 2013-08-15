@@ -23,21 +23,22 @@ pub struct ErrorEncoder;
 impl Encoder for ErrorEncoder {
     pub fn encoding(&self) -> ~Encoding { ~ErrorEncoding as ~Encoding }
 
-    pub fn feed<'r>(&mut self, input: &'r str) -> (~[u8],Option<EncoderError<'r>>) {
+    pub fn feed_into<'r>(&mut self, input: &'r str, _output: &mut ~[u8])
+                      -> Option<EncoderError<'r>> {
         if input.len() > 0 {
             let str::CharRange {ch, next} = input.char_range_at(0);
-            (~[], Some(CodecError {
+            Some(CodecError {
                 remaining: input.slice_from(next),
                 problem: str::from_char(ch),
                 cause: ~"unrepresentable character",
-            }))
+            })
         } else {
-            (~[], None)
+            None
         }
     }
 
-    pub fn flush(~self) -> (~[u8],Option<EncoderError<'static>>) {
-        (~[], None)
+    pub fn flush(&mut self) -> Option<EncoderError<'static>> {
+        None
     }
 }
 
@@ -47,20 +48,21 @@ pub struct ErrorDecoder;
 impl Decoder for ErrorDecoder {
     pub fn encoding(&self) -> ~Encoding { ~ErrorEncoding as ~Encoding }
 
-    pub fn feed<'r>(&mut self, input: &'r [u8]) -> (~str,Option<DecoderError<'r>>) {
+    pub fn feed_into<'r>(&mut self, input: &'r [u8], _output: &mut ~str)
+                      -> Option<DecoderError<'r>> {
         if input.len() > 0 {
-            (~"", Some(CodecError {
+            Some(CodecError {
                 remaining: input.slice(1, input.len()),
                 problem: ~[input[0]],
                 cause: ~"invalid sequence",
-            }))
+            })
         } else {
-            (~"", None)
+            None
         }
     }
 
-    pub fn flush(~self) -> (~str,Option<DecoderError<'static>>) {
-        (~"", None)
+    pub fn flush(&mut self) -> Option<DecoderError<'static>> {
+        None
     }
 }
 
@@ -89,7 +91,7 @@ mod tests {
         assert_result!(e.feed("BC"), (~[], Some(("C", ~"B"))));
         assert_result!(e.feed(""), (~[], None));
         assert_result!(e.feed("\xa0"), (~[], Some(("", ~"\xa0"))));
-        assert_result!(e.flush(), (~[], None));
+        assert_result!(((), e.flush()), ((), None));
     }
 
     #[test]
@@ -99,7 +101,7 @@ mod tests {
         assert_result!(d.feed(&[0x42, 0x43]), (~"", Some((&[0x43], ~[0x42]))));
         assert_result!(d.feed(&[]), (~"", None));
         assert_result!(d.feed(&[0xa0]), (~"", Some((&[], ~[0xa0]))));
-        assert_result!(d.flush(), (~"", None));
+        assert_result!(((), d.flush()), ((), None));
     }
 }
 

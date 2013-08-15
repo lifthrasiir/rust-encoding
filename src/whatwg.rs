@@ -3,7 +3,7 @@
 // See README.md and LICENSE.txt for details.
 
 /*!
- * An alternative API compatible to WHATWG Encoding standard. 
+ * An alternative API compatible to WHATWG Encoding standard.
  *
  * WHATWG Encoding standard, compared to the native interface provided by rust-encoding, requires
  * both intentionally different naming of encodings (for example, "EUC-KR" in the standard is
@@ -430,8 +430,7 @@ impl TextDecoder {
                 remaining_.shift();
                 loop {
                     let remaining__ = remaining_;
-                    let (decoded_, err_) = decoder.feed(remaining__);
-                    ret.push_str(decoded_);
+                    let err_ = decoder.feed_into(remaining__, ret);
                     match err_ {
                         Some(err_) => {
                             ret.push_char('\ufffd');
@@ -443,8 +442,7 @@ impl TextDecoder {
                     }
                 }
 
-                let (decoded, newerr) = decoder.feed(remaining);
-                ret.push_str(decoded);
+                let newerr = decoder.feed_into(remaining, ret);
                 if newerr.is_none() { return; }
                 err = newerr.unwrap();
             }
@@ -452,16 +450,14 @@ impl TextDecoder {
 
         let mut ret = ~"";
         if feed_first_bytes {
-            let (decoded, err) = self.decoder.feed(self.first_bytes);
-            ret.push_str(decoded);
+            let err = self.decoder.feed_into(self.first_bytes, &mut ret);
             if err.is_some() {
                 if self.fatal { return Err(~"EncodingError"); }
                 handle_error(&mut self.decoder, err.unwrap(), &mut ret);
             }
         }
         if input.is_some() {
-            let (decoded, err) = self.decoder.feed(input.unwrap());
-            ret.push_str(decoded);
+            let err = self.decoder.feed_into(input.unwrap(), &mut ret);
             if err.is_some() {
                 if self.fatal { return Err(~"EncodingError"); }
                 handle_error(&mut self.decoder, err.unwrap(), &mut ret);
@@ -474,8 +470,7 @@ impl TextDecoder {
             let mut decoder = self.encoding.decoder();
             swap(&mut decoder, &mut self.decoder);
             loop {
-                let (decoded, err) = decoder.flush(); 
-                ret.push_str(decoded);
+                let err = decoder.flush();
                 if err.is_none() { break; }
                 if self.fatal { return Err(~"EncodingError"); }
                 decoder = self.encoding.decoder();
@@ -528,15 +523,13 @@ impl TextEncoder {
                                       options: TextEncodeOptions) -> Result<~[u8],~str> {
         let mut ret = ~[];
         if input.is_some() {
-            let (encoded, err) = self.encoder.feed(input.unwrap());
-            ret.push_all_move(encoded);
+            let err = self.encoder.feed_into(input.unwrap(), &mut ret);
             if err.is_some() { return Ok(ret); }
         }
         if !options.stream {
             let mut encoder = self.encoding.encoder();
             swap(&mut encoder, &mut self.encoder);
-            let (encoded, err) = encoder.flush(); 
-            ret.push_all_move(encoded);
+            let err = encoder.flush();
             if err.is_some() { return Ok(ret); }
         }
         Ok(ret)
