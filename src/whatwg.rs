@@ -60,7 +60,7 @@ mod whatwg_encodings {
 
 /// Returns an encoding and canonical name from given label if any. Follows WHATWG Encoding
 /// Standard "get an encoding" algorithm.
-fn get_encoding(label: &str) -> Option<(&'static types::Encoding, &'static str)> {
+pub fn get_encoding(label: &str) -> Option<(&'static types::Encoding, &'static str)> {
     match label.trim().to_ascii().to_lower().to_str_ascii() {
         ~"unicode-1-1-utf-8" |
         ~"utf-8" |
