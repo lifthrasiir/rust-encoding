@@ -16,7 +16,6 @@ impl Encoding for Windows949Encoding {
     fn name(&self) -> ~str { ~"windows-949" }
     fn encoder(&self) -> ~Encoder { ~Windows949Encoder as ~Encoder }
     fn decoder(&self) -> ~Decoder { ~Windows949Decoder { lead: 0 } as ~Decoder }
-    fn preferred_replacement_seq(&self) -> ~[u8] { ~[0x3f] /* "?" */ }
 }
 
 #[deriving(Clone)]

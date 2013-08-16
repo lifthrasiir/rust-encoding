@@ -17,7 +17,6 @@ impl Encoding for EUCJPEncoding {
     fn name(&self) -> ~str { ~"euc-jp" }
     fn encoder(&self) -> ~Encoder { ~EUCJPEncoder as ~Encoder }
     fn decoder(&self) -> ~Decoder { ~EUCJPDecoder { first: 0, second: 0 } as ~Decoder }
-    fn preferred_replacement_seq(&self) -> ~[u8] { ~[0x3f] /* "?" */ }
 }
 
 #[deriving(Clone)]
@@ -287,7 +286,6 @@ impl Encoding for ShiftJISEncoding {
     fn name(&self) -> ~str { ~"shift-jis" }
     fn encoder(&self) -> ~Encoder { ~ShiftJISEncoder as ~Encoder }
     fn decoder(&self) -> ~Decoder { ~ShiftJISDecoder { lead: 0 } as ~Decoder }
-    fn preferred_replacement_seq(&self) -> ~[u8] { ~[0x3f] /* "?" */ }
 }
 
 #[deriving(Clone)]

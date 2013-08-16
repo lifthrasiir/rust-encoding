@@ -14,7 +14,6 @@ impl Encoding for ErrorEncoding {
     fn name(&self) -> ~str { ~"error" }
     fn encoder(&self) -> ~Encoder { ~ErrorEncoder as ~Encoder }
     fn decoder(&self) -> ~Decoder { ~ErrorDecoder as ~Decoder }
-    fn preferred_replacement_seq(&self) -> ~[u8] { ~[0x3f] /* "?" */ }
 }
 
 #[deriving(Clone)]

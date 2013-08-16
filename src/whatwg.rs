@@ -39,7 +39,6 @@ mod whatwg_encodings {
         fn name(&self) -> ~str { ~"replacement" }
         fn encoder(&self) -> ~Encoder { all::UTF_8.encoder() }
         fn decoder(&self) -> ~Decoder { all::ERROR.decoder() }
-        fn preferred_replacement_seq(&self) -> ~[u8] { ~[0x3f] /* "?" */ }
     }
 
     pub static REPLACEMENT: &'static ReplacementEncoding = &ReplacementEncoding;

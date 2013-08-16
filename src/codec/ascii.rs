@@ -15,7 +15,6 @@ impl Encoding for ASCIIEncoding {
     fn name(&self) -> ~str { ~"ascii" }
     fn encoder(&self) -> ~Encoder { ~ASCIIEncoder as ~Encoder }
     fn decoder(&self) -> ~Decoder { ~ASCIIDecoder as ~Decoder }
-    fn preferred_replacement_seq(&self) -> ~[u8] { ~[0x3f] /* "?" */ }
 }
 
 #[deriving(Clone)]

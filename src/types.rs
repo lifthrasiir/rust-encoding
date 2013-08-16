@@ -85,7 +85,7 @@ pub trait Encoding {
     fn decoder(&self) -> ~Decoder;
     /// Returns a preferred replacement sequence for the encoder. Normally `?` encoded in given
     /// encoding. Note that this is fixed to `"\ufffd"` for the decoder.
-    fn preferred_replacement_seq(&self) -> ~[u8];
+    fn preferred_replacement_seq(&self) -> ~[u8] { ~[0x3f] /* "?" */ }
 }
 
 impl<'self> Encoding for &'self Encoding {
