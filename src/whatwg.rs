@@ -19,6 +19,9 @@
  */
 
 use std::util::swap;
+// TODO: change this to std::ascii::StrAsciiExt when upgrading to Rust 0.8
+// and remove the implementation in util.
+use util::StrAsciiExt;
 use all;
 use types;
 
@@ -61,7 +64,7 @@ mod whatwg_encodings {
 /// Returns an encoding and canonical name from given label if any. Follows WHATWG Encoding
 /// Standard "get an encoding" algorithm.
 pub fn get_encoding(label: &str) -> Option<(&'static types::Encoding, &'static str)> {
-    match label.trim().to_ascii().to_lower().to_str_ascii() {
+    match label.trim_chars(& &[' ', '\n', '\r', '\t', '\x0C']).to_ascii_lower() {
         ~"unicode-1-1-utf-8" |
         ~"utf-8" |
         ~"utf8" =>
@@ -329,6 +332,22 @@ pub fn get_encoding(label: &str) -> Option<(&'static types::Encoding, &'static s
         ~"x-user-defined" =>
             Some((whatwg_encodings::X_USER_DEFINED as &'static types::Encoding, "x-user-defined")),
         _ => None
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::get_encoding;
+
+    #[test]
+    fn test_get_encoding() {
+        assert!(get_encoding("utf-8").is_some())
+        assert!(get_encoding("UTF-8").is_some())
+        assert!(get_encoding("\t\n\x0C\r utf-8\t\n\x0C\r ").is_some())
+        assert!(get_encoding("\u00A0utf-8").is_none(), "Non-ASCII whitespace should not be trimmed")
+        assert!(get_encoding("greek").is_some())
+        assert!(get_encoding("gree\u212A").is_none(),
+                "Case-insensitive matching should be ASCII only. Kelvin sign does not match k.")
     }
 }
 
