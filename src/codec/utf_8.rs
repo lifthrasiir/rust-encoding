@@ -683,7 +683,7 @@ mod scan {
 pub struct UTF8Encoding;
 
 impl Encoding for UTF8Encoding {
-    fn name(&self) -> ~str { ~"utf-8" }
+    fn name(&self) -> &'static str { "utf-8" }
     fn encoder(&self) -> ~Encoder { ~UTF8Encoder { scanner: scan::Scanner::new() } as ~Encoder }
     fn decoder(&self) -> ~Decoder { ~UTF8Decoder { scanner: scan::Scanner::new() } as ~Decoder }
 }

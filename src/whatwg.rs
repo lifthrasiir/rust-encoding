@@ -36,7 +36,7 @@ mod whatwg_encodings {
     struct ReplacementEncoding;
 
     impl Encoding for ReplacementEncoding {
-        fn name(&self) -> ~str { ~"replacement" }
+        fn name(&self) -> &'static str { "replacement" }
         fn encoder(&self) -> ~Encoder { all::UTF_8.encoder() }
         fn decoder(&self) -> ~Decoder { all::ERROR.decoder() }
     }

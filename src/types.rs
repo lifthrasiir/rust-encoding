@@ -78,7 +78,7 @@ pub trait Decoder: Clone {
 /// Character encoding.
 pub trait Encoding {
     /// Returns the canonical name of given encoding.
-    fn name(&self) -> ~str;
+    fn name(&self) -> &'static str;
     /// Creates a new encoder.
     fn encoder(&self) -> ~Encoder;
     /// Creates a new decoder.
@@ -89,14 +89,14 @@ pub trait Encoding {
 }
 
 impl<'self> Encoding for &'self Encoding {
-    fn name(&self) -> ~str { (*self).name() }
+    fn name(&self) -> &'static str { (*self).name() }
     fn encoder(&self) -> ~Encoder { (*self).encoder() }
     fn decoder(&self) -> ~Decoder { (*self).decoder() }
     fn preferred_replacement_seq(&self) -> ~[u8] { (*self).preferred_replacement_seq() }
 }
 
 impl Encoding for ~Encoding {
-    fn name(&self) -> ~str { (*self).name() }
+    fn name(&self) -> &'static str { (*self).name() }
     fn encoder(&self) -> ~Encoder { (*self).encoder() }
     fn decoder(&self) -> ~Decoder { (*self).decoder() }
     fn preferred_replacement_seq(&self) -> ~[u8] { (*self).preferred_replacement_seq() }

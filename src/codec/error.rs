@@ -11,7 +11,7 @@ use types::*;
 pub struct ErrorEncoding;
 
 impl Encoding for ErrorEncoding {
-    fn name(&self) -> ~str { ~"error" }
+    fn name(&self) -> &'static str { "error" }
     fn encoder(&self) -> ~Encoder { ~ErrorEncoder as ~Encoder }
     fn decoder(&self) -> ~Decoder { ~ErrorDecoder as ~Decoder }
 }
