@@ -28,7 +28,7 @@ impl Encoder for EUCJPEncoder {
     fn feed<'r>(&mut self, input: &'r str, output: &mut ~[u8]) -> Option<EncoderError<'r>> {
         { let new_len = output.len() + input.len(); output.reserve_at_least(new_len) }
         let mut err = None;
-        for input.index_iter().advance |((_,j), ch)| {
+        for ((_,j), ch) in input.index_iter() {
             match ch {
                 '\u0000'..'\u007f' => { output.push(ch as u8); }
                 '\u00a5' => { output.push(0x5c); }
@@ -297,7 +297,7 @@ impl Encoder for ShiftJISEncoder {
     fn feed<'r>(&mut self, input: &'r str, output: &mut ~[u8]) -> Option<EncoderError<'r>> {
         { let new_len = output.len() + input.len(); output.reserve_at_least(new_len) }
         let mut err = None;
-        for input.index_iter().advance |((_,j), ch)| {
+        for ((_,j), ch) in input.index_iter() {
             match ch {
                 '\u0000'..'\u0080' => { output.push(ch as u8); }
                 '\u00a5' => { output.push(0x5c); }

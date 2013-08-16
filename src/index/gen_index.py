@@ -58,12 +58,11 @@ def generate_single_byte_index(name):
         print >>f
         print >>f, '#[cfg(test)]'
         print >>f, 'mod tests {'
-        print >>f, '    use std::u8;'
         print >>f, '    use super::{forward, backward};'
         print >>f
         print >>f, '    #[test]'
         print >>f, '    fn test_correct_table() {'
-        print >>f, '        for u8::range(0, 128) |i| {'
+        print >>f, '        for i in range(0u8, 128) {'
         print >>f, '            let j = forward(i);'
         print >>f, '            if j != 0xffff { assert_eq!(backward(j), i); }'
         print >>f, '        }'
@@ -174,12 +173,11 @@ def generate_multi_byte_index(name):
         print >>f
         print >>f, '#[cfg(test)]'
         print >>f, 'mod tests {'
-        print >>f, '    use std::u32;'
         print >>f, '    use super::{forward, backward};'
         print >>f
         print >>f, '    #[test]'
         print >>f, '    fn test_correct_table() {'
-        print >>f, '        for u32::range(0, 0x10000) |i| {'
+        print >>f, '        for i in range(0u32, 0x10000) {'
         print >>f, '            let i = i as u16;'
         for i in dups:
             print >>f, '            if i == %d { loop; }' % i

@@ -27,7 +27,7 @@ impl Encoder for Windows949Encoder {
     fn feed<'r>(&mut self, input: &'r str, output: &mut ~[u8]) -> Option<EncoderError<'r>> {
         { let new_len = output.len() + input.len(); output.reserve_at_least(new_len) }
         let mut err = None;
-        for input.index_iter().advance |((_,j), ch)| {
+        for ((_,j), ch) in input.index_iter() {
             if ch <= '\u007f' {
                 output.push(ch as u8);
             } else {
@@ -159,7 +159,6 @@ impl Decoder for Windows949Decoder {
 
 #[cfg(test)]
 mod euckr_tests {
-    use std::u16;
     use super::Windows949Encoding;
     use types::*;
 
@@ -222,7 +221,7 @@ mod euckr_tests {
 
     #[test]
     fn test_decoder_invalid_lone_lead_immediate_test_flush() {
-        for u16::range(0x80, 0x100) |i| {
+        for i in range(0x80u16, 0x100) {
             let i = i as u8;
             let mut d = Windows949Encoding.decoder();
             assert_result!(d.test_feed(&[i]), (~"", None)); // wait for a trail
@@ -232,7 +231,7 @@ mod euckr_tests {
 
     #[test]
     fn test_decoder_invalid_lone_lead_followed_by_space() {
-        for u16::range(0x80, 0x100) |i| {
+        for i in range(0x80, 0x100) {
             let i = i as u8;
             let mut d = Windows949Encoding.decoder();
             assert_result!(d.test_feed(&[i, 0x20]), (~"", Some((&[0x20], ~[i]))));
@@ -242,7 +241,7 @@ mod euckr_tests {
 
     #[test]
     fn test_decoder_invalid_lead_followed_by_invalid_trail() {
-        for u16::range(0x80, 0x100) |i| {
+        for i in range(0x80u16, 0x100) {
             let i = i as u8;
             let mut d = Windows949Encoding.decoder();
             assert_result!(d.test_feed(&[i, 0x80]), (~"", Some((&[], ~[i, 0x80]))));
