@@ -22,7 +22,7 @@ impl Encoding for Windows949Encoding {
 pub struct Windows949Encoder;
 
 impl Encoder for Windows949Encoder {
-    fn encoding(&self) -> ~Encoding { ~Windows949Encoding as ~Encoding }
+    fn encoding(&self) -> &'static Encoding { &Windows949Encoding as &'static Encoding }
 
     fn feed<'r>(&mut self, input: &'r str, output: &mut ~[u8]) -> Option<EncoderError<'r>> {
         { let new_len = output.len() + input.len(); output.reserve_at_least(new_len) }
@@ -68,7 +68,7 @@ pub struct Windows949Decoder {
 }
 
 impl Decoder for Windows949Decoder {
-    fn encoding(&self) -> ~Encoding { ~Windows949Encoding as ~Encoding }
+    fn encoding(&self) -> &'static Encoding { &Windows949Encoding as &'static Encoding }
 
     fn feed<'r>(&mut self, input: &'r [u8], output: &mut ~str) -> Option<DecoderError<'r>> {
         { let new_len = output.len() + input.len(); output.reserve_at_least(new_len) }

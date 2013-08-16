@@ -705,7 +705,7 @@ fn u8_error_to_str_error<'r>(err: CodecError<&'r [u8],~[u8]>) -> CodecError<&'r 
 }
 
 impl Encoder for UTF8Encoder {
-    fn encoding(&self) -> ~Encoding { ~UTF8Encoding as ~Encoding }
+    fn encoding(&self) -> &'static Encoding { &UTF8Encoding as &'static Encoding }
 
     fn feed<'r>(&mut self, input: &'r str, output: &mut ~[u8]) -> Option<EncoderError<'r>> {
         { let new_len = output.len() + input.len(); output.reserve_at_least(new_len) }
@@ -726,7 +726,7 @@ pub struct UTF8Decoder {
 }
 
 impl Decoder for UTF8Decoder {
-    fn encoding(&self) -> ~Encoding { ~UTF8Encoding as ~Encoding }
+    fn encoding(&self) -> &'static Encoding { &UTF8Encoding as &'static Encoding }
 
     fn feed<'r>(&mut self, input: &'r [u8], output: &mut ~str) -> Option<DecoderError<'r>> {
         { let new_len = output.len() + input.len(); output.reserve_at_least(new_len) }

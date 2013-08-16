@@ -23,7 +23,7 @@ impl Encoding for EUCJPEncoding {
 pub struct EUCJPEncoder;
 
 impl Encoder for EUCJPEncoder {
-    fn encoding(&self) -> ~Encoding { ~EUCJPEncoding as ~Encoding }
+    fn encoding(&self) -> &'static Encoding { &EUCJPEncoding as &'static Encoding }
 
     fn feed<'r>(&mut self, input: &'r str, output: &mut ~[u8]) -> Option<EncoderError<'r>> {
         { let new_len = output.len() + input.len(); output.reserve_at_least(new_len) }
@@ -70,7 +70,7 @@ pub struct EUCJPDecoder {
 }
 
 impl Decoder for EUCJPDecoder {
-    fn encoding(&self) -> ~Encoding { ~EUCJPEncoding as ~Encoding }
+    fn encoding(&self) -> &'static Encoding { &EUCJPEncoding as &'static Encoding }
 
     fn feed<'r>(&mut self, input: &'r [u8], output: &mut ~str) -> Option<DecoderError<'r>> {
         { let new_len = output.len() + input.len(); output.reserve_at_least(new_len) }
@@ -292,7 +292,7 @@ impl Encoding for ShiftJISEncoding {
 pub struct ShiftJISEncoder;
 
 impl Encoder for ShiftJISEncoder {
-    fn encoding(&self) -> ~Encoding { ~ShiftJISEncoding as ~Encoding }
+    fn encoding(&self) -> &'static Encoding { &ShiftJISEncoding as &'static Encoding }
 
     fn feed<'r>(&mut self, input: &'r str, output: &mut ~[u8]) -> Option<EncoderError<'r>> {
         { let new_len = output.len() + input.len(); output.reserve_at_least(new_len) }
@@ -337,7 +337,7 @@ pub struct ShiftJISDecoder {
 }
 
 impl Decoder for ShiftJISDecoder {
-    fn encoding(&self) -> ~Encoding { ~ShiftJISEncoding as ~Encoding }
+    fn encoding(&self) -> &'static Encoding { &ShiftJISEncoding as &'static Encoding }
 
     fn feed<'r>(&mut self, input: &'r [u8], output: &mut ~str) -> Option<DecoderError<'r>> {
         { let new_len = output.len() + input.len(); output.reserve_at_least(new_len) }
