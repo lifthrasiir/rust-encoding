@@ -714,6 +714,7 @@ impl Encoder for UTF8Encoder {
     pub fn encoding(&self) -> ~Encoding { ~UTF8Encoding as ~Encoding }
 
     pub fn feed<'r>(&mut self, input: &'r str, output: &mut ~[u8]) -> Option<EncoderError<'r>> {
+        { let new_len = output.len() + input.len(); output.reserve_at_least(new_len) }
         // in theory `input` should be a valid UTF-8 string, but in reality it may not.
         let err = self.scanner.feed(input.as_bytes(), |s| output.push_all(s));
         err.map_consume(u8_error_to_str_error)
@@ -734,6 +735,7 @@ impl Decoder for UTF8Decoder {
     pub fn encoding(&self) -> ~Encoding { ~UTF8Encoding as ~Encoding }
 
     pub fn feed<'r>(&mut self, input: &'r [u8], output: &mut ~str) -> Option<DecoderError<'r>> {
+        { let new_len = output.len() + input.len(); output.reserve_at_least(new_len) }
         self.scanner.feed(input, |s| output.push_str(str::from_bytes(s)))
     }
 
