@@ -14,19 +14,19 @@ use types::*;
 pub struct EUCJPEncoding;
 
 impl Encoding for EUCJPEncoding {
-    pub fn name(&self) -> ~str { ~"euc-jp" }
-    pub fn encoder(&self) -> ~Encoder { ~EUCJPEncoder as ~Encoder }
-    pub fn decoder(&self) -> ~Decoder { ~EUCJPDecoder { first: 0, second: 0 } as ~Decoder }
-    pub fn preferred_replacement_seq(&self) -> ~[u8] { ~[0x3f] /* "?" */ }
+    fn name(&self) -> ~str { ~"euc-jp" }
+    fn encoder(&self) -> ~Encoder { ~EUCJPEncoder as ~Encoder }
+    fn decoder(&self) -> ~Decoder { ~EUCJPDecoder { first: 0, second: 0 } as ~Decoder }
+    fn preferred_replacement_seq(&self) -> ~[u8] { ~[0x3f] /* "?" */ }
 }
 
 #[deriving(Clone)]
 pub struct EUCJPEncoder;
 
 impl Encoder for EUCJPEncoder {
-    pub fn encoding(&self) -> ~Encoding { ~EUCJPEncoding as ~Encoding }
+    fn encoding(&self) -> ~Encoding { ~EUCJPEncoding as ~Encoding }
 
-    pub fn feed<'r>(&mut self, input: &'r str, output: &mut ~[u8]) -> Option<EncoderError<'r>> {
+    fn feed<'r>(&mut self, input: &'r str, output: &mut ~[u8]) -> Option<EncoderError<'r>> {
         { let new_len = output.len() + input.len(); output.reserve_at_least(new_len) }
         let mut err = None;
         for input.index_iter().advance |((_,j), ch)| {
@@ -59,7 +59,7 @@ impl Encoder for EUCJPEncoder {
         err
     }
 
-    pub fn flush(&mut self, _output: &mut ~[u8]) -> Option<EncoderError<'static>> {
+    fn flush(&mut self, _output: &mut ~[u8]) -> Option<EncoderError<'static>> {
         None
     }
 }
@@ -71,9 +71,9 @@ pub struct EUCJPDecoder {
 }
 
 impl Decoder for EUCJPDecoder {
-    pub fn encoding(&self) -> ~Encoding { ~EUCJPEncoding as ~Encoding }
+    fn encoding(&self) -> ~Encoding { ~EUCJPEncoding as ~Encoding }
 
-    pub fn feed<'r>(&mut self, input: &'r [u8], output: &mut ~str) -> Option<DecoderError<'r>> {
+    fn feed<'r>(&mut self, input: &'r [u8], output: &mut ~str) -> Option<DecoderError<'r>> {
         { let new_len = output.len() + input.len(); output.reserve_at_least(new_len) }
         let mut i = 0;
         let len = input.len();
@@ -203,7 +203,7 @@ impl Decoder for EUCJPDecoder {
         None
     }
 
-    pub fn flush(&mut self, _output: &mut ~str) -> Option<DecoderError<'static>> {
+    fn flush(&mut self, _output: &mut ~str) -> Option<DecoderError<'static>> {
         if self.second != 0 {
             Some(CodecError { remaining: &[],
                               problem: ~[0x8f, self.second],
@@ -284,19 +284,19 @@ mod eucjp_tests {
 pub struct ShiftJISEncoding;
 
 impl Encoding for ShiftJISEncoding {
-    pub fn name(&self) -> ~str { ~"shift-jis" }
-    pub fn encoder(&self) -> ~Encoder { ~ShiftJISEncoder as ~Encoder }
-    pub fn decoder(&self) -> ~Decoder { ~ShiftJISDecoder { lead: 0 } as ~Decoder }
-    pub fn preferred_replacement_seq(&self) -> ~[u8] { ~[0x3f] /* "?" */ }
+    fn name(&self) -> ~str { ~"shift-jis" }
+    fn encoder(&self) -> ~Encoder { ~ShiftJISEncoder as ~Encoder }
+    fn decoder(&self) -> ~Decoder { ~ShiftJISDecoder { lead: 0 } as ~Decoder }
+    fn preferred_replacement_seq(&self) -> ~[u8] { ~[0x3f] /* "?" */ }
 }
 
 #[deriving(Clone)]
 pub struct ShiftJISEncoder;
 
 impl Encoder for ShiftJISEncoder {
-    pub fn encoding(&self) -> ~Encoding { ~ShiftJISEncoding as ~Encoding }
+    fn encoding(&self) -> ~Encoding { ~ShiftJISEncoding as ~Encoding }
 
-    pub fn feed<'r>(&mut self, input: &'r str, output: &mut ~[u8]) -> Option<EncoderError<'r>> {
+    fn feed<'r>(&mut self, input: &'r str, output: &mut ~[u8]) -> Option<EncoderError<'r>> {
         { let new_len = output.len() + input.len(); output.reserve_at_least(new_len) }
         let mut err = None;
         for input.index_iter().advance |((_,j), ch)| {
@@ -328,7 +328,7 @@ impl Encoder for ShiftJISEncoder {
         err
     }
 
-    pub fn flush(&mut self, _output: &mut ~[u8]) -> Option<EncoderError<'static>> {
+    fn flush(&mut self, _output: &mut ~[u8]) -> Option<EncoderError<'static>> {
         None
     }
 }
@@ -339,9 +339,9 @@ pub struct ShiftJISDecoder {
 }
 
 impl Decoder for ShiftJISDecoder {
-    pub fn encoding(&self) -> ~Encoding { ~ShiftJISEncoding as ~Encoding }
+    fn encoding(&self) -> ~Encoding { ~ShiftJISEncoding as ~Encoding }
 
-    pub fn feed<'r>(&mut self, input: &'r [u8], output: &mut ~str) -> Option<DecoderError<'r>> {
+    fn feed<'r>(&mut self, input: &'r [u8], output: &mut ~str) -> Option<DecoderError<'r>> {
         { let new_len = output.len() + input.len(); output.reserve_at_least(new_len) }
         let mut i = 0;
         let len = input.len();
@@ -419,7 +419,7 @@ impl Decoder for ShiftJISDecoder {
         None
     }
 
-    pub fn flush(&mut self, _output: &mut ~str) -> Option<DecoderError<'static>> {
+    fn flush(&mut self, _output: &mut ~str) -> Option<DecoderError<'static>> {
         if self.lead != 0 {
             Some(CodecError { remaining: &[],
                               problem: ~[self.lead],

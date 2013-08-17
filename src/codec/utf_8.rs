@@ -683,10 +683,10 @@ mod scan {
 pub struct UTF8Encoding;
 
 impl Encoding for UTF8Encoding {
-    pub fn name(&self) -> ~str { ~"utf-8" }
-    pub fn encoder(&self) -> ~Encoder { ~UTF8Encoder { scanner: scan::Scanner::new() } as ~Encoder }
-    pub fn decoder(&self) -> ~Decoder { ~UTF8Decoder { scanner: scan::Scanner::new() } as ~Decoder }
-    pub fn preferred_replacement_seq(&self) -> ~[u8] { ~[0x3f] /* "?" */ }
+    fn name(&self) -> ~str { ~"utf-8" }
+    fn encoder(&self) -> ~Encoder { ~UTF8Encoder { scanner: scan::Scanner::new() } as ~Encoder }
+    fn decoder(&self) -> ~Decoder { ~UTF8Decoder { scanner: scan::Scanner::new() } as ~Decoder }
+    fn preferred_replacement_seq(&self) -> ~[u8] { ~[0x3f] /* "?" */ }
 }
 
 #[deriving(Clone)]
@@ -711,16 +711,16 @@ fn u8_error_to_str_error<'r>(err: CodecError<&'r [u8],~[u8]>) -> CodecError<&'r 
 }
 
 impl Encoder for UTF8Encoder {
-    pub fn encoding(&self) -> ~Encoding { ~UTF8Encoding as ~Encoding }
+    fn encoding(&self) -> ~Encoding { ~UTF8Encoding as ~Encoding }
 
-    pub fn feed<'r>(&mut self, input: &'r str, output: &mut ~[u8]) -> Option<EncoderError<'r>> {
+    fn feed<'r>(&mut self, input: &'r str, output: &mut ~[u8]) -> Option<EncoderError<'r>> {
         { let new_len = output.len() + input.len(); output.reserve_at_least(new_len) }
         // in theory `input` should be a valid UTF-8 string, but in reality it may not.
         let err = self.scanner.feed(input.as_bytes(), |s| output.push_all(s));
         err.map_consume(u8_error_to_str_error)
     }
 
-    pub fn flush(&mut self, _output: &mut ~[u8]) -> Option<EncoderError<'static>> {
+    fn flush(&mut self, _output: &mut ~[u8]) -> Option<EncoderError<'static>> {
         let mut scanner = self.scanner;
         scanner.flush().map_consume(u8_error_to_str_error)
     }
@@ -732,14 +732,14 @@ pub struct UTF8Decoder {
 }
 
 impl Decoder for UTF8Decoder {
-    pub fn encoding(&self) -> ~Encoding { ~UTF8Encoding as ~Encoding }
+    fn encoding(&self) -> ~Encoding { ~UTF8Encoding as ~Encoding }
 
-    pub fn feed<'r>(&mut self, input: &'r [u8], output: &mut ~str) -> Option<DecoderError<'r>> {
+    fn feed<'r>(&mut self, input: &'r [u8], output: &mut ~str) -> Option<DecoderError<'r>> {
         { let new_len = output.len() + input.len(); output.reserve_at_least(new_len) }
         self.scanner.feed(input, |s| output.push_str(str::from_bytes(s)))
     }
 
-    pub fn flush(&mut self, _output: &mut ~str) -> Option<DecoderError<'static>> {
+    fn flush(&mut self, _output: &mut ~str) -> Option<DecoderError<'static>> {
         let mut scanner = self.scanner;
         scanner.flush()
     }

@@ -11,19 +11,19 @@ use types::*;
 pub struct ErrorEncoding;
 
 impl Encoding for ErrorEncoding {
-    pub fn name(&self) -> ~str { ~"error" }
-    pub fn encoder(&self) -> ~Encoder { ~ErrorEncoder as ~Encoder }
-    pub fn decoder(&self) -> ~Decoder { ~ErrorDecoder as ~Decoder }
-    pub fn preferred_replacement_seq(&self) -> ~[u8] { ~[0x3f] /* "?" */ }
+    fn name(&self) -> ~str { ~"error" }
+    fn encoder(&self) -> ~Encoder { ~ErrorEncoder as ~Encoder }
+    fn decoder(&self) -> ~Decoder { ~ErrorDecoder as ~Decoder }
+    fn preferred_replacement_seq(&self) -> ~[u8] { ~[0x3f] /* "?" */ }
 }
 
 #[deriving(Clone)]
 pub struct ErrorEncoder;
 
 impl Encoder for ErrorEncoder {
-    pub fn encoding(&self) -> ~Encoding { ~ErrorEncoding as ~Encoding }
+    fn encoding(&self) -> ~Encoding { ~ErrorEncoding as ~Encoding }
 
-    pub fn feed<'r>(&mut self, input: &'r str, _output: &mut ~[u8])
+    fn feed<'r>(&mut self, input: &'r str, _output: &mut ~[u8])
                       -> Option<EncoderError<'r>> {
         if input.len() > 0 {
             let str::CharRange {ch, next} = input.char_range_at(0);
@@ -37,7 +37,7 @@ impl Encoder for ErrorEncoder {
         }
     }
 
-    pub fn flush(&mut self, _output: &mut ~[u8]) -> Option<EncoderError<'static>> {
+    fn flush(&mut self, _output: &mut ~[u8]) -> Option<EncoderError<'static>> {
         None
     }
 }
@@ -46,9 +46,9 @@ impl Encoder for ErrorEncoder {
 pub struct ErrorDecoder;
 
 impl Decoder for ErrorDecoder {
-    pub fn encoding(&self) -> ~Encoding { ~ErrorEncoding as ~Encoding }
+    fn encoding(&self) -> ~Encoding { ~ErrorEncoding as ~Encoding }
 
-    pub fn feed<'r>(&mut self, input: &'r [u8], _output: &mut ~str)
+    fn feed<'r>(&mut self, input: &'r [u8], _output: &mut ~str)
                       -> Option<DecoderError<'r>> {
         if input.len() > 0 {
             Some(CodecError {
@@ -61,7 +61,7 @@ impl Decoder for ErrorDecoder {
         }
     }
 
-    pub fn flush(&mut self, _output: &mut ~str) -> Option<DecoderError<'static>> {
+    fn flush(&mut self, _output: &mut ~str) -> Option<DecoderError<'static>> {
         None
     }
 }
