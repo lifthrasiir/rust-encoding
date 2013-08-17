@@ -19,7 +19,7 @@
  */
 
 use std::util::swap;
-use std::ascii::StrAsciiExt::StrAsciiExt;
+use std::ascii::StrAsciiExt;
 use all;
 use types;
 
