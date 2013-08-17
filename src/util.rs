@@ -38,3 +38,19 @@ impl<'self> StrCharIndex<'self> for &'self str {
     }
 }
 
+// TODO: remove this when upgrading to Rust 0.8 and use std::ascii::StrAsciiExt instead.
+pub trait StrAsciiExt {
+    fn to_ascii_lower(&self) -> ~str;
+}
+
+impl<'self> StrAsciiExt for &'self str {
+    #[inline]
+    fn to_ascii_lower(&self) -> ~str {
+        do self.map_chars |c| {
+            match c {
+                'A'..'Z' => c + 'a' - 'A',
+                _ => c
+            }
+        }
+    }
+}
