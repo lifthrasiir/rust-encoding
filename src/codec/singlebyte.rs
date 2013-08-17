@@ -37,18 +37,17 @@ pub struct SingleByteEncoder {
 impl Encoder for SingleByteEncoder {
     pub fn encoding(&self) -> ~Encoding { ~self.encoding.clone() as ~Encoding }
 
-    pub fn feed<'r>(&mut self, input: &'r str) -> (~[u8],Option<EncoderError<'r>>) {
-        let mut ret = ~[];
+    pub fn feed<'r>(&mut self, input: &'r str, output: &mut ~[u8]) -> Option<EncoderError<'r>> {
         let mut err = None;
         for input.index_iter().advance |((_,j), ch)| {
             if ch <= '\u007f' {
-                ret.push(ch as u8);
+                output.push(ch as u8);
                 loop
             }
             if ch <= '\uffff' {
                 let index = (self.encoding.index_backward)(ch as u16);
                 if index != 0xff {
-                    ret.push((index + 0x80) as u8);
+                    output.push((index + 0x80) as u8);
                     loop
                 }
             }
@@ -59,11 +58,11 @@ impl Encoder for SingleByteEncoder {
             });
             break;
         }
-        (ret, err)
+        err
     }
 
-    pub fn flush(~self) -> (~[u8],Option<EncoderError<'static>>) {
-        (~[], None)
+    pub fn flush(&mut self, _output: &mut ~[u8]) -> Option<EncoderError<'static>> {
+        None
     }
 }
 
@@ -75,32 +74,31 @@ pub struct SingleByteDecoder {
 impl Decoder for SingleByteDecoder {
     pub fn encoding(&self) -> ~Encoding { ~self.encoding.clone() as ~Encoding }
 
-    pub fn feed<'r>(&mut self, input: &'r [u8]) -> (~str,Option<DecoderError<'r>>) {
-        let mut ret = ~"";
+    pub fn feed<'r>(&mut self, input: &'r [u8], output: &mut ~str) -> Option<DecoderError<'r>> {
         let mut i = 0;
         let len = input.len();
         while i < len {
             if input[i] <= 0x7f {
-                ret.push_char(input[i] as char);
+                output.push_char(input[i] as char);
             } else {
                 let ch = (self.encoding.index_forward)(input[i] - 0x80);
                 if ch != 0xffff {
-                    ret.push_char(ch as char);
+                    output.push_char(ch as char);
                 } else {
-                    return (ret, Some(CodecError {
+                    return Some(CodecError {
                         remaining: input.slice(i+1, input.len()),
                         problem: ~[input[i]],
                         cause: ~"invalid sequence",
-                    }));
+                    });
                 }
             }
             i += 1;
         }
-        (ret, None)
+        None
     }
 
-    pub fn flush(~self) -> (~str,Option<DecoderError<'static>>) {
-        (~"", None)
+    pub fn flush(&mut self, _output: &mut ~str) -> Option<DecoderError<'static>> {
+        None
     }
 }
 
@@ -125,8 +123,8 @@ mod tests {
     #[test]
     fn test_encoder_non_bmp() {
         let mut e = ISO_8859_2.encoder();
-        assert_result!(e.feed("A\uFFFFB"), (~[0x41], Some(("B", ~"\uFFFF"))));
-        assert_result!(e.feed("A\U00010000B"), (~[0x41], Some(("B", ~"\U00010000"))));
+        assert_result!(e.test_feed("A\uFFFFB"), (~[0x41], Some(("B", ~"\uFFFF"))));
+        assert_result!(e.test_feed("A\U00010000B"), (~[0x41], Some(("B", ~"\U00010000"))));
     }
 }
 

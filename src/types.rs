@@ -28,12 +28,25 @@ pub type DecoderError<'self> = CodecError<&'self [u8],~[u8]>;
 pub trait Encoder: Clone {
     /// Returns a (copy of) encoding implemented by this encoder.
     pub fn encoding(&self) -> ~Encoding;
-    /// Feeds given portion of string to the encoder, and returns an encoded byte sequence with
-    /// optional error information.
-    pub fn feed<'r>(&mut self, input: &'r str) -> (~[u8],Option<EncoderError<'r>>);
-    /// Finishes the encoder, and returns the last encoded byte sequence with optional error
-    /// information. `remaining` value of the error information is always an empty string if any.
-    pub fn flush(~self) -> (~[u8],Option<EncoderError<'static>>);
+    /// Feeds given portion of string to the encoder,
+    /// pushes the an encoded byte sequence at the end of the given output,
+    /// and returns optional error information. None means success.
+    pub fn feed<'r>(&mut self, input: &'r str, output: &mut ~[u8]) -> Option<EncoderError<'r>>;
+    #[cfg(test)] pub fn test_feed<'r>(&mut self, input: &'r str) -> (~[u8], Option<EncoderError<'r>>) {
+        let mut output = ~[];
+        let err = self.feed(input, &mut output);
+        (output, err)
+    }
+    /// Finishes the encoder,
+    /// pushes the an encoded byte sequence at the end of the given output,
+    /// and returns optional error information. None means success.
+    /// `remaining` value of the error information, if any, is always an empty string.
+    pub fn flush(&mut self, output: &mut ~[u8]) -> Option<EncoderError<'static>>;
+    #[cfg(test)] pub fn test_flush(&mut self) -> (~[u8], Option<EncoderError<'static>>) {
+        let mut output = ~[];
+        let err = self.flush(&mut output);
+        (output, err)
+    }
 }
 
 /// Encoder converting a byte sequence into a Unicode string. This is a lower level interface, and
@@ -41,12 +54,25 @@ pub trait Encoder: Clone {
 pub trait Decoder: Clone {
     /// Returns a (copy of) encoding implemented by this decoder.
     pub fn encoding(&self) -> ~Encoding;
-    /// Feeds given portion of byte sequenc to the encoder, and returns a decoded string with
-    /// optional error information.
-    pub fn feed<'r>(&mut self, input: &'r [u8]) -> (~str,Option<DecoderError<'r>>);
-    /// Finishes the decoder, and returns the last decoded string with optional error information.
-    /// `remaining` value of the error information is always an empty sequence if any.
-    pub fn flush(~self) -> (~str,Option<DecoderError<'static>>);
+    /// Feeds given portion of byte sequence to the encoder,
+    /// pushes the a decoded string at the end of the given output,
+    /// and returns optional error information. None means success.
+    pub fn feed<'r>(&mut self, input: &'r [u8], output: &mut ~str) -> Option<DecoderError<'r>>;
+    #[cfg(test)] pub fn test_feed<'r>(&mut self, input: &'r [u8]) -> (~str, Option<DecoderError<'r>>) {
+        let mut output = ~"";
+        let err = self.feed(input, &mut output);
+        (output, err)
+    }
+    /// Finishes the decoder,
+    /// pushes the a decoded string at the end of the given output,
+    /// and returns optional error information. None means success.
+    /// `remaining` value of the error information, if any, is always an empty sequence.
+    pub fn flush(&mut self, output: &mut ~str) -> Option<DecoderError<'static>>;
+    #[cfg(test)] pub fn test_flush(&mut self) -> (~str, Option<DecoderError<'static>>) {
+        let mut output = ~"";
+        let err = self.flush(&mut output);
+        (output, err)
+    }
 }
 
 /// Character encoding.
@@ -94,9 +120,7 @@ impl<T:Encoding> EncodingUtil<T> for T {
         let mut ret = ~[];
 
         loop {
-            let (encoded, err) = encoder.feed(remaining);
-            ret.push_all(encoded);
-            match err {
+            match encoder.feed(remaining, &mut ret) {
                 Some(err) => {
                     match trap.encoder_trap(self, err.problem) {
                         Some(s) => { ret.push_all(s); }
@@ -108,9 +132,7 @@ impl<T:Encoding> EncodingUtil<T> for T {
             }
         }
 
-        let (encoded, err) = encoder.flush();
-        ret.push_all(encoded);
-        match err {
+        match encoder.flush(&mut ret) {
             Some(err) => {
                 match trap.encoder_trap(self, err.problem) {
                     Some(s) => { ret.push_all(s); }
@@ -129,9 +151,7 @@ impl<T:Encoding> EncodingUtil<T> for T {
         let mut ret = ~"";
 
         loop {
-            let (decoded, err) = decoder.feed(remaining);
-            ret.push_str(decoded);
-            match err {
+            match decoder.feed(remaining, &mut ret) {
                 Some(err) => {
                     match trap.decoder_trap(self, err.problem) {
                         Some(s) => { ret.push_str(s); }
@@ -143,9 +163,7 @@ impl<T:Encoding> EncodingUtil<T> for T {
             }
         }
 
-        let (decoded, err) = decoder.flush();
-        ret.push_str(decoded);
-        match err {
+        match decoder.flush(&mut ret) {
             Some(err) => {
                 match trap.decoder_trap(self, err.problem) {
                     Some(s) => { ret.push_str(s); }
