@@ -12,19 +12,19 @@ use types::*;
 pub struct ASCIIEncoding;
 
 impl Encoding for ASCIIEncoding {
-    pub fn name(&self) -> ~str { ~"ascii" }
-    pub fn encoder(&self) -> ~Encoder { ~ASCIIEncoder as ~Encoder }
-    pub fn decoder(&self) -> ~Decoder { ~ASCIIDecoder as ~Decoder }
-    pub fn preferred_replacement_seq(&self) -> ~[u8] { ~[0x3f] /* "?" */ }
+    fn name(&self) -> ~str { ~"ascii" }
+    fn encoder(&self) -> ~Encoder { ~ASCIIEncoder as ~Encoder }
+    fn decoder(&self) -> ~Decoder { ~ASCIIDecoder as ~Decoder }
+    fn preferred_replacement_seq(&self) -> ~[u8] { ~[0x3f] /* "?" */ }
 }
 
 #[deriving(Clone)]
 pub struct ASCIIEncoder;
 
 impl Encoder for ASCIIEncoder {
-    pub fn encoding(&self) -> ~Encoding { ~ASCIIEncoding as ~Encoding }
+    fn encoding(&self) -> ~Encoding { ~ASCIIEncoding as ~Encoding }
 
-    pub fn feed<'r>(&mut self, input: &'r str, output: &mut ~[u8]) -> Option<EncoderError<'r>> {
+    fn feed<'r>(&mut self, input: &'r str, output: &mut ~[u8]) -> Option<EncoderError<'r>> {
         { let new_len = output.len() + input.len(); output.reserve_at_least(new_len) }
         let mut err = None;
         for input.index_iter().advance |((_,j), ch)| {
@@ -42,7 +42,7 @@ impl Encoder for ASCIIEncoder {
         err
     }
 
-    pub fn flush(&mut self, _output: &mut ~[u8]) -> Option<EncoderError<'static>> {
+    fn flush(&mut self, _output: &mut ~[u8]) -> Option<EncoderError<'static>> {
         None
     }
 }
@@ -51,9 +51,9 @@ impl Encoder for ASCIIEncoder {
 pub struct ASCIIDecoder;
 
 impl Decoder for ASCIIDecoder {
-    pub fn encoding(&self) -> ~Encoding { ~ASCIIEncoding as ~Encoding }
+    fn encoding(&self) -> ~Encoding { ~ASCIIEncoding as ~Encoding }
 
-    pub fn feed<'r>(&mut self, input: &'r [u8], output: &mut ~str) -> Option<DecoderError<'r>> {
+    fn feed<'r>(&mut self, input: &'r [u8], output: &mut ~str) -> Option<DecoderError<'r>> {
         { let new_len = output.len() + input.len(); output.reserve_at_least(new_len) }
         let mut i = 0;
         let len = input.len();
@@ -72,7 +72,7 @@ impl Decoder for ASCIIDecoder {
         None
     }
 
-    pub fn flush(&mut self, _output: &mut ~str) -> Option<DecoderError<'static>> {
+    fn flush(&mut self, _output: &mut ~str) -> Option<DecoderError<'static>> {
         None
     }
 }

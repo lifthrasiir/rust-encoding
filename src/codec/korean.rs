@@ -13,19 +13,19 @@ use types::*;
 pub struct Windows949Encoding;
 
 impl Encoding for Windows949Encoding {
-    pub fn name(&self) -> ~str { ~"windows-949" }
-    pub fn encoder(&self) -> ~Encoder { ~Windows949Encoder as ~Encoder }
-    pub fn decoder(&self) -> ~Decoder { ~Windows949Decoder { lead: 0 } as ~Decoder }
-    pub fn preferred_replacement_seq(&self) -> ~[u8] { ~[0x3f] /* "?" */ }
+    fn name(&self) -> ~str { ~"windows-949" }
+    fn encoder(&self) -> ~Encoder { ~Windows949Encoder as ~Encoder }
+    fn decoder(&self) -> ~Decoder { ~Windows949Decoder { lead: 0 } as ~Decoder }
+    fn preferred_replacement_seq(&self) -> ~[u8] { ~[0x3f] /* "?" */ }
 }
 
 #[deriving(Clone)]
 pub struct Windows949Encoder;
 
 impl Encoder for Windows949Encoder {
-    pub fn encoding(&self) -> ~Encoding { ~Windows949Encoding as ~Encoding }
+    fn encoding(&self) -> ~Encoding { ~Windows949Encoding as ~Encoding }
 
-    pub fn feed<'r>(&mut self, input: &'r str, output: &mut ~[u8]) -> Option<EncoderError<'r>> {
+    fn feed<'r>(&mut self, input: &'r str, output: &mut ~[u8]) -> Option<EncoderError<'r>> {
         { let new_len = output.len() + input.len(); output.reserve_at_least(new_len) }
         let mut err = None;
         for input.index_iter().advance |((_,j), ch)| {
@@ -58,7 +58,7 @@ impl Encoder for Windows949Encoder {
         err
     }
 
-    pub fn flush(&mut self, _output: &mut ~[u8]) -> Option<EncoderError<'static>> {
+    fn flush(&mut self, _output: &mut ~[u8]) -> Option<EncoderError<'static>> {
         None
     }
 }
@@ -69,9 +69,9 @@ pub struct Windows949Decoder {
 }
 
 impl Decoder for Windows949Decoder {
-    pub fn encoding(&self) -> ~Encoding { ~Windows949Encoding as ~Encoding }
+    fn encoding(&self) -> ~Encoding { ~Windows949Encoding as ~Encoding }
 
-    pub fn feed<'r>(&mut self, input: &'r [u8], output: &mut ~str) -> Option<DecoderError<'r>> {
+    fn feed<'r>(&mut self, input: &'r [u8], output: &mut ~str) -> Option<DecoderError<'r>> {
         { let new_len = output.len() + input.len(); output.reserve_at_least(new_len) }
         let mut i = 0;
         let len = input.len();
@@ -147,7 +147,7 @@ impl Decoder for Windows949Decoder {
         None
     }
 
-    pub fn flush(&mut self, _output: &mut ~str) -> Option<DecoderError<'static>> {
+    fn flush(&mut self, _output: &mut ~str) -> Option<DecoderError<'static>> {
         if self.lead != 0 {
             Some(CodecError { remaining: &[],
                               problem: ~[self.lead],

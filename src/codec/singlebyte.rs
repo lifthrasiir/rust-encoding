@@ -23,10 +23,10 @@ impl Clone for SingleByteEncoding {
 }
 
 impl Encoding for SingleByteEncoding {
-    pub fn name(&self) -> ~str { self.name.to_owned() }
-    pub fn encoder(&self) -> ~Encoder { ~SingleByteEncoder { encoding: self.clone() } as ~Encoder }
-    pub fn decoder(&self) -> ~Decoder { ~SingleByteDecoder { encoding: self.clone() } as ~Decoder }
-    pub fn preferred_replacement_seq(&self) -> ~[u8] { ~[0x3f] /* "?" */ }
+    fn name(&self) -> ~str { self.name.to_owned() }
+    fn encoder(&self) -> ~Encoder { ~SingleByteEncoder { encoding: self.clone() } as ~Encoder }
+    fn decoder(&self) -> ~Decoder { ~SingleByteDecoder { encoding: self.clone() } as ~Decoder }
+    fn preferred_replacement_seq(&self) -> ~[u8] { ~[0x3f] /* "?" */ }
 }
 
 #[deriving(Clone)]
@@ -35,9 +35,9 @@ pub struct SingleByteEncoder {
 }
 
 impl Encoder for SingleByteEncoder {
-    pub fn encoding(&self) -> ~Encoding { ~self.encoding.clone() as ~Encoding }
+    fn encoding(&self) -> ~Encoding { ~self.encoding.clone() as ~Encoding }
 
-    pub fn feed<'r>(&mut self, input: &'r str, output: &mut ~[u8]) -> Option<EncoderError<'r>> {
+    fn feed<'r>(&mut self, input: &'r str, output: &mut ~[u8]) -> Option<EncoderError<'r>> {
         { let new_len = output.len() + input.len(); output.reserve_at_least(new_len) }
         let mut err = None;
         for input.index_iter().advance |((_,j), ch)| {
@@ -62,7 +62,7 @@ impl Encoder for SingleByteEncoder {
         err
     }
 
-    pub fn flush(&mut self, _output: &mut ~[u8]) -> Option<EncoderError<'static>> {
+    fn flush(&mut self, _output: &mut ~[u8]) -> Option<EncoderError<'static>> {
         None
     }
 }
@@ -73,9 +73,9 @@ pub struct SingleByteDecoder {
 }
 
 impl Decoder for SingleByteDecoder {
-    pub fn encoding(&self) -> ~Encoding { ~self.encoding.clone() as ~Encoding }
+    fn encoding(&self) -> ~Encoding { ~self.encoding.clone() as ~Encoding }
 
-    pub fn feed<'r>(&mut self, input: &'r [u8], output: &mut ~str) -> Option<DecoderError<'r>> {
+    fn feed<'r>(&mut self, input: &'r [u8], output: &mut ~str) -> Option<DecoderError<'r>> {
         { let new_len = output.len() + input.len(); output.reserve_at_least(new_len) }
         let mut i = 0;
         let len = input.len();
@@ -99,7 +99,7 @@ impl Decoder for SingleByteDecoder {
         None
     }
 
-    pub fn flush(&mut self, _output: &mut ~str) -> Option<DecoderError<'static>> {
+    fn flush(&mut self, _output: &mut ~str) -> Option<DecoderError<'static>> {
         None
     }
 }

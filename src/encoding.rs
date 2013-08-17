@@ -100,7 +100,7 @@ mod tests {
         pub struct SurrogateEscape;
         impl<T:Encoding> DecoderTrap<T> for SurrogateEscape {
             // converts invalid single bytes 80..FF to invalid surrogates U+DC80..DCFF
-            pub fn decoder_trap(&mut self, _encoding: &T, input: &[u8]) -> Option<~str> {
+            fn decoder_trap(&mut self, _encoding: &T, input: &[u8]) -> Option<~str> {
                 let chars: ~[char] =
                     input.iter().transform(|&c| (c as uint + 0xdc00) as char).collect();
                 Some(str::from_chars(chars))
@@ -109,7 +109,7 @@ mod tests {
         impl<T:Encoding> EncoderTrap<T> for SurrogateEscape {
             // converts invalid surrogates U+DC80..DCFF back to single bytes 80..FF
             // this is an illustrative example, the actual routine would be a bit more complex.
-            pub fn encoder_trap(&mut self, _encoding: &T, input: &str) -> Option<~[u8]> {
+            fn encoder_trap(&mut self, _encoding: &T, input: &str) -> Option<~[u8]> {
                 let chars: ~[char] = input.iter().collect();
                 if chars.len() == 1 && '\udc80' <= chars[0] && chars[0] <= '\udcff' {
                     Some(~[(chars[0] as uint - 0xdc00) as u8])
