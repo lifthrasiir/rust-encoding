@@ -23,10 +23,9 @@ impl Clone for SingleByteEncoding {
 }
 
 impl Encoding for SingleByteEncoding {
-    fn name(&self) -> ~str { self.name.to_owned() }
+    fn name(&self) -> &'static str { self.name }
     fn encoder(&self) -> ~Encoder { ~SingleByteEncoder { encoding: self.clone() } as ~Encoder }
     fn decoder(&self) -> ~Decoder { ~SingleByteDecoder { encoding: self.clone() } as ~Decoder }
-    fn preferred_replacement_seq(&self) -> ~[u8] { ~[0x3f] /* "?" */ }
 }
 
 #[deriving(Clone)]
