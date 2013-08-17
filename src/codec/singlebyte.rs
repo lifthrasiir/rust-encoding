@@ -104,10 +104,29 @@ impl Decoder for SingleByteDecoder {
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use all::ISO_8859_2;
+    use types::*;
 
-#[test]
-fn test_non_bmp() {
-    use all;
-    assert_eq!(all::ISO_8859_2.encode("A\uFFFFB", Replace).unwrap(), ~[0x41, 0x3F, 0x42]);
-    assert_eq!(all::ISO_8859_2.encode("A\U00010000B", Replace).unwrap(), ~[0x41, 0x3F, 0x42]);
+    fn strip_cause<T,Remaining,Problem>(result: (T,Option<CodecError<Remaining,Problem>>))
+                                    -> (T,Option<(Remaining,Problem)>) {
+        match result {
+            (processed, None) => (processed, None),
+            (processed, Some(CodecError { remaining, problem, cause: _cause })) =>
+                (processed, Some((remaining, problem)))
+        }
+    }
+
+    macro_rules! assert_result(
+        ($lhs:expr, $rhs:expr) => (assert_eq!(strip_cause($lhs), $rhs))
+    )
+
+    #[test]
+    fn test_encoder_non_bmp() {
+        let mut e = ISO_8859_2.encoder();
+        assert_result!(e.feed("A\uFFFFB"), (~[0x41], Some(("B", ~"\uFFFF"))));
+        assert_result!(e.feed("A\U00010000B"), (~[0x41], Some(("B", ~"\U00010000"))));
+    }
 }
+
