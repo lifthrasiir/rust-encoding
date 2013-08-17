@@ -61,9 +61,10 @@ mod whatwg_encodings {
     };
 }
 
-/// Returns an encoding and canonical name from given label if any. Follows WHATWG Encoding
-/// Standard "get an encoding" algorithm.
-pub fn get_encoding(label: &str) -> Option<(&'static types::Encoding, &'static str)> {
+/// Returns an encoding and canonical name from given label if any.
+/// Follows WHATWG Encoding Standard "get an encoding" algorithm:
+/// http://encoding.spec.whatwg.org/#decode
+pub fn encoding_from_label(label: &str) -> Option<(&'static types::Encoding, &'static str)> {
     match label.trim_chars(& &[' ', '\n', '\r', '\t', '\x0C']).to_ascii_lower().as_slice() {
         "unicode-1-1-utf-8" |
         "utf-8" |
@@ -338,23 +339,23 @@ pub fn get_encoding(label: &str) -> Option<(&'static types::Encoding, &'static s
 #[cfg(test)]
 mod tests {
     extern mod extra;
-    use super::get_encoding;
+    use super::encoding_from_label;
 
     #[test]
-    fn test_get_encoding() {
-        assert!(get_encoding("utf-8").is_some())
-        assert!(get_encoding("UTF-8").is_some())
-        assert!(get_encoding("\t\n\x0C\r utf-8\t\n\x0C\r ").is_some())
-        assert!(get_encoding("\u00A0utf-8").is_none(), "Non-ASCII whitespace should not be trimmed")
-        assert!(get_encoding("greek").is_some())
-        assert!(get_encoding("gree\u212A").is_none(),
+    fn test_encoding_from_label() {
+        assert!(encoding_from_label("utf-8").is_some())
+        assert!(encoding_from_label("UTF-8").is_some())
+        assert!(encoding_from_label("\t\n\x0C\r utf-8\t\n\x0C\r ").is_some())
+        assert!(encoding_from_label("\u00A0utf-8").is_none(), "Non-ASCII whitespace should not be trimmed")
+        assert!(encoding_from_label("greek").is_some())
+        assert!(encoding_from_label("gree\u212A").is_none(),
                 "Case-insensitive matching should be ASCII only. Kelvin sign does not match k.")
     }
 
     #[bench]
-    fn bench_get_encoding(harness: &mut extra::test::BenchHarness) {
+    fn bench_encoding_from_label(harness: &mut extra::test::BenchHarness) {
         do harness.iter() {
-            get_encoding("iso-8859-bazinga");
+            encoding_from_label("iso-8859-bazinga");
         }
     }
 }
@@ -395,7 +396,7 @@ impl TextDecoder {
     pub fn from_options(label: Option<~str>, options: TextDecoderOptions)
                                     -> Result<TextDecoder,~str> {
         let label = label.get_or_default(~"utf-8");
-        let ret = get_encoding(label);
+        let ret = encoding_from_label(label);
         if ret.is_none() { return Err(~"TypeError"); }
         let (encoding, whatwg_name) = ret.unwrap();
         if whatwg_name == "replacement" { return Err(~"TypeError"); }
@@ -526,7 +527,7 @@ pub struct TextEncoder {
 impl TextEncoder {
     pub fn new(label: Option<~str>) -> Result<TextEncoder,~str> {
         let label = label.get_or_default(~"utf-8");
-        let ret = get_encoding(label);
+        let ret = encoding_from_label(label);
         if ret.is_none() { return Err(~"TypeError"); }
         let (encoding, whatwg_name) = ret.unwrap();
         if whatwg_name != "utf-8" && whatwg_name != "utf-16le" && whatwg_name != "utf-16be" {
