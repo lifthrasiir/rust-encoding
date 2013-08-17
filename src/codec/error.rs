@@ -20,7 +20,7 @@ impl Encoding for ErrorEncoding {
 pub struct ErrorEncoder;
 
 impl Encoder for ErrorEncoder {
-    fn encoding(&self) -> ~Encoding { ~ErrorEncoding as ~Encoding }
+    fn encoding(&self) -> &'static Encoding { &ErrorEncoding as &'static Encoding }
 
     fn feed<'r>(&mut self, input: &'r str, _output: &mut ~[u8])
                       -> Option<EncoderError<'r>> {
@@ -45,7 +45,7 @@ impl Encoder for ErrorEncoder {
 pub struct ErrorDecoder;
 
 impl Decoder for ErrorDecoder {
-    fn encoding(&self) -> ~Encoding { ~ErrorEncoding as ~Encoding }
+    fn encoding(&self) -> &'static Encoding { &ErrorEncoding as &'static Encoding }
 
     fn feed<'r>(&mut self, input: &'r [u8], _output: &mut ~str)
                       -> Option<DecoderError<'r>> {

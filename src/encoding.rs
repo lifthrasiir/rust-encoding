@@ -102,7 +102,7 @@ mod tests {
             // converts invalid single bytes 80..FF to invalid surrogates U+DC80..DCFF
             fn decoder_trap(&mut self, _encoding: &T, input: &[u8]) -> Option<~str> {
                 let chars: ~[char] =
-                    input.iter().transform(|&c| (c as uint + 0xdc00) as char).collect();
+                    input.iter().map(|&c| (c as uint + 0xdc00) as char).collect();
                 Some(str::from_chars(chars))
             }
         }

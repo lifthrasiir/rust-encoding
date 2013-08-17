@@ -4763,12 +4763,11 @@ pub fn backward(code: u32) -> u16 {
 
 #[cfg(test)]
 mod tests {
-    use std::u32;
     use super::{forward, backward};
 
     #[test]
     fn test_correct_table() {
-        for u32::range(0, 0x10000) |i| {
+        for i in range(0u32, 0x10000) {
             let i = i as u16;
             if i == 6555 { loop; }
             let j = forward(i);

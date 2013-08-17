@@ -25,9 +25,9 @@ pub type DecoderError<'self> = CodecError<&'self [u8],~[u8]>;
 
 /// Encoder converting a Unicode string into a byte sequence. This is a lower level interface, and
 /// normally `Encoding::encode` should be used instead.
-pub trait Encoder: Clone {
+pub trait Encoder {
     /// Returns a (copy of) encoding implemented by this encoder.
-    fn encoding(&self) -> ~Encoding;
+    fn encoding(&self) -> &'static Encoding;
     /// Feeds given portion of string to the encoder,
     /// pushes the an encoded byte sequence at the end of the given output,
     /// and returns optional error information. None means success.
@@ -51,9 +51,9 @@ pub trait Encoder: Clone {
 
 /// Encoder converting a byte sequence into a Unicode string. This is a lower level interface, and
 /// normally `Encoding::decode` should be used instead.
-pub trait Decoder: Clone {
+pub trait Decoder {
     /// Returns a (copy of) encoding implemented by this decoder.
-    fn encoding(&self) -> ~Encoding;
+    fn encoding(&self) -> &'static Encoding;
     /// Feeds given portion of byte sequence to the encoder,
     /// pushes the a decoded string at the end of the given output,
     /// and returns optional error information. None means success.
@@ -78,43 +78,29 @@ pub trait Decoder: Clone {
 /// Character encoding.
 pub trait Encoding {
     /// Returns the canonical name of given encoding.
-    fn name(&self) -> &'static str;
+    fn name(&'static self) -> &'static str;
     /// Creates a new encoder.
-    fn encoder(&self) -> ~Encoder;
+    fn encoder(&'static self) -> ~Encoder;
     /// Creates a new decoder.
-    fn decoder(&self) -> ~Decoder;
+    fn decoder(&'static self) -> ~Decoder;
     /// Returns a preferred replacement sequence for the encoder. Normally `?` encoded in given
     /// encoding. Note that this is fixed to `"\ufffd"` for the decoder.
-    fn preferred_replacement_seq(&self) -> ~[u8] { ~[0x3f] /* "?" */ }
-}
-
-impl<'self> Encoding for &'self Encoding {
-    fn name(&self) -> &'static str { (*self).name() }
-    fn encoder(&self) -> ~Encoder { (*self).encoder() }
-    fn decoder(&self) -> ~Decoder { (*self).decoder() }
-    fn preferred_replacement_seq(&self) -> ~[u8] { (*self).preferred_replacement_seq() }
-}
-
-impl Encoding for ~Encoding {
-    fn name(&self) -> &'static str { (*self).name() }
-    fn encoder(&self) -> ~Encoder { (*self).encoder() }
-    fn decoder(&self) -> ~Decoder { (*self).decoder() }
-    fn preferred_replacement_seq(&self) -> ~[u8] { (*self).preferred_replacement_seq() }
+    fn preferred_replacement_seq(&'static self) -> ~[u8] { ~[0x3f] /* "?" */ }
 }
 
 /// Utilities for character encodings.
 pub trait EncodingUtil<T:Encoding> {
     /// An easy-to-use interface to `Encoder`. On the encoder error `trap` is called, which may
     /// return a replacement sequence to continue processing, or a failure to return the error.
-    fn encode<Trap:EncoderTrap<T>>(&self, input: &str, trap: Trap) -> Result<~[u8],~str>;
+    fn encode<Trap:EncoderTrap<T>>(&'static self, input: &str, trap: Trap) -> Result<~[u8],~str>;
     /// An easy-to-use interface to `Decoder`. On the decoder error `trap` is called, which may
     /// return a replacement string to continue processing, or a failure to return the error.
-    fn decode<Trap:DecoderTrap<T>>(&self, input: &[u8], trap: Trap) -> Result<~str,~str>;
+    fn decode<Trap:DecoderTrap<T>>(&'static self, input: &[u8], trap: Trap) -> Result<~str,~str>;
 }
 
 impl<T:Encoding> EncodingUtil<T> for T {
     #[inline]
-    fn encode<Trap:EncoderTrap<T>>(&self, input: &str, mut trap: Trap) -> Result<~[u8],~str> {
+    fn encode<Trap:EncoderTrap<T>>(&'static self, input: &str, mut trap: Trap) -> Result<~[u8],~str> {
         let mut encoder = self.encoder();
         let mut remaining = input;
         let mut ret = ~[];
@@ -145,7 +131,7 @@ impl<T:Encoding> EncodingUtil<T> for T {
     }
 
     #[inline]
-    fn decode<Trap:DecoderTrap<T>>(&self, input: &[u8], mut trap: Trap) -> Result<~str,~str> {
+    fn decode<Trap:DecoderTrap<T>>(&'static self, input: &[u8], mut trap: Trap) -> Result<~str,~str> {
         let mut decoder = self.decoder();
         let mut remaining = input;
         let mut ret = ~"";
@@ -180,26 +166,26 @@ impl<T:Encoding> EncodingUtil<T> for T {
 /// `EncoderTrap::encoder_trap` is also a valid encoder trap.
 pub trait EncoderTrap<T:Encoding> {
     /// Handles an encoder error. Returns a replacement sequence or gives up by returning `None`.
-    fn encoder_trap(&mut self, encoding: &T, input: &str) -> Option<~[u8]>;
+    fn encoder_trap(&mut self, encoding: &'static T, input: &str) -> Option<~[u8]>;
 }
 
 /// Decoder trap, which handles decoder errors. Note that a function with the same arguments as
 /// `DecoderTrap::decoder_trap` is also a valid decoder trap.
 pub trait DecoderTrap<T:Encoding> {
     /// Handles a decoder error. Returns a replacement string or gives up by returning `None`.
-    fn decoder_trap(&mut self, encoding: &T, input: &[u8]) -> Option<~str>;
+    fn decoder_trap(&mut self, encoding: &'static T, input: &[u8]) -> Option<~str>;
 }
 
 impl<'self,T:Encoding> EncoderTrap<T> for &'self fn(&str) -> ~[u8] {
     #[inline(always)]
-    fn encoder_trap(&mut self, _encoding: &T, input: &str) -> Option<~[u8]> {
+    fn encoder_trap(&mut self, _encoding: &'static T, input: &str) -> Option<~[u8]> {
         Some((*self)(input))
     }
 }
 
 impl<'self,T:Encoding> DecoderTrap<T> for &'self fn(&[u8]) -> ~str {
     #[inline(always)]
-    fn decoder_trap(&mut self, _encoding: &T, input: &[u8]) -> Option<~str> {
+    fn decoder_trap(&mut self, _encoding: &'static T, input: &[u8]) -> Option<~str> {
         Some((*self)(input))
     }
 }
@@ -209,14 +195,14 @@ pub struct Strict;
 
 impl<T:Encoding> EncoderTrap<T> for Strict {
     #[inline]
-    fn encoder_trap(&mut self, _encoding: &T, _input: &str) -> Option<~[u8]> {
+    fn encoder_trap(&mut self, _encoding: &'static T, _input: &str) -> Option<~[u8]> {
         None
     }
 }
 
 impl<T:Encoding> DecoderTrap<T> for Strict {
     #[inline]
-    fn decoder_trap(&mut self, _encoding: &T, _input: &[u8]) -> Option<~str> {
+    fn decoder_trap(&mut self, _encoding: &'static T, _input: &[u8]) -> Option<~str> {
         None
     }
 }
@@ -227,14 +213,14 @@ pub struct Replace;
 
 impl<T:Encoding> EncoderTrap<T> for Replace {
     #[inline]
-    fn encoder_trap(&mut self, encoding: &T, _input: &str) -> Option<~[u8]> {
+    fn encoder_trap(&mut self, encoding: &'static T, _input: &str) -> Option<~[u8]> {
         Some(encoding.preferred_replacement_seq())
     }
 }
 
 impl<T:Encoding> DecoderTrap<T> for Replace {
     #[inline]
-    fn decoder_trap(&mut self, _encoding: &T, _input: &[u8]) -> Option<~str> {
+    fn decoder_trap(&mut self, _encoding: &'static T, _input: &[u8]) -> Option<~str> {
         Some(~"\ufffd")
     }
 }
@@ -244,14 +230,14 @@ pub struct Ignore;
 
 impl<T:Encoding> EncoderTrap<T> for Ignore {
     #[inline]
-    fn encoder_trap(&mut self, _encoding: &T, _input: &str) -> Option<~[u8]> {
+    fn encoder_trap(&mut self, _encoding: &'static T, _input: &str) -> Option<~[u8]> {
         Some(~[])
     }
 }
 
 impl<T:Encoding> DecoderTrap<T> for Ignore {
     #[inline]
-    fn decoder_trap(&mut self, _encoding: &T, _input: &[u8]) -> Option<~str> {
+    fn decoder_trap(&mut self, _encoding: &'static T, _input: &[u8]) -> Option<~str> {
         Some(~"")
     }
 }

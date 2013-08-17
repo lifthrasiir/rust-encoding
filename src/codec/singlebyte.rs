@@ -14,32 +14,23 @@ pub struct SingleByteEncoding {
     index_backward: extern "Rust" fn(u16) -> u8,
 }
 
-impl Clone for SingleByteEncoding {
-    fn clone(&self) -> SingleByteEncoding {
-        SingleByteEncoding { name: self.name,
-                             index_forward: self.index_forward,
-                             index_backward: self.index_backward }
-    }
-}
-
 impl Encoding for SingleByteEncoding {
-    fn name(&self) -> &'static str { self.name }
-    fn encoder(&self) -> ~Encoder { ~SingleByteEncoder { encoding: self.clone() } as ~Encoder }
-    fn decoder(&self) -> ~Decoder { ~SingleByteDecoder { encoding: self.clone() } as ~Decoder }
+    fn name(&'static self) -> &'static str { self.name }
+    fn encoder(&'static self) -> ~Encoder { ~SingleByteEncoder { encoding: self } as ~Encoder }
+    fn decoder(&'static self) -> ~Decoder { ~SingleByteDecoder { encoding: self } as ~Decoder }
 }
 
-#[deriving(Clone)]
 pub struct SingleByteEncoder {
-    encoding: SingleByteEncoding,
+    encoding: &'static SingleByteEncoding,
 }
 
 impl Encoder for SingleByteEncoder {
-    fn encoding(&self) -> ~Encoding { ~self.encoding.clone() as ~Encoding }
+    fn encoding(&self) -> &'static Encoding { self.encoding as &'static Encoding }
 
     fn feed<'r>(&mut self, input: &'r str, output: &mut ~[u8]) -> Option<EncoderError<'r>> {
         { let new_len = output.len() + input.len(); output.reserve_at_least(new_len) }
         let mut err = None;
-        for input.index_iter().advance |((_,j), ch)| {
+        for ((_,j), ch) in input.index_iter() {
             if ch <= '\u007f' {
                 output.push(ch as u8);
                 loop
@@ -66,13 +57,12 @@ impl Encoder for SingleByteEncoder {
     }
 }
 
-#[deriving(Clone)]
 pub struct SingleByteDecoder {
-    encoding: SingleByteEncoding,
+    encoding: &'static SingleByteEncoding,
 }
 
 impl Decoder for SingleByteDecoder {
-    fn encoding(&self) -> ~Encoding { ~self.encoding.clone() as ~Encoding }
+    fn encoding(&self) -> &'static Encoding { self.encoding as &'static Encoding }
 
     fn feed<'r>(&mut self, input: &'r [u8], output: &mut ~str) -> Option<DecoderError<'r>> {
         { let new_len = output.len() + input.len(); output.reserve_at_least(new_len) }

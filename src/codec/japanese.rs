@@ -23,12 +23,12 @@ impl Encoding for EUCJPEncoding {
 pub struct EUCJPEncoder;
 
 impl Encoder for EUCJPEncoder {
-    fn encoding(&self) -> ~Encoding { ~EUCJPEncoding as ~Encoding }
+    fn encoding(&self) -> &'static Encoding { &EUCJPEncoding as &'static Encoding }
 
     fn feed<'r>(&mut self, input: &'r str, output: &mut ~[u8]) -> Option<EncoderError<'r>> {
         { let new_len = output.len() + input.len(); output.reserve_at_least(new_len) }
         let mut err = None;
-        for input.index_iter().advance |((_,j), ch)| {
+        for ((_,j), ch) in input.index_iter() {
             match ch {
                 '\u0000'..'\u007f' => { output.push(ch as u8); }
                 '\u00a5' => { output.push(0x5c); }
@@ -70,7 +70,7 @@ pub struct EUCJPDecoder {
 }
 
 impl Decoder for EUCJPDecoder {
-    fn encoding(&self) -> ~Encoding { ~EUCJPEncoding as ~Encoding }
+    fn encoding(&self) -> &'static Encoding { &EUCJPEncoding as &'static Encoding }
 
     fn feed<'r>(&mut self, input: &'r [u8], output: &mut ~str) -> Option<DecoderError<'r>> {
         { let new_len = output.len() + input.len(); output.reserve_at_least(new_len) }
@@ -292,12 +292,12 @@ impl Encoding for ShiftJISEncoding {
 pub struct ShiftJISEncoder;
 
 impl Encoder for ShiftJISEncoder {
-    fn encoding(&self) -> ~Encoding { ~ShiftJISEncoding as ~Encoding }
+    fn encoding(&self) -> &'static Encoding { &ShiftJISEncoding as &'static Encoding }
 
     fn feed<'r>(&mut self, input: &'r str, output: &mut ~[u8]) -> Option<EncoderError<'r>> {
         { let new_len = output.len() + input.len(); output.reserve_at_least(new_len) }
         let mut err = None;
-        for input.index_iter().advance |((_,j), ch)| {
+        for ((_,j), ch) in input.index_iter() {
             match ch {
                 '\u0000'..'\u0080' => { output.push(ch as u8); }
                 '\u00a5' => { output.push(0x5c); }
@@ -337,7 +337,7 @@ pub struct ShiftJISDecoder {
 }
 
 impl Decoder for ShiftJISDecoder {
-    fn encoding(&self) -> ~Encoding { ~ShiftJISEncoding as ~Encoding }
+    fn encoding(&self) -> &'static Encoding { &ShiftJISEncoding as &'static Encoding }
 
     fn feed<'r>(&mut self, input: &'r [u8], output: &mut ~str) -> Option<DecoderError<'r>> {
         { let new_len = output.len() + input.len(); output.reserve_at_least(new_len) }

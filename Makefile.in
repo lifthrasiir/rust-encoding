@@ -5,7 +5,7 @@ CXX ?= g++
 CXXFLAGS ?=
 AR ?= ar
 RUSTC ?= rustc
-RUSTFLAGS ?= -O -A default-methods
+RUSTFLAGS ?= -O
 
 RUST_SRC=$(shell find $(VPATH)/src/. -type f -name '*.rs')
 

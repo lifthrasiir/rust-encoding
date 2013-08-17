@@ -21,12 +21,12 @@ impl Encoding for ASCIIEncoding {
 pub struct ASCIIEncoder;
 
 impl Encoder for ASCIIEncoder {
-    fn encoding(&self) -> ~Encoding { ~ASCIIEncoding as ~Encoding }
+    fn encoding(&self) -> &'static Encoding { &ASCIIEncoding as &'static Encoding }
 
     fn feed<'r>(&mut self, input: &'r str, output: &mut ~[u8]) -> Option<EncoderError<'r>> {
         { let new_len = output.len() + input.len(); output.reserve_at_least(new_len) }
         let mut err = None;
-        for input.index_iter().advance |((_,j), ch)| {
+        for ((_,j), ch) in input.index_iter() {
             if ch <= '\u007f' {
                 output.push(ch as u8);
             } else {
@@ -50,7 +50,7 @@ impl Encoder for ASCIIEncoder {
 pub struct ASCIIDecoder;
 
 impl Decoder for ASCIIDecoder {
-    fn encoding(&self) -> ~Encoding { ~ASCIIEncoding as ~Encoding }
+    fn encoding(&self) -> &'static Encoding { &ASCIIEncoding as &'static Encoding }
 
     fn feed<'r>(&mut self, input: &'r [u8], output: &mut ~str) -> Option<DecoderError<'r>> {
         { let new_len = output.len() + input.len(); output.reserve_at_least(new_len) }

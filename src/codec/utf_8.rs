@@ -38,7 +38,6 @@ use types::*;
  * from the queue even we don't have the original buffer at our disposal.
  */
 mod scan {
-    use std::uint;
     use types::CodecError;
 
     static CHAR_CATEGORY: [u8, ..256] = [
@@ -187,7 +186,7 @@ mod scan {
                         // ...but we still don't know if the current sequence is valid or not.
                         queuelen = state_to_seqlen!(state);
                         assert!(queuelen <= len);
-                        for uint::range(0, queuelen) |j| {
+                        for j in range(0, queuelen) {
                             queue[j] = input[len - queuelen + j];
                         }
                         self.queuelen = queuelen;
@@ -204,7 +203,7 @@ mod scan {
                         // `ch` might be the first byte of the next sequence, so we don't consume it
                         queuelen = state_to_seqlen!(oldstate);
                         assert!(queuelen <= i);
-                        for uint::range(0, queuelen) |j| {
+                        for j in range(0, queuelen) {
                             queue[j] = input[i - queuelen + j];
                         }
                         invalidstart = i - queuelen;
@@ -280,7 +279,6 @@ mod scan {
         // portions of these tests are adopted from Markus Kuhn's UTF-8 decoder capability and
         // stress test: <http://www.cl.cam.ac.uk/~mgk25/ucs/examples/UTF-8-test.txt>.
 
-        use std::{u8, u16};
         use types::CodecError;
         use super::Scanner;
 
@@ -395,7 +393,7 @@ mod scan {
 
         #[test]
         fn test_invalid_continuation() {
-            for u8::range(0x80, 0xc0) |c| {
+            for c in range(0x80u8, 0xc0) {
                 let mut s = Scanner::new();
                 assert_result!(s.test_feed(&[c]), (~[], Some((~[c], &[]))));
                 assert_result!(s.test_flush(), (~[], None));
@@ -451,7 +449,7 @@ mod scan {
 
         #[test]
         fn test_invalid_start_immediate_test_flush() {
-            for u16::range(0xf5, 0x100) |c| {
+            for c in range(0xf5u16, 0x100) {
                 let c = c as u8;
 
                 let mut s = Scanner::new();
@@ -465,7 +463,7 @@ mod scan {
 
         #[test]
         fn test_invalid_start_followed_by_space() {
-            for u16::range(0xf5, 0x100) |c| {
+            for c in range(0xf5u16, 0x100) {
                 let c = c as u8;
 
                 let mut s = Scanner::new();
@@ -484,7 +482,7 @@ mod scan {
 
         #[test]
         fn test_invalid_lone_start_immediate_test_flush() {
-            for u8::range(0xc2, 0xf5) |c| {
+            for c in range(0xc2u8, 0xf5) {
                 let mut s = Scanner::new();
                 assert_result!(s.test_feed(&[c]), (~[], None)); // wait for cont. bytes
                 assert_result!(s.test_flush(), (~[], Some((~[c], &[]))));
@@ -493,7 +491,7 @@ mod scan {
 
         #[test]
         fn test_invalid_lone_start_followed_by_space() {
-            for u8::range(0xc2, 0xf5) |c| {
+            for c in range(0xc2u8, 0xf5) {
                 let mut s = Scanner::new();
                 assert_result!(s.test_feed(&[c, 0x20]), (~[], Some((~[c], &[0x20]))));
                 assert_result!(s.test_flush(), (~[], None));
@@ -507,7 +505,7 @@ mod scan {
 
         #[test]
         fn test_invalid_incomplete_three_byte_seq_followed_by_space() {
-            for u8::range(0xe0, 0xf5) |c| {
+            for c in range(0xe0u8, 0xf5) {
                 let d = if c == 0xe0 || c == 0xf0 {0xa0} else {0x80};
 
                 let mut s = Scanner::new();
@@ -534,7 +532,7 @@ mod scan {
 
         #[test]
         fn test_invalid_incomplete_four_byte_seq_followed_by_space() {
-            for u8::range(0xf0, 0xf5) |c| {
+            for c in range(0xf0u8, 0xf5) {
                 let d = if c == 0xf0 {0xa0} else {0x80};
                 let e = 0x80;
 
@@ -696,12 +694,9 @@ pub struct UTF8Encoder {
 /// Converts a codec error with `u8` input to one with `str`.
 fn u8_error_to_str_error<'r>(err: CodecError<&'r [u8],~[u8]>) -> CodecError<&'r str,~str> {
     /// Same as `std::str::from_bytes_slice` but omits `is_utf8` check.
+    #[inline]
     fn from_bytes_slice_unchecked<'a>(vector: &'a [u8]) -> &'a str {
-        unsafe {
-            let (ptr, len): (*u8, uint) = ::std::cast::transmute(vector);
-            let string: &'a str = ::std::cast::transmute((ptr, len + 1));
-            string
-        }
+        unsafe { ::std::cast::transmute(vector) }
     }
 
     let CodecError { remaining, problem, cause } = err;
@@ -710,18 +705,18 @@ fn u8_error_to_str_error<'r>(err: CodecError<&'r [u8],~[u8]>) -> CodecError<&'r 
 }
 
 impl Encoder for UTF8Encoder {
-    fn encoding(&self) -> ~Encoding { ~UTF8Encoding as ~Encoding }
+    fn encoding(&self) -> &'static Encoding { &UTF8Encoding as &'static Encoding }
 
     fn feed<'r>(&mut self, input: &'r str, output: &mut ~[u8]) -> Option<EncoderError<'r>> {
         { let new_len = output.len() + input.len(); output.reserve_at_least(new_len) }
         // in theory `input` should be a valid UTF-8 string, but in reality it may not.
         let err = self.scanner.feed(input.as_bytes(), |s| output.push_all(s));
-        err.map_consume(u8_error_to_str_error)
+        err.map_move(u8_error_to_str_error)
     }
 
     fn flush(&mut self, _output: &mut ~[u8]) -> Option<EncoderError<'static>> {
         let mut scanner = self.scanner;
-        scanner.flush().map_consume(u8_error_to_str_error)
+        scanner.flush().map_move(u8_error_to_str_error)
     }
 }
 
@@ -731,11 +726,11 @@ pub struct UTF8Decoder {
 }
 
 impl Decoder for UTF8Decoder {
-    fn encoding(&self) -> ~Encoding { ~UTF8Encoding as ~Encoding }
+    fn encoding(&self) -> &'static Encoding { &UTF8Encoding as &'static Encoding }
 
     fn feed<'r>(&mut self, input: &'r [u8], output: &mut ~str) -> Option<DecoderError<'r>> {
         { let new_len = output.len() + input.len(); output.reserve_at_least(new_len) }
-        self.scanner.feed(input, |s| output.push_str(str::from_bytes(s)))
+        self.scanner.feed(input, |s| unsafe { str::raw::push_bytes(output, s) })
     }
 
     fn flush(&mut self, _output: &mut ~str) -> Option<DecoderError<'static>> {
