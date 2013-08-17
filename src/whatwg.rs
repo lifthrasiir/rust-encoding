@@ -19,9 +19,7 @@
  */
 
 use std::util::swap;
-// TODO: change this to std::ascii::StrAsciiExt when upgrading to Rust 0.8
-// and remove the implementation in util.
-use util::StrAsciiExt;
+use std::ascii::StrAsciiExt::StrAsciiExt;
 use all;
 use types;
 
