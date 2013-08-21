@@ -283,7 +283,7 @@ mod eucjp_tests {
 pub struct ShiftJISEncoding;
 
 impl Encoding for ShiftJISEncoding {
-    fn name(&self) -> &'static str { "shift-jis" }
+    fn name(&self) -> &'static str { "shift_jis" }
     fn encoder(&self) -> ~Encoder { ~ShiftJISEncoder as ~Encoder }
     fn decoder(&self) -> ~Decoder { ~ShiftJISDecoder { lead: 0 } as ~Decoder }
 }

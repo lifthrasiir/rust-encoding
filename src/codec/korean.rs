@@ -13,7 +13,9 @@ use types::*;
 pub struct Windows949Encoding;
 
 impl Encoding for Windows949Encoding {
-    fn name(&self) -> &'static str { "windows-949" }
+    // Even though this is actually windows-949 (a super-set of EUC-KR),
+    // the canonical name in the WHATWG spec is euc-kr.
+    fn name(&self) -> &'static str { "euc-kr" }
     fn encoder(&self) -> ~Encoder { ~Windows949Encoder as ~Encoder }
     fn decoder(&self) -> ~Decoder { ~Windows949Decoder { lead: 0 } as ~Decoder }
 }
