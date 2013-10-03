@@ -5,7 +5,7 @@
 //! Legacy Japanese encodings based on JIS X 0208 and JIS X 0212.
 
 use std::str;
-use util::StrCharIndex;
+use util::{as_char, StrCharIndex};
 use index0208 = index::jis0208;
 use index0212 = index::jis0212;
 use types::*;
@@ -82,7 +82,7 @@ impl Decoder for EUCJPDecoder {
             let trail = input[i] as uint;
             match (lead, trail) {
                 (0x8e, 0xa1..0xdf) => {
-                    output.push_char((0xff61 + trail - 0xa1) as char);
+                    output.push_char(as_char(0xff61 + trail - 0xa1));
                 }
                 (0x8f, _) => {
                     self.first = 0;
@@ -105,7 +105,7 @@ impl Decoder for EUCJPDecoder {
                                 cause: ~"invalid sequence",
                             });
                         }
-                        ch => { output.push_char(ch as char); }
+                        ch => { output.push_char(as_char(ch)); }
                     }
                 }
             }
@@ -130,7 +130,7 @@ impl Decoder for EUCJPDecoder {
                         cause: ~"invalid sequence",
                     });
                 }
-                ch => { output.push_char(ch as char); }
+                ch => { output.push_char(as_char(ch)); }
             }
             i += 1;
         }
@@ -151,7 +151,7 @@ impl Decoder for EUCJPDecoder {
                 let trail = input[i] as uint;
                 match (lead, trail) {
                     (0x8e, 0xa1..0xdf) => {
-                        output.push_char((0xff61 + trail - 0xa1) as char);
+                        output.push_char(as_char(0xff61 + trail - 0xa1));
                     }
                     (0x8f, _) => { // JIS X 0212 three-byte sequence
                         i += 1;
@@ -174,7 +174,7 @@ impl Decoder for EUCJPDecoder {
                                     cause: ~"invalid sequence",
                                 });
                             }
-                            ch => { output.push_char(ch as char); }
+                            ch => { output.push_char(as_char(ch)); }
                         }
                     }
                     (_, _) => {
@@ -192,7 +192,7 @@ impl Decoder for EUCJPDecoder {
                                     cause: ~"invalid sequence",
                                 });
                             }
-                            ch => { output.push_char(ch as char); }
+                            ch => { output.push_char(as_char(ch)); }
                         }
                     }
                 }
@@ -366,7 +366,7 @@ impl Decoder for ShiftJISDecoder {
                         cause: ~"invalid sequence",
                     });
                 }
-                ch => { output.push_char(ch as char); }
+                ch => { output.push_char(as_char(ch)); }
             }
             i += 1;
         }
@@ -378,7 +378,7 @@ impl Decoder for ShiftJISDecoder {
                     output.push_char(input[i] as char);
                 }
                 0xa1..0xdf => {
-                    output.push_char((0xff61 + (input[i] as uint) - 0xa1) as char);
+                    output.push_char(as_char(0xff61 + (input[i] as uint) - 0xa1));
                 }
                 _ => {
                     i += 1;
@@ -408,7 +408,7 @@ impl Decoder for ShiftJISDecoder {
                                 cause: ~"invalid sequence",
                             });
                         }
-                        ch => { output.push_char(ch as char); }
+                        ch => { output.push_char(as_char(ch)); }
                     }
                 }
             }

@@ -75,7 +75,6 @@ pub mod whatwg;
 
 #[cfg(test)]
 mod tests {
-    use std::str;
     use super::*;
 
     #[test]
@@ -96,34 +95,21 @@ mod tests {
     }
 
     #[test]
-    fn test_readme_surrogate_escape() {
-        pub struct SurrogateEscape;
-        impl<T:Encoding> DecoderTrap<T> for SurrogateEscape {
-            // converts invalid single bytes 80..FF to invalid surrogates U+DC80..DCFF
-            fn decoder_trap(&mut self, _encoding: &T, input: &[u8]) -> Option<~str> {
-                let chars: ~[char] =
-                    input.iter().map(|&c| (c as uint + 0xdc00) as char).collect();
-                Some(str::from_chars(chars))
-            }
-        }
-        impl<T:Encoding> EncoderTrap<T> for SurrogateEscape {
-            // converts invalid surrogates U+DC80..DCFF back to single bytes 80..FF
-            // this is an illustrative example, the actual routine would be a bit more complex.
+    fn test_readme_xml_escape() {
+        pub struct XmlEscape;
+        impl<T:Encoding> EncoderTrap<T> for XmlEscape {
             fn encoder_trap(&mut self, _encoding: &T, input: &str) -> Option<~[u8]> {
-                let chars: ~[char] = input.iter().collect();
-                if chars.len() == 1 && '\udc80' <= chars[0] && chars[0] <= '\udcff' {
-                    Some(~[(chars[0] as uint - 0xdc00) as u8])
-                } else {
-                    None
-                }
+                let escapes: ~[~str] =
+                    input.iter().map(|ch| format!("&\\#{};", ch as int)).collect();
+                let escapes = escapes.concat();
+                Some(escapes.as_bytes().to_owned())
             }
         }
 
-        let orig = ~[0xea,0xb0,0x80,0xfe,0x20];
-        let decoded = all::UTF_8.decode(orig, SurrogateEscape).unwrap();
-        assert_eq!(decoded.clone(), ~"\uac00\udcfe\u0020");
-        let encoded = all::UTF_8.encode(decoded, SurrogateEscape).unwrap();
-        assert_eq!(orig, encoded);
+        let orig = ~"Hello, 世界!";
+        let encoded = all::ASCII.encode(orig, XmlEscape).unwrap();
+        let decoded = all::ASCII.decode(encoded, Strict).unwrap();
+        assert_eq!(decoded, ~"Hello, &#19990;&#30028;!");
     }
 
     #[test]

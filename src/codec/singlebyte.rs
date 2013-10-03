@@ -5,7 +5,7 @@
 //! Common codec implementation for single-byte encodings.
 
 use std::str;
-use util::StrCharIndex;
+use util::{as_char, StrCharIndex};
 use types::*;
 
 pub struct SingleByteEncoding {
@@ -74,7 +74,7 @@ impl Decoder for SingleByteDecoder {
             } else {
                 let ch = (self.encoding.index_forward)(input[i] - 0x80);
                 if ch != 0xffff {
-                    output.push_char(ch as char);
+                    output.push_char(as_char(ch));
                 } else {
                     return Some(CodecError {
                         remaining: input.slice(i+1, input.len()),

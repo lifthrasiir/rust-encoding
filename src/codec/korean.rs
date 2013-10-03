@@ -5,7 +5,7 @@
 //! Legacy Korean encodings based on KS X 1001.
 
 use std::str;
-use util::StrCharIndex;
+use util::{as_char, StrCharIndex};
 use index = index::euc_kr;
 use types::*;
 
@@ -99,7 +99,7 @@ impl Decoder for Windows949Decoder {
                         cause: ~"invalid sequence",
                     });
                 }
-                ch => { output.push_char(ch as char); }
+                ch => { output.push_char(as_char(ch)); }
             }
             i += 1;
         }
@@ -138,7 +138,7 @@ impl Decoder for Windows949Decoder {
                             cause: ~"invalid sequence",
                         });
                     }
-                    ch => { output.push_char(ch as char); }
+                    ch => { output.push_char(as_char(ch)); }
                 }
             }
             i += 1;

@@ -5,6 +5,12 @@
 //! Internal utilities.
 
 use std::str::CharRange;
+use std::cast::transmute;
+
+/// Unchecked conversion to `char`.
+pub fn as_char<T:Integer+NumCast>(ch: T) -> char {
+    unsafe { transmute(ch.to_u32()) }
+}
 
 /// External iterator for a string's characters with its corresponding byte offset range.
 pub struct StrCharIndexIterator<'self> {

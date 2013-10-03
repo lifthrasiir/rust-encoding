@@ -43,36 +43,23 @@ let trap: &fn(&[u8]) -> ~str = |_| ~"whatever"; // custom decoder trap
 all::ISO_8859_6.decode([65,99,109,101,169], trap); // => Ok(~"Acmewhatever")
 ~~~~
 
-A practical example of custom encoder/decoder traps
-(a la Python's [PEP-0383](http://www.python.org/dev/peps/pep-0383/)):
+A practical example of custom encoder traps:
 
 ~~~~ {.rust}
-pub struct SurrogateEscape;
-impl<T:Encoding> DecoderTrap<T> for SurrogateEscape {
-    // converts invalid single bytes 80..FF to invalid surrogates U+DC80..DCFF
-    pub fn decoder_trap(&mut self, _encoding: &T, input: &[u8]) -> Option<~str> {
-        let chars: ~[char] =
-            input.iter().transform(|&c| (c as uint + 0xdc00) as char).collect();
-        Some(str::from_chars(chars))
-    }
-}
-impl<T:Encoding> EncoderTrap<T> for SurrogateEscape {
-    // converts invalid surrogates U+DC80..DCFF back to single bytes 80..FF
-    // this is an illustrative example, the actual routine would be a bit more complex.
-    pub fn encoder_trap(&mut self, _encoding: &T, input: &str) -> Option<~[u8]> {
-        let chars: ~[char] = input.iter().collect();
-        if chars.len() == 1 && '\udc80' <= chars[0] && chars[0] <= '\udcff' {
-            Some(~[(chars[0] as uint - 0xdc00) as u8])
-        } else {
-            None
-        }
+pub struct XmlEscape;
+impl<T:Encoding> EncoderTrap<T> for XmlEscape {
+    fn encoder_trap(&mut self, _encoding: &T, input: &str) -> Option<~[u8]> {
+        let escapes: ~[~str] =
+            input.iter().map(|ch| format!("&\\#{};", ch as int)).collect();
+        let escapes = escapes.concat();
+        Some(escapes.as_bytes().to_owned())
     }
 }
 
-let orig = ~[0xea,0xb0,0x80,0xfe,0x20];
-let decoded = all::UTF_8.decode(orig, SurrogateEscape).unwrap(); // => ~"\uac00\udcfe\u0020"
-let encoded = all::UTF_8.encode(decoded, SurrogateEscape).unwrap();
-assert_eq!(orig, encoded);
+let orig = ~"Hello, 世界!";
+let encoded = all::ASCII.encode(orig, XmlEscape).unwrap();
+let decoded = all::ASCII.decode(encoded, Strict).unwrap();
+assert_eq!(decoded, ~"Hello, &#19990;&#30028;!");
 ~~~~
 
 An alternative API compatible to WHATWG Encoding standard, also demonstrating

@@ -693,15 +693,9 @@ pub struct UTF8Encoder {
 
 /// Converts a codec error with `u8` input to one with `str`.
 fn u8_error_to_str_error<'r>(err: CodecError<&'r [u8],~[u8]>) -> CodecError<&'r str,~str> {
-    /// Same as `std::str::from_bytes_slice` but omits `is_utf8` check.
-    #[inline]
-    fn from_bytes_slice_unchecked<'a>(vector: &'a [u8]) -> &'a str {
-        unsafe { ::std::cast::transmute(vector) }
-    }
-
     let CodecError { remaining, problem, cause } = err;
-    CodecError { remaining: from_bytes_slice_unchecked(remaining),
-                 problem: str::from_bytes_owned(problem), cause: cause }
+    CodecError { remaining: unsafe { ::std::cast::transmute(remaining) },
+                 problem: unsafe { ::std::cast::transmute(problem) }, cause: cause }
 }
 
 impl Encoder for UTF8Encoder {

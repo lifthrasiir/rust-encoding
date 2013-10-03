@@ -392,7 +392,7 @@ impl TextDecoder {
 
     pub fn from_options(label: Option<~str>, options: TextDecoderOptions)
                                     -> Result<TextDecoder,~str> {
-        let label = label.unwrap_or_default(~"utf-8");
+        let label = label.unwrap_or(~"utf-8");
         let ret = encoding_from_label(label);
         if ret.is_none() { return Err(~"TypeError"); }
         let (encoding, whatwg_name) = ret.unwrap();
@@ -523,7 +523,7 @@ pub struct TextEncoder {
 
 impl TextEncoder {
     pub fn new(label: Option<~str>) -> Result<TextEncoder,~str> {
-        let label = label.unwrap_or_default(~"utf-8");
+        let label = label.unwrap_or(~"utf-8");
         let ret = encoding_from_label(label);
         if ret.is_none() { return Err(~"TypeError"); }
         let (encoding, whatwg_name) = ret.unwrap();
