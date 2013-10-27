@@ -25,7 +25,7 @@ pub struct EUCJPEncoder;
 impl Encoder for EUCJPEncoder {
     fn encoding(&self) -> &'static Encoding { &EUCJPEncoding as &'static Encoding }
 
-    fn feed<'r>(&mut self, input: &'r str, output: &mut ~[u8]) -> Option<EncoderError<'r>> {
+    fn raw_feed<'r>(&mut self, input: &'r str, output: &mut ~[u8]) -> Option<EncoderError<'r>> {
         { let new_len = output.len() + input.len(); output.reserve_at_least(new_len) }
         let mut err = None;
         for ((_,j), ch) in input.index_iter() {
@@ -58,7 +58,7 @@ impl Encoder for EUCJPEncoder {
         err
     }
 
-    fn flush(&mut self, _output: &mut ~[u8]) -> Option<EncoderError<'static>> {
+    fn raw_finish(&mut self, _output: &mut ~[u8]) -> Option<EncoderError<'static>> {
         None
     }
 }
@@ -72,7 +72,7 @@ pub struct EUCJPDecoder {
 impl Decoder for EUCJPDecoder {
     fn encoding(&self) -> &'static Encoding { &EUCJPEncoding as &'static Encoding }
 
-    fn feed<'r>(&mut self, input: &'r [u8], output: &mut ~str) -> Option<DecoderError<'r>> {
+    fn raw_feed<'r>(&mut self, input: &'r [u8], output: &mut ~str) -> Option<DecoderError<'r>> {
         { let new_len = output.len() + input.len(); output.reserve_at_least(new_len) }
         let mut i = 0;
         let len = input.len();
@@ -202,7 +202,7 @@ impl Decoder for EUCJPDecoder {
         None
     }
 
-    fn flush(&mut self, _output: &mut ~str) -> Option<DecoderError<'static>> {
+    fn raw_finish(&mut self, _output: &mut ~str) -> Option<DecoderError<'static>> {
         if self.second != 0 {
             Some(CodecError { remaining: &[],
                               problem: ~[0x8f, self.second],
@@ -246,7 +246,7 @@ mod eucjp_tests {
         assert_result!(e.test_feed("\u306b\u307b\u3093"), (~[0xa4, 0xcb, 0xa4, 0xdb, 0xa4, 0xf3], None));
         assert_result!(e.test_feed("\uff86\uff8e\uff9d"), (~[0x8e, 0xc6, 0x8e, 0xce, 0x8e, 0xdd], None));
         assert_result!(e.test_feed("\u65e5\u672c"), (~[0xc6, 0xfc, 0xcb, 0xdc], None));
-        assert_result!(e.test_flush(), (~[], None));
+        assert_result!(e.test_finish(), (~[], None));
     }
 
     #[test]
@@ -256,7 +256,7 @@ mod eucjp_tests {
         assert_result!(e.test_feed("?\uffff!"), (~[0x3f], Some(("!", ~"\uffff"))));
         // JIS X 0212 is not supported in the encoder
         assert_result!(e.test_feed("\u736c\u8c78"), (~[], Some(("\u8c78", ~"\u736c"))));
-        assert_result!(e.test_flush(), (~[], None));
+        assert_result!(e.test_finish(), (~[], None));
     }
 
     #[test]
@@ -273,7 +273,7 @@ mod eucjp_tests {
                        (~"\uff86\uff8e\uff9d", None));
         assert_result!(d.test_feed(&[0xc6, 0xfc, 0xcb, 0xdc]), (~"\u65e5\u672c", None));
         assert_result!(d.test_feed(&[0x8f, 0xcb, 0xc6, 0xec, 0xb8]), (~"\u736c\u8c78", None));
-        assert_result!(d.test_flush(), (~"", None));
+        assert_result!(d.test_finish(), (~"", None));
     }
 
     // TODO more tests
@@ -294,7 +294,7 @@ pub struct ShiftJISEncoder;
 impl Encoder for ShiftJISEncoder {
     fn encoding(&self) -> &'static Encoding { &ShiftJISEncoding as &'static Encoding }
 
-    fn feed<'r>(&mut self, input: &'r str, output: &mut ~[u8]) -> Option<EncoderError<'r>> {
+    fn raw_feed<'r>(&mut self, input: &'r str, output: &mut ~[u8]) -> Option<EncoderError<'r>> {
         { let new_len = output.len() + input.len(); output.reserve_at_least(new_len) }
         let mut err = None;
         for ((_,j), ch) in input.index_iter() {
@@ -326,7 +326,7 @@ impl Encoder for ShiftJISEncoder {
         err
     }
 
-    fn flush(&mut self, _output: &mut ~[u8]) -> Option<EncoderError<'static>> {
+    fn raw_finish(&mut self, _output: &mut ~[u8]) -> Option<EncoderError<'static>> {
         None
     }
 }
@@ -339,7 +339,7 @@ pub struct ShiftJISDecoder {
 impl Decoder for ShiftJISDecoder {
     fn encoding(&self) -> &'static Encoding { &ShiftJISEncoding as &'static Encoding }
 
-    fn feed<'r>(&mut self, input: &'r [u8], output: &mut ~str) -> Option<DecoderError<'r>> {
+    fn raw_feed<'r>(&mut self, input: &'r [u8], output: &mut ~str) -> Option<DecoderError<'r>> {
         { let new_len = output.len() + input.len(); output.reserve_at_least(new_len) }
         let mut i = 0;
         let len = input.len();
@@ -417,7 +417,7 @@ impl Decoder for ShiftJISDecoder {
         None
     }
 
-    fn flush(&mut self, _output: &mut ~str) -> Option<DecoderError<'static>> {
+    fn raw_finish(&mut self, _output: &mut ~str) -> Option<DecoderError<'static>> {
         if self.lead != 0 {
             Some(CodecError { remaining: &[],
                               problem: ~[self.lead],
@@ -457,7 +457,7 @@ mod shiftjis_tests {
         assert_result!(e.test_feed("\u306b\u307b\u3093"), (~[0x82, 0xc9, 0x82, 0xd9, 0x82, 0xf1], None));
         assert_result!(e.test_feed("\uff86\uff8e\uff9d"), (~[0xc6, 0xce, 0xdd], None));
         assert_result!(e.test_feed("\u65e5\u672c"), (~[0x93, 0xfa, 0x96, 0x7b], None));
-        assert_result!(e.test_flush(), (~[], None));
+        assert_result!(e.test_finish(), (~[], None));
     }
 
     #[test]
@@ -466,7 +466,7 @@ mod shiftjis_tests {
         assert_result!(e.test_feed("\uffff"), (~[], Some(("", ~"\uffff"))));
         assert_result!(e.test_feed("?\uffff!"), (~[0x3f], Some(("!", ~"\uffff"))));
         assert_result!(e.test_feed("\u736c\u8c78"), (~[], Some(("\u8c78", ~"\u736c"))));
-        assert_result!(e.test_flush(), (~[], None));
+        assert_result!(e.test_finish(), (~[], None));
     }
 
     #[test]
@@ -481,7 +481,7 @@ mod shiftjis_tests {
                        (~"\u306b\u307b\u3093", None));
         assert_result!(d.test_feed(&[0xc6, 0xce, 0xdd]), (~"\uff86\uff8e\uff9d", None));
         assert_result!(d.test_feed(&[0x93, 0xfa, 0x96, 0x7b]), (~"\u65e5\u672c", None));
-        assert_result!(d.test_flush(), (~"", None));
+        assert_result!(d.test_finish(), (~"", None));
     }
 
     // TODO more tests

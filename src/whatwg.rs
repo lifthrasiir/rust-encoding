@@ -455,7 +455,7 @@ impl TextDecoder {
                 remaining_.shift();
                 loop {
                     let remaining__ = remaining_;
-                    let err_ = decoder.feed(remaining__, ret);
+                    let err_ = decoder.raw_feed(remaining__, ret);
                     match err_ {
                         Some(err_) => {
                             ret.push_char('\ufffd');
@@ -467,7 +467,7 @@ impl TextDecoder {
                     }
                 }
 
-                let newerr = decoder.feed(remaining, ret);
+                let newerr = decoder.raw_feed(remaining, ret);
                 if newerr.is_none() { return; }
                 err = newerr.unwrap();
             }
@@ -475,27 +475,28 @@ impl TextDecoder {
 
         let mut ret = ~"";
         if feed_first_bytes {
-            let err = self.decoder.feed(self.first_bytes, &mut ret);
+            let err = self.decoder.raw_feed(self.first_bytes, &mut ret);
             if err.is_some() {
                 if self.fatal { return Err(~"EncodingError"); }
                 handle_error(&mut self.decoder, err.unwrap(), &mut ret);
             }
         }
         if input.is_some() {
-            let err = self.decoder.feed(input.unwrap(), &mut ret);
+            let err = self.decoder.raw_feed(input.unwrap(), &mut ret);
             if err.is_some() {
                 if self.fatal { return Err(~"EncodingError"); }
                 handle_error(&mut self.decoder, err.unwrap(), &mut ret);
             }
         }
         if !options.stream {
-            // this is a bit convoluted. `Decoder.flush` always destroys the current decoding state,
-            // but the specification requires that the state should be *resurrected* if the problem
-            // is two or more byte long! we temporarily recreate the decoder in this case.
+            // this is a bit convoluted. `Decoder.raw_finish` always destroys
+            // the current decoding state, but the specification requires that the state should be
+            // *resurrected* if the problem is two or more byte long!
+            // we temporarily recreate the decoder in this case.
             let mut decoder = self.encoding.decoder();
             swap(&mut decoder, &mut self.decoder);
             loop {
-                let err = decoder.flush(&mut ret);
+                let err = decoder.raw_finish(&mut ret);
                 if err.is_none() { break; }
                 if self.fatal { return Err(~"EncodingError"); }
                 decoder = self.encoding.decoder();
@@ -548,13 +549,13 @@ impl TextEncoder {
                                       options: TextEncodeOptions) -> Result<~[u8],~str> {
         let mut ret = ~[];
         if input.is_some() {
-            let err = self.encoder.feed(input.unwrap(), &mut ret);
+            let err = self.encoder.raw_feed(input.unwrap(), &mut ret);
             if err.is_some() { return Ok(ret); }
         }
         if !options.stream {
             let mut encoder = self.encoding.encoder();
             swap(&mut encoder, &mut self.encoder);
-            let err = encoder.flush(&mut ret);
+            let err = encoder.raw_finish(&mut ret);
             if err.is_some() { return Ok(ret); }
         }
         Ok(ret)

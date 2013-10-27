@@ -27,7 +27,7 @@ pub struct SingleByteEncoder {
 impl Encoder for SingleByteEncoder {
     fn encoding(&self) -> &'static Encoding { self.encoding as &'static Encoding }
 
-    fn feed<'r>(&mut self, input: &'r str, output: &mut ~[u8]) -> Option<EncoderError<'r>> {
+    fn raw_feed<'r>(&mut self, input: &'r str, output: &mut ~[u8]) -> Option<EncoderError<'r>> {
         { let new_len = output.len() + input.len(); output.reserve_at_least(new_len) }
         let mut err = None;
         for ((_,j), ch) in input.index_iter() {
@@ -52,7 +52,7 @@ impl Encoder for SingleByteEncoder {
         err
     }
 
-    fn flush(&mut self, _output: &mut ~[u8]) -> Option<EncoderError<'static>> {
+    fn raw_finish(&mut self, _output: &mut ~[u8]) -> Option<EncoderError<'static>> {
         None
     }
 }
@@ -64,7 +64,7 @@ pub struct SingleByteDecoder {
 impl Decoder for SingleByteDecoder {
     fn encoding(&self) -> &'static Encoding { self.encoding as &'static Encoding }
 
-    fn feed<'r>(&mut self, input: &'r [u8], output: &mut ~str) -> Option<DecoderError<'r>> {
+    fn raw_feed<'r>(&mut self, input: &'r [u8], output: &mut ~str) -> Option<DecoderError<'r>> {
         { let new_len = output.len() + input.len(); output.reserve_at_least(new_len) }
         let mut i = 0;
         let len = input.len();
@@ -88,7 +88,7 @@ impl Decoder for SingleByteDecoder {
         None
     }
 
-    fn flush(&mut self, _output: &mut ~str) -> Option<DecoderError<'static>> {
+    fn raw_finish(&mut self, _output: &mut ~str) -> Option<DecoderError<'static>> {
         None
     }
 }

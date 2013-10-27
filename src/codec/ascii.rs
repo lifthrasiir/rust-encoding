@@ -23,7 +23,7 @@ pub struct ASCIIEncoder;
 impl Encoder for ASCIIEncoder {
     fn encoding(&self) -> &'static Encoding { &ASCIIEncoding as &'static Encoding }
 
-    fn feed<'r>(&mut self, input: &'r str, output: &mut ~[u8]) -> Option<EncoderError<'r>> {
+    fn raw_feed<'r>(&mut self, input: &'r str, output: &mut ~[u8]) -> Option<EncoderError<'r>> {
         { let new_len = output.len() + input.len(); output.reserve_at_least(new_len) }
         let mut err = None;
         for ((_,j), ch) in input.index_iter() {
@@ -41,7 +41,7 @@ impl Encoder for ASCIIEncoder {
         err
     }
 
-    fn flush(&mut self, _output: &mut ~[u8]) -> Option<EncoderError<'static>> {
+    fn raw_finish(&mut self, _output: &mut ~[u8]) -> Option<EncoderError<'static>> {
         None
     }
 }
@@ -52,7 +52,7 @@ pub struct ASCIIDecoder;
 impl Decoder for ASCIIDecoder {
     fn encoding(&self) -> &'static Encoding { &ASCIIEncoding as &'static Encoding }
 
-    fn feed<'r>(&mut self, input: &'r [u8], output: &mut ~str) -> Option<DecoderError<'r>> {
+    fn raw_feed<'r>(&mut self, input: &'r [u8], output: &mut ~str) -> Option<DecoderError<'r>> {
         { let new_len = output.len() + input.len(); output.reserve_at_least(new_len) }
         let mut i = 0;
         let len = input.len();
@@ -71,7 +71,7 @@ impl Decoder for ASCIIDecoder {
         None
     }
 
-    fn flush(&mut self, _output: &mut ~str) -> Option<DecoderError<'static>> {
+    fn raw_finish(&mut self, _output: &mut ~str) -> Option<DecoderError<'static>> {
         None
     }
 }
@@ -101,7 +101,7 @@ mod tests {
         assert_result!(e.test_feed("BC"), (~[0x42, 0x43], None));
         assert_result!(e.test_feed(""), (~[], None));
         assert_result!(e.test_feed("\xa0"), (~[], Some(("", ~"\xa0"))));
-        assert_result!(e.test_flush(), (~[], None));
+        assert_result!(e.test_finish(), (~[], None));
     }
 
     #[test]
@@ -111,7 +111,7 @@ mod tests {
         assert_result!(d.test_feed(&[0x42, 0x43]), (~"BC", None));
         assert_result!(d.test_feed(&[]), (~"", None));
         assert_result!(d.test_feed(&[0xa0]), (~"", Some((&[], ~[0xa0]))));
-        assert_result!(d.test_flush(), (~"", None));
+        assert_result!(d.test_finish(), (~"", None));
     }
 }
 
