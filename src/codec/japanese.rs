@@ -43,7 +43,7 @@ impl Encoder for EUCJPEncoder {
                         err = Some(CodecError {
                             remaining: input.slice_from(j),
                             problem: str::from_char(ch),
-                            cause: ~"unrepresentable character",
+                            cause: "unrepresentable character".into_send_str(),
                         });
                         break;
                     } else {
@@ -102,7 +102,7 @@ impl Decoder for EUCJPDecoder {
                                 remaining: input.slice(if inclusive {i+1} else {i}, len),
                                 problem: if inclusive {~[lead as u8, trail as u8]}
                                                  else {~[lead as u8]},
-                                cause: ~"invalid sequence",
+                                cause: "invalid sequence".into_send_str(),
                             });
                         }
                         ch => { output.push_char(as_char(ch)); }
@@ -127,7 +127,7 @@ impl Decoder for EUCJPDecoder {
                         remaining: input.slice(if inclusive {i+1} else {i}, len),
                         problem: if inclusive {~[0x8f, trail as u8, byte as u8]}
                                          else {~[0x8f, trail as u8]},
-                        cause: ~"invalid sequence",
+                        cause: "invalid sequence".into_send_str(),
                     });
                 }
                 ch => { output.push_char(as_char(ch)); }
@@ -171,7 +171,7 @@ impl Decoder for EUCJPDecoder {
                                     remaining: input.slice(if inclusive {i+1} else {i}, len),
                                     problem: if inclusive {~[0x8f, trail as u8, byte as u8]}
                                                      else {~[0x8f, trail as u8]},
-                                    cause: ~"invalid sequence",
+                                    cause: "invalid sequence".into_send_str(),
                                 });
                             }
                             ch => { output.push_char(as_char(ch)); }
@@ -189,7 +189,7 @@ impl Decoder for EUCJPDecoder {
                                     remaining: input.slice(if inclusive {i+1} else {i}, len),
                                     problem: if inclusive {~[lead as u8, trail as u8]}
                                                      else {~[lead as u8]},
-                                    cause: ~"invalid sequence",
+                                    cause: "invalid sequence".into_send_str(),
                                 });
                             }
                             ch => { output.push_char(as_char(ch)); }
@@ -206,11 +206,11 @@ impl Decoder for EUCJPDecoder {
         if self.second != 0 {
             Some(CodecError { remaining: &[],
                               problem: ~[0x8f, self.second],
-                              cause: ~"incomplete sequence" })
+                              cause: "incomplete sequence".into_send_str() })
         } else if self.first != 0 {
             Some(CodecError { remaining: &[],
                               problem: ~[self.first],
-                              cause: ~"incomplete sequence" })
+                              cause: "incomplete sequence".into_send_str() })
         } else {
             None
         }
@@ -309,7 +309,7 @@ impl Encoder for ShiftJISEncoder {
                         err = Some(CodecError {
                             remaining: input.slice_from(j),
                             problem: str::from_char(ch),
-                            cause: ~"unrepresentable character",
+                            cause: "unrepresentable character".into_send_str(),
                         });
                         break;
                     } else {
@@ -363,7 +363,7 @@ impl Decoder for ShiftJISDecoder {
                     return Some(CodecError {
                         remaining: input.slice(if inclusive {i+1} else {i}, len),
                         problem: if inclusive {~[lead as u8, trail as u8]} else {~[lead as u8]},
-                        cause: ~"invalid sequence",
+                        cause: "invalid sequence".into_send_str(),
                     });
                 }
                 ch => { output.push_char(as_char(ch)); }
@@ -405,7 +405,7 @@ impl Decoder for ShiftJISDecoder {
                                 remaining: input.slice(if inclusive {i+1} else {i}, len),
                                 problem: if inclusive {~[lead as u8, trail as u8]}
                                                  else {~[lead as u8]},
-                                cause: ~"invalid sequence",
+                                cause: "invalid sequence".into_send_str(),
                             });
                         }
                         ch => { output.push_char(as_char(ch)); }
@@ -421,7 +421,7 @@ impl Decoder for ShiftJISDecoder {
         if self.lead != 0 {
             Some(CodecError { remaining: &[],
                               problem: ~[self.lead],
-                              cause: ~"incomplete sequence" })
+                              cause: "incomplete sequence".into_send_str() })
         } else {
             None
         }

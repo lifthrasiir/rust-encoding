@@ -45,7 +45,7 @@ impl Encoder for SingleByteEncoder {
             err = Some(CodecError {
                 remaining: input.slice_from(j),
                 problem: str::from_char(ch),
-                cause: ~"unrepresentable character",
+                cause: "unrepresentable character".into_send_str(),
             });
             break;
         }
@@ -79,7 +79,7 @@ impl Decoder for SingleByteDecoder {
                     return Some(CodecError {
                         remaining: input.slice(i+1, input.len()),
                         problem: ~[input[i]],
-                        cause: ~"invalid sequence",
+                        cause: "invalid sequence".into_send_str(),
                     });
                 }
             }

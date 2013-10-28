@@ -29,7 +29,7 @@ impl Encoder for ErrorEncoder {
             Some(CodecError {
                 remaining: input.slice_from(next),
                 problem: str::from_char(ch),
-                cause: ~"unrepresentable character",
+                cause: "unrepresentable character".into_send_str(),
             })
         } else {
             None
@@ -53,7 +53,7 @@ impl Decoder for ErrorDecoder {
             Some(CodecError {
                 remaining: input.slice(1, input.len()),
                 problem: ~[input[0]],
-                cause: ~"invalid sequence",
+                cause: "invalid sequence".into_send_str(),
             })
         } else {
             None

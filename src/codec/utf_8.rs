@@ -240,7 +240,7 @@ mod scan {
             push(input.slice(validstart, invalidstart));
             Some(CodecError { remaining: input.slice(i, len),
                               problem: queue.slice(0, queuelen).to_owned(),
-                              cause: ~"invalid byte sequence" })
+                              cause: "invalid byte sequence".into_send_str() })
         }
 
         pub fn finish(&mut self) -> Option<CodecError<&'static [u8],~[u8]>> {
@@ -253,11 +253,11 @@ mod scan {
             if state == INITIAL_STATE {
                 None
             } else {
-                let cause = if is_error_state!(state) {~"invalid byte sequence"}
-                                                 else {~"incomplete byte sequence"};
+                let cause = if is_error_state!(state) {"invalid byte sequence"}
+                                                 else {"incomplete byte sequence"};
                 Some(CodecError { remaining: &[],
                                   problem: queue.slice(0, queuelen).to_owned(),
-                                  cause: cause })
+                                  cause: cause.into_send_str() })
             }
         }
 

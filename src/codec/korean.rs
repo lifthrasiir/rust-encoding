@@ -36,7 +36,7 @@ impl Encoder for Windows949Encoder {
                     err = Some(CodecError {
                         remaining: input.slice_from(j),
                         problem: str::from_char(ch),
-                        cause: ~"unrepresentable character",
+                        cause: "unrepresentable character".into_send_str(),
                     });
                     break;
                 } else if ptr < (26 + 26 + 126) * (0xc7 - 0x81) {
@@ -96,7 +96,7 @@ impl Decoder for Windows949Decoder {
                     return Some(CodecError {
                         remaining: input.slice(if inclusive {i+1} else {i}, len),
                         problem: if inclusive {~[lead as u8, trail as u8]} else {~[lead as u8]},
-                        cause: ~"invalid sequence",
+                        cause: "invalid sequence".into_send_str(),
                     });
                 }
                 ch => { output.push_char(as_char(ch)); }
@@ -135,7 +135,7 @@ impl Decoder for Windows949Decoder {
                             remaining: input.slice(if inclusive {i+1} else {i}, len),
                             problem: if inclusive {~[lead as u8, trail as u8]}
                                              else {~[lead as u8]},
-                            cause: ~"invalid sequence",
+                            cause: "invalid sequence".into_send_str(),
                         });
                     }
                     ch => { output.push_char(as_char(ch)); }
@@ -150,7 +150,7 @@ impl Decoder for Windows949Decoder {
         if self.lead != 0 {
             Some(CodecError { remaining: &[],
                               problem: ~[self.lead],
-                              cause: ~"incomplete sequence" })
+                              cause: "incomplete sequence".into_send_str() })
         } else {
             None
         }

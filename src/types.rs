@@ -4,6 +4,8 @@
 
 //! Interface to the character encoding.
 
+use std::send_str::SendStr;
+
 /// Error information from either encoder or decoder. It has a pointer to the problematic sequence
 /// and a remaining sequence yet to be processed.
 pub struct CodecError<Remaining,Problem> {
@@ -14,7 +16,7 @@ pub struct CodecError<Remaining,Problem> {
     /// calls to `raw_feed`.
     problem: Problem,
     /// A human-readable cause of the error.
-    cause: ~str,
+    cause: SendStr,
 }
 
 /// Error information from encoder.
@@ -118,7 +120,7 @@ impl<T:Encoding> EncodingUtil<T> for T {
                 Some(err) => {
                     match trap.encoder_trap(self, err.problem) {
                         Some(s) => { ret.push_all(s); }
-                        None => { return Err(err.cause); }
+                        None => { return Err(err.cause.into_owned()); }
                     }
                     remaining = err.remaining;
                 }
@@ -130,7 +132,7 @@ impl<T:Encoding> EncodingUtil<T> for T {
             Some(err) => {
                 match trap.encoder_trap(self, err.problem) {
                     Some(s) => { ret.push_all(s); }
-                    None => { return Err(err.cause); }
+                    None => { return Err(err.cause.into_owned()); }
                 }
             }
             None => {}
@@ -149,7 +151,7 @@ impl<T:Encoding> EncodingUtil<T> for T {
                 Some(err) => {
                     match trap.decoder_trap(self, err.problem) {
                         Some(s) => { ret.push_str(s); }
-                        None => { return Err(err.cause); }
+                        None => { return Err(err.cause.into_owned()); }
                     }
                     remaining = err.remaining;
                 }
@@ -161,7 +163,7 @@ impl<T:Encoding> EncodingUtil<T> for T {
             Some(err) => {
                 match trap.decoder_trap(self, err.problem) {
                     Some(s) => { ret.push_str(s); }
-                    None => { return Err(err.cause); }
+                    None => { return Err(err.cause.into_owned()); }
                 }
             }
             None => {}

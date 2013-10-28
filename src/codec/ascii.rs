@@ -33,7 +33,7 @@ impl Encoder for ASCIIEncoder {
                 err = Some(CodecError {
                     remaining: input.slice_from(j),
                     problem: str::from_char(ch),
-                    cause: ~"unrepresentable character",
+                    cause: "unrepresentable character".into_send_str(),
                 });
                 break;
             }
@@ -63,7 +63,7 @@ impl Decoder for ASCIIDecoder {
                 return Some(CodecError {
                     remaining: input.slice(i+1, len),
                     problem: ~[input[i]],
-                    cause: ~"invalid sequence",
+                    cause: "invalid sequence".into_send_str(),
                 });
             }
             i += 1;
