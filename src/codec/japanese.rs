@@ -25,17 +25,19 @@ pub struct EUCJPEncoder;
 impl Encoder for EUCJPEncoder {
     fn encoding(&self) -> &'static Encoding { &EUCJPEncoding as &'static Encoding }
 
-    fn raw_feed<'r>(&mut self, input: &'r str, output: &mut ~[u8]) -> Option<EncoderError<'r>> {
-        { let new_len = output.len() + input.len(); output.reserve_at_least(new_len) }
+    fn raw_feed<'r>(&mut self, input: &'r str,
+                    output: &mut ByteWriter) -> Option<EncoderError<'r>> {
+        output.writer_hint(input.len());
+
         let mut err = None;
         for ((_,j), ch) in input.index_iter() {
             match ch {
-                '\u0000'..'\u007f' => { output.push(ch as u8); }
-                '\u00a5' => { output.push(0x5c); }
-                '\u203e' => { output.push(0x7e); }
+                '\u0000'..'\u007f' => { output.write_byte(ch as u8); }
+                '\u00a5' => { output.write_byte(0x5c); }
+                '\u203e' => { output.write_byte(0x7e); }
                 '\uff61'..'\uff9f' => {
-                    output.push(0x8e);
-                    output.push((ch as uint - 0xff61 + 0xa1) as u8);
+                    output.write_byte(0x8e);
+                    output.write_byte((ch as uint - 0xff61 + 0xa1) as u8);
                 }
                 _ => {
                     let ptr = index0208::backward(ch as u32);
@@ -49,8 +51,8 @@ impl Encoder for EUCJPEncoder {
                     } else {
                         let lead = ptr / 94 + 0xa1;
                         let trail = ptr % 94 + 0xa1;
-                        output.push(lead as u8);
-                        output.push(trail as u8);
+                        output.write_byte(lead as u8);
+                        output.write_byte(trail as u8);
                     }
                 }
             }
@@ -58,7 +60,7 @@ impl Encoder for EUCJPEncoder {
         err
     }
 
-    fn raw_finish(&mut self, _output: &mut ~[u8]) -> Option<EncoderError<'static>> {
+    fn raw_finish(&mut self, _output: &mut ByteWriter) -> Option<EncoderError<'static>> {
         None
     }
 }
@@ -72,8 +74,10 @@ pub struct EUCJPDecoder {
 impl Decoder for EUCJPDecoder {
     fn encoding(&self) -> &'static Encoding { &EUCJPEncoding as &'static Encoding }
 
-    fn raw_feed<'r>(&mut self, input: &'r [u8], output: &mut ~str) -> Option<DecoderError<'r>> {
-        { let new_len = output.len() + input.len(); output.reserve_at_least(new_len) }
+    fn raw_feed<'r>(&mut self, input: &'r [u8],
+                    output: &mut StringWriter) -> Option<DecoderError<'r>> {
+        output.writer_hint(input.len());
+
         let mut i = 0;
         let len = input.len();
 
@@ -82,7 +86,7 @@ impl Decoder for EUCJPDecoder {
             let trail = input[i] as uint;
             match (lead, trail) {
                 (0x8e, 0xa1..0xdf) => {
-                    output.push_char(as_char(0xff61 + trail - 0xa1));
+                    output.write_char(as_char(0xff61 + trail - 0xa1));
                 }
                 (0x8f, _) => {
                     self.first = 0;
@@ -105,7 +109,7 @@ impl Decoder for EUCJPDecoder {
                                 cause: "invalid sequence".into_send_str(),
                             });
                         }
-                        ch => { output.push_char(as_char(ch)); }
+                        ch => { output.write_char(as_char(ch)); }
                     }
                 }
             }
@@ -130,7 +134,7 @@ impl Decoder for EUCJPDecoder {
                         cause: "invalid sequence".into_send_str(),
                     });
                 }
-                ch => { output.push_char(as_char(ch)); }
+                ch => { output.write_char(as_char(ch)); }
             }
             i += 1;
         }
@@ -139,7 +143,7 @@ impl Decoder for EUCJPDecoder {
         self.second = 0;
         while i < len {
             if input[i] < 0x80 {
-                output.push_char(input[i] as char);
+                output.write_char(input[i] as char);
             } else {
                 i += 1;
                 if i >= len { // we wait for a trail byte even if the lead is obviously invalid
@@ -151,7 +155,7 @@ impl Decoder for EUCJPDecoder {
                 let trail = input[i] as uint;
                 match (lead, trail) {
                     (0x8e, 0xa1..0xdf) => {
-                        output.push_char(as_char(0xff61 + trail - 0xa1));
+                        output.write_char(as_char(0xff61 + trail - 0xa1));
                     }
                     (0x8f, _) => { // JIS X 0212 three-byte sequence
                         i += 1;
@@ -174,7 +178,7 @@ impl Decoder for EUCJPDecoder {
                                     cause: "invalid sequence".into_send_str(),
                                 });
                             }
-                            ch => { output.push_char(as_char(ch)); }
+                            ch => { output.write_char(as_char(ch)); }
                         }
                     }
                     (_, _) => {
@@ -192,7 +196,7 @@ impl Decoder for EUCJPDecoder {
                                     cause: "invalid sequence".into_send_str(),
                                 });
                             }
-                            ch => { output.push_char(as_char(ch)); }
+                            ch => { output.write_char(as_char(ch)); }
                         }
                     }
                 }
@@ -202,7 +206,7 @@ impl Decoder for EUCJPDecoder {
         None
     }
 
-    fn raw_finish(&mut self, _output: &mut ~str) -> Option<DecoderError<'static>> {
+    fn raw_finish(&mut self, _output: &mut StringWriter) -> Option<DecoderError<'static>> {
         if self.second != 0 {
             Some(CodecError { remaining: &[],
                               problem: ~[0x8f, self.second],
@@ -294,15 +298,17 @@ pub struct ShiftJISEncoder;
 impl Encoder for ShiftJISEncoder {
     fn encoding(&self) -> &'static Encoding { &ShiftJISEncoding as &'static Encoding }
 
-    fn raw_feed<'r>(&mut self, input: &'r str, output: &mut ~[u8]) -> Option<EncoderError<'r>> {
-        { let new_len = output.len() + input.len(); output.reserve_at_least(new_len) }
+    fn raw_feed<'r>(&mut self, input: &'r str,
+                    output: &mut ByteWriter) -> Option<EncoderError<'r>> {
+        output.writer_hint(input.len());
+
         let mut err = None;
         for ((_,j), ch) in input.index_iter() {
             match ch {
-                '\u0000'..'\u0080' => { output.push(ch as u8); }
-                '\u00a5' => { output.push(0x5c); }
-                '\u203e' => { output.push(0x7e); }
-                '\uff61'..'\uff9f' => { output.push((ch as uint - 0xff61 + 0xa1) as u8); }
+                '\u0000'..'\u0080' => { output.write_byte(ch as u8); }
+                '\u00a5' => { output.write_byte(0x5c); }
+                '\u203e' => { output.write_byte(0x7e); }
+                '\uff61'..'\uff9f' => { output.write_byte((ch as uint - 0xff61 + 0xa1) as u8); }
                 _ => {
                     let ptr = index0208::backward(ch as u32);
                     if ptr == 0xffff {
@@ -317,8 +323,8 @@ impl Encoder for ShiftJISEncoder {
                         let leadoffset = if lead < 0x1f {0x81} else {0xc1};
                         let trail = ptr % 188;
                         let trailoffset = if trail < 0x3f {0x40} else {0x41};
-                        output.push((lead + leadoffset) as u8);
-                        output.push((trail + trailoffset) as u8);
+                        output.write_byte((lead + leadoffset) as u8);
+                        output.write_byte((trail + trailoffset) as u8);
                     }
                 }
             }
@@ -326,7 +332,7 @@ impl Encoder for ShiftJISEncoder {
         err
     }
 
-    fn raw_finish(&mut self, _output: &mut ~[u8]) -> Option<EncoderError<'static>> {
+    fn raw_finish(&mut self, _output: &mut ByteWriter) -> Option<EncoderError<'static>> {
         None
     }
 }
@@ -339,8 +345,10 @@ pub struct ShiftJISDecoder {
 impl Decoder for ShiftJISDecoder {
     fn encoding(&self) -> &'static Encoding { &ShiftJISEncoding as &'static Encoding }
 
-    fn raw_feed<'r>(&mut self, input: &'r [u8], output: &mut ~str) -> Option<DecoderError<'r>> {
-        { let new_len = output.len() + input.len(); output.reserve_at_least(new_len) }
+    fn raw_feed<'r>(&mut self, input: &'r [u8],
+                    output: &mut StringWriter) -> Option<DecoderError<'r>> {
+        output.writer_hint(input.len());
+
         let mut i = 0;
         let len = input.len();
 
@@ -366,7 +374,7 @@ impl Decoder for ShiftJISDecoder {
                         cause: "invalid sequence".into_send_str(),
                     });
                 }
-                ch => { output.push_char(as_char(ch)); }
+                ch => { output.write_char(as_char(ch)); }
             }
             i += 1;
         }
@@ -375,10 +383,10 @@ impl Decoder for ShiftJISDecoder {
         while i < len {
             match input[i] {
                 0x00..0x7f => {
-                    output.push_char(input[i] as char);
+                    output.write_char(input[i] as char);
                 }
                 0xa1..0xdf => {
-                    output.push_char(as_char(0xff61 + (input[i] as uint) - 0xa1));
+                    output.write_char(as_char(0xff61 + (input[i] as uint) - 0xa1));
                 }
                 _ => {
                     i += 1;
@@ -408,7 +416,7 @@ impl Decoder for ShiftJISDecoder {
                                 cause: "invalid sequence".into_send_str(),
                             });
                         }
-                        ch => { output.push_char(as_char(ch)); }
+                        ch => { output.write_char(as_char(ch)); }
                     }
                 }
             }
@@ -417,7 +425,7 @@ impl Decoder for ShiftJISDecoder {
         None
     }
 
-    fn raw_finish(&mut self, _output: &mut ~str) -> Option<DecoderError<'static>> {
+    fn raw_finish(&mut self, _output: &mut StringWriter) -> Option<DecoderError<'static>> {
         if self.lead != 0 {
             Some(CodecError { remaining: &[],
                               problem: ~[self.lead],

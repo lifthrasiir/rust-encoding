@@ -24,12 +24,14 @@ pub struct Windows949Encoder;
 impl Encoder for Windows949Encoder {
     fn encoding(&self) -> &'static Encoding { &Windows949Encoding as &'static Encoding }
 
-    fn raw_feed<'r>(&mut self, input: &'r str, output: &mut ~[u8]) -> Option<EncoderError<'r>> {
-        { let new_len = output.len() + input.len(); output.reserve_at_least(new_len) }
+    fn raw_feed<'r>(&mut self, input: &'r str,
+                    output: &mut ByteWriter) -> Option<EncoderError<'r>> {
+        output.writer_hint(input.len());
+
         let mut err = None;
         for ((_,j), ch) in input.index_iter() {
             if ch <= '\u007f' {
-                output.push(ch as u8);
+                output.write_byte(ch as u8);
             } else {
                 let ptr = index::backward(ch as u32);
                 if ptr == 0xffff {
@@ -43,21 +45,21 @@ impl Encoder for Windows949Encoder {
                     let lead = ptr / (26 + 26 + 126) + 0x81;
                     let trail = ptr % (26 + 26 + 126);
                     let offset = if trail < 26 {0x41} else if trail < 26 + 26 {0x47} else {0x4d};
-                    output.push(lead as u8);
-                    output.push((trail + offset) as u8);
+                    output.write_byte(lead as u8);
+                    output.write_byte((trail + offset) as u8);
                 } else {
                     let ptr = ptr - (26 + 26 + 126) * (0xc7 - 0x81);
                     let lead = ptr / 94 + 0xc7;
                     let trail = ptr % 94 + 0xa1;
-                    output.push(lead as u8);
-                    output.push(trail as u8);
+                    output.write_byte(lead as u8);
+                    output.write_byte(trail as u8);
                 }
             }
         }
         err
     }
 
-    fn raw_finish(&mut self, _output: &mut ~[u8]) -> Option<EncoderError<'static>> {
+    fn raw_finish(&mut self, _output: &mut ByteWriter) -> Option<EncoderError<'static>> {
         None
     }
 }
@@ -70,8 +72,10 @@ pub struct Windows949Decoder {
 impl Decoder for Windows949Decoder {
     fn encoding(&self) -> &'static Encoding { &Windows949Encoding as &'static Encoding }
 
-    fn raw_feed<'r>(&mut self, input: &'r [u8], output: &mut ~str) -> Option<DecoderError<'r>> {
-        { let new_len = output.len() + input.len(); output.reserve_at_least(new_len) }
+    fn raw_feed<'r>(&mut self, input: &'r [u8],
+                    output: &mut StringWriter) -> Option<DecoderError<'r>> {
+        output.writer_hint(input.len());
+
         let mut i = 0;
         let len = input.len();
 
@@ -99,7 +103,7 @@ impl Decoder for Windows949Decoder {
                         cause: "invalid sequence".into_send_str(),
                     });
                 }
-                ch => { output.push_char(as_char(ch)); }
+                ch => { output.write_char(as_char(ch)); }
             }
             i += 1;
         }
@@ -107,7 +111,7 @@ impl Decoder for Windows949Decoder {
         self.lead = 0;
         while i < len {
             if input[i] < 0x80 {
-                output.push_char(input[i] as char);
+                output.write_char(input[i] as char);
             } else {
                 i += 1;
                 if i >= len { // we wait for a trail byte even if the lead is obviously invalid
@@ -138,7 +142,7 @@ impl Decoder for Windows949Decoder {
                             cause: "invalid sequence".into_send_str(),
                         });
                     }
-                    ch => { output.push_char(as_char(ch)); }
+                    ch => { output.write_char(as_char(ch)); }
                 }
             }
             i += 1;
@@ -146,7 +150,7 @@ impl Decoder for Windows949Decoder {
         None
     }
 
-    fn raw_finish(&mut self, _output: &mut ~str) -> Option<DecoderError<'static>> {
+    fn raw_finish(&mut self, _output: &mut StringWriter) -> Option<DecoderError<'static>> {
         if self.lead != 0 {
             Some(CodecError { remaining: &[],
                               problem: ~[self.lead],

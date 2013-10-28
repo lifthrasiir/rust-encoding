@@ -22,8 +22,8 @@ pub struct ErrorEncoder;
 impl Encoder for ErrorEncoder {
     fn encoding(&self) -> &'static Encoding { &ErrorEncoding as &'static Encoding }
 
-    fn raw_feed<'r>(&mut self, input: &'r str, _output: &mut ~[u8])
-                      -> Option<EncoderError<'r>> {
+    fn raw_feed<'r>(&mut self, input: &'r str,
+                    _output: &mut ByteWriter) -> Option<EncoderError<'r>> {
         if input.len() > 0 {
             let str::CharRange {ch, next} = input.char_range_at(0);
             Some(CodecError {
@@ -36,7 +36,7 @@ impl Encoder for ErrorEncoder {
         }
     }
 
-    fn raw_finish(&mut self, _output: &mut ~[u8]) -> Option<EncoderError<'static>> {
+    fn raw_finish(&mut self, _output: &mut ByteWriter) -> Option<EncoderError<'static>> {
         None
     }
 }
@@ -47,8 +47,8 @@ pub struct ErrorDecoder;
 impl Decoder for ErrorDecoder {
     fn encoding(&self) -> &'static Encoding { &ErrorEncoding as &'static Encoding }
 
-    fn raw_feed<'r>(&mut self, input: &'r [u8], _output: &mut ~str)
-                      -> Option<DecoderError<'r>> {
+    fn raw_feed<'r>(&mut self, input: &'r [u8],
+                    _output: &mut StringWriter) -> Option<DecoderError<'r>> {
         if input.len() > 0 {
             Some(CodecError {
                 remaining: input.slice(1, input.len()),
@@ -60,7 +60,7 @@ impl Decoder for ErrorDecoder {
         }
     }
 
-    fn raw_finish(&mut self, _output: &mut ~str) -> Option<DecoderError<'static>> {
+    fn raw_finish(&mut self, _output: &mut StringWriter) -> Option<DecoderError<'static>> {
         None
     }
 }

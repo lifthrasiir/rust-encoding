@@ -444,9 +444,9 @@ impl TextDecoder {
         }
 
         fn handle_error<'r>(decoder: &mut ~types::Decoder, mut err: types::DecoderError<'r>,
-                            ret: &mut ~str) {
+                            ret: &mut types::StringWriter) {
             loop {
-                ret.push_char('\ufffd');
+                ret.write_char('\ufffd');
                 let remaining = err.remaining;
 
                 // we need to consume the entirety of `err.problem` before `err.remaining`.
@@ -458,7 +458,7 @@ impl TextDecoder {
                     let err_ = decoder.raw_feed(remaining__, ret);
                     match err_ {
                         Some(err_) => {
-                            ret.push_char('\ufffd');
+                            ret.write_char('\ufffd');
                             remaining_ = err_.problem + err_.remaining;
                             assert!(!remaining_.is_empty());
                             remaining_.shift();
@@ -475,17 +475,17 @@ impl TextDecoder {
 
         let mut ret = ~"";
         if feed_first_bytes {
-            let err = self.decoder.raw_feed(self.first_bytes, &mut ret);
+            let err = self.decoder.raw_feed(self.first_bytes, &mut ret as &mut types::StringWriter);
             if err.is_some() {
                 if self.fatal { return Err(~"EncodingError"); }
-                handle_error(&mut self.decoder, err.unwrap(), &mut ret);
+                handle_error(&mut self.decoder, err.unwrap(), &mut ret as &mut types::StringWriter);
             }
         }
         if input.is_some() {
-            let err = self.decoder.raw_feed(input.unwrap(), &mut ret);
+            let err = self.decoder.raw_feed(input.unwrap(), &mut ret as &mut types::StringWriter);
             if err.is_some() {
                 if self.fatal { return Err(~"EncodingError"); }
-                handle_error(&mut self.decoder, err.unwrap(), &mut ret);
+                handle_error(&mut self.decoder, err.unwrap(), &mut ret as &mut types::StringWriter);
             }
         }
         if !options.stream {
@@ -496,11 +496,11 @@ impl TextDecoder {
             let mut decoder = self.encoding.decoder();
             swap(&mut decoder, &mut self.decoder);
             loop {
-                let err = decoder.raw_finish(&mut ret);
+                let err = decoder.raw_finish(&mut ret as &mut types::StringWriter);
                 if err.is_none() { break; }
                 if self.fatal { return Err(~"EncodingError"); }
                 decoder = self.encoding.decoder();
-                handle_error(&mut decoder, err.unwrap(), &mut ret);
+                handle_error(&mut decoder, err.unwrap(), &mut ret as &mut types::StringWriter);
             }
         }
         Ok(ret)
@@ -549,13 +549,13 @@ impl TextEncoder {
                                       options: TextEncodeOptions) -> Result<~[u8],~str> {
         let mut ret = ~[];
         if input.is_some() {
-            let err = self.encoder.raw_feed(input.unwrap(), &mut ret);
+            let err = self.encoder.raw_feed(input.unwrap(), &mut ret as &mut types::ByteWriter);
             if err.is_some() { return Ok(ret); }
         }
         if !options.stream {
             let mut encoder = self.encoding.encoder();
             swap(&mut encoder, &mut self.encoder);
-            let err = encoder.raw_finish(&mut ret);
+            let err = encoder.raw_finish(&mut ret as &mut types::ByteWriter);
             if err.is_some() { return Ok(ret); }
         }
         Ok(ret)

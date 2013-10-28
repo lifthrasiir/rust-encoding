@@ -23,12 +23,14 @@ pub struct ASCIIEncoder;
 impl Encoder for ASCIIEncoder {
     fn encoding(&self) -> &'static Encoding { &ASCIIEncoding as &'static Encoding }
 
-    fn raw_feed<'r>(&mut self, input: &'r str, output: &mut ~[u8]) -> Option<EncoderError<'r>> {
-        { let new_len = output.len() + input.len(); output.reserve_at_least(new_len) }
+    fn raw_feed<'r>(&mut self, input: &'r str,
+                    output: &mut ByteWriter) -> Option<EncoderError<'r>> {
+        output.writer_hint(input.len());
+
         let mut err = None;
         for ((_,j), ch) in input.index_iter() {
             if ch <= '\u007f' {
-                output.push(ch as u8);
+                output.write_byte(ch as u8);
             } else {
                 err = Some(CodecError {
                     remaining: input.slice_from(j),
@@ -41,7 +43,7 @@ impl Encoder for ASCIIEncoder {
         err
     }
 
-    fn raw_finish(&mut self, _output: &mut ~[u8]) -> Option<EncoderError<'static>> {
+    fn raw_finish(&mut self, _output: &mut ByteWriter) -> Option<EncoderError<'static>> {
         None
     }
 }
@@ -52,13 +54,15 @@ pub struct ASCIIDecoder;
 impl Decoder for ASCIIDecoder {
     fn encoding(&self) -> &'static Encoding { &ASCIIEncoding as &'static Encoding }
 
-    fn raw_feed<'r>(&mut self, input: &'r [u8], output: &mut ~str) -> Option<DecoderError<'r>> {
-        { let new_len = output.len() + input.len(); output.reserve_at_least(new_len) }
+    fn raw_feed<'r>(&mut self, input: &'r [u8],
+                    output: &mut StringWriter) -> Option<DecoderError<'r>> {
+        output.writer_hint(input.len());
+                                        
         let mut i = 0;
         let len = input.len();
         while i < len {
             if input[i] <= 0x7f {
-                output.push_char(input[i] as char);
+                output.write_char(input[i] as char);
             } else {
                 return Some(CodecError {
                     remaining: input.slice(i+1, len),
@@ -71,7 +75,7 @@ impl Decoder for ASCIIDecoder {
         None
     }
 
-    fn raw_finish(&mut self, _output: &mut ~str) -> Option<DecoderError<'static>> {
+    fn raw_finish(&mut self, _output: &mut StringWriter) -> Option<DecoderError<'static>> {
         None
     }
 }

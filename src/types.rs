@@ -25,6 +25,63 @@ pub type EncoderError<'self> = CodecError<&'self str,~str>;
 /// Error information from decoder.
 pub type DecoderError<'self> = CodecError<&'self [u8],~[u8]>;
 
+/// Byte writer. In most cases this will be an owned vector of `u8`.
+pub trait ByteWriter {
+    /// Hints an expected lower bound on the length (in bytes) of the output until the next call to
+    /// `writer_hint`, so that the writer can reserve the memory for writing. `Encoder`s are
+    /// recommended but not required to call this method with an appropriate estimate.
+    fn writer_hint(&mut self, _expectedlen: uint) {}
+
+    /// Writes a single byte.
+    fn write_byte(&mut self, b: u8);
+
+    /// Writes a number of bytes.
+    fn write_bytes(&mut self, v: &[u8]);
+}
+
+impl<T:OwnedVector<u8>+OwnedCopyableVector<u8>> ByteWriter for T {
+    fn writer_hint(&mut self, expectedlen: uint) {
+        self.reserve_additional(expectedlen);
+    }
+
+    fn write_byte(&mut self, b: u8) {
+        self.push(b);
+    }
+
+    fn write_bytes(&mut self, v: &[u8]) {
+        self.push_all(v);
+    }
+}
+
+/// String writer used by `Encoder`s. In most cases this will be an owned string.
+pub trait StringWriter {
+    /// Hints an expected lower bound on the length (in bytes) of the output until the next call to
+    /// `writer_hint`, so that the writer can reserve the memory for writing. `Encoder`s are
+    /// recommended but not required to call this method with an appropriate estimate.
+    fn writer_hint(&mut self, _expectedlen: uint) {}
+
+    /// Writes a single character.
+    fn write_char(&mut self, c: char);
+
+    /// Writes a string.
+    fn write_str(&mut self, s: &str);
+}
+
+impl<T:OwnedStr+Container> StringWriter for T {
+    fn writer_hint(&mut self, expectedlen: uint) {
+        let newlen = self.len() + expectedlen;
+        self.reserve_at_least(newlen);
+    }
+
+    fn write_char(&mut self, c: char) {
+        self.push_char(c);
+    }
+
+    fn write_str(&mut self, s: &str) {
+        self.push_str(s);
+    }
+}
+
 /// Encoder converting a Unicode string into a byte sequence. This is a lower level interface, and
 /// normally `Encoding::encode` should be used instead.
 pub trait Encoder {
@@ -34,11 +91,11 @@ pub trait Encoder {
     /// Feeds given portion of string to the encoder,
     /// pushes the an encoded byte sequence at the end of the given output,
     /// and returns optional error information. None means success.
-    fn raw_feed<'r>(&mut self, input: &'r str, output: &mut ~[u8]) -> Option<EncoderError<'r>>;
+    fn raw_feed<'r>(&mut self, input: &'r str, output: &mut ByteWriter) -> Option<EncoderError<'r>>;
 
     #[cfg(test)] fn test_feed<'r>(&mut self, input: &'r str) -> (~[u8], Option<EncoderError<'r>>) {
         let mut output = ~[];
-        let err = self.raw_feed(input, &mut output);
+        let err = self.raw_feed(input, &mut output as &mut ByteWriter);
         (output, err)
     }
 
@@ -46,11 +103,11 @@ pub trait Encoder {
     /// pushes the an encoded byte sequence at the end of the given output,
     /// and returns optional error information. None means success.
     /// `remaining` value of the error information, if any, is always an empty string.
-    fn raw_finish(&mut self, output: &mut ~[u8]) -> Option<EncoderError<'static>>;
+    fn raw_finish(&mut self, output: &mut ByteWriter) -> Option<EncoderError<'static>>;
 
     #[cfg(test)] fn test_finish(&mut self) -> (~[u8], Option<EncoderError<'static>>) {
         let mut output = ~[];
-        let err = self.raw_finish(&mut output);
+        let err = self.raw_finish(&mut output as &mut ByteWriter);
         (output, err)
     }
 }
@@ -64,11 +121,12 @@ pub trait Decoder {
     /// Feeds given portion of byte sequence to the encoder,
     /// pushes the a decoded string at the end of the given output,
     /// and returns optional error information. None means success.
-    fn raw_feed<'r>(&mut self, input: &'r [u8], output: &mut ~str) -> Option<DecoderError<'r>>;
+    fn raw_feed<'r>(&mut self, input: &'r [u8],
+                    output: &mut StringWriter) -> Option<DecoderError<'r>>;
 
     #[cfg(test)] fn test_feed<'r>(&mut self, input: &'r [u8]) -> (~str, Option<DecoderError<'r>>) {
         let mut output = ~"";
-        let err = self.raw_feed(input, &mut output);
+        let err = self.raw_feed(input, &mut output as &mut StringWriter);
         (output, err)
     }
 
@@ -76,11 +134,11 @@ pub trait Decoder {
     /// pushes the a decoded string at the end of the given output,
     /// and returns optional error information. None means success.
     /// `remaining` value of the error information, if any, is always an empty sequence.
-    fn raw_finish(&mut self, output: &mut ~str) -> Option<DecoderError<'static>>;
+    fn raw_finish(&mut self, output: &mut StringWriter) -> Option<DecoderError<'static>>;
 
     #[cfg(test)] fn test_finish(&mut self) -> (~str, Option<DecoderError<'static>>) {
         let mut output = ~"";
-        let err = self.raw_finish(&mut output);
+        let err = self.raw_finish(&mut output as &mut StringWriter);
         (output, err)
     }
 }
@@ -109,7 +167,7 @@ pub trait Encoding {
         let mut ret = ~[];
 
         loop {
-            match encoder.raw_feed(remaining, &mut ret) {
+            match encoder.raw_feed(remaining, &mut ret as &mut ByteWriter) {
                 Some(err) => {
                     match trap.encoder_trap(self as &Encoding, err.problem) {
                         Some(s) => { ret.push_all(s); }
@@ -121,7 +179,7 @@ pub trait Encoding {
             }
         }
 
-        match encoder.raw_finish(&mut ret) {
+        match encoder.raw_finish(&mut ret as &mut ByteWriter) {
             Some(err) => {
                 match trap.encoder_trap(self as &Encoding, err.problem) {
                     Some(s) => { ret.push_all(s); }
@@ -142,7 +200,7 @@ pub trait Encoding {
         let mut ret = ~"";
 
         loop {
-            match decoder.raw_feed(remaining, &mut ret) {
+            match decoder.raw_feed(remaining, &mut ret as &mut StringWriter) {
                 Some(err) => {
                     match trap.decoder_trap(self as &Encoding, err.problem) {
                         Some(s) => { ret.push_str(s); }
@@ -154,7 +212,7 @@ pub trait Encoding {
             }
         }
 
-        match decoder.raw_finish(&mut ret) {
+        match decoder.raw_finish(&mut ret as &mut StringWriter) {
             Some(err) => {
                 match trap.decoder_trap(self as &Encoding, err.problem) {
                     Some(s) => { ret.push_str(s); }
