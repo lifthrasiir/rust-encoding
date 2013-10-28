@@ -97,8 +97,8 @@ mod tests {
     #[test]
     fn test_readme_xml_escape() {
         pub struct XmlEscape;
-        impl<T:Encoding> EncoderTrap<T> for XmlEscape {
-            fn encoder_trap(&mut self, _encoding: &T, input: &str) -> Option<~[u8]> {
+        impl EncoderTrap for XmlEscape {
+            fn encoder_trap(&mut self, _encoding: &Encoding, input: &str) -> Option<~[u8]> {
                 let escapes: ~[~str] =
                     input.iter().map(|ch| format!("&\\#{};", ch as int)).collect();
                 let escapes = escapes.concat();

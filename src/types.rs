@@ -88,29 +88,22 @@ pub trait Decoder {
 /// Character encoding.
 pub trait Encoding {
     /// Returns the canonical name of given encoding.
-    fn name(&'static self) -> &'static str;
+    fn name(&self) -> &'static str;
+
     /// Creates a new encoder.
     fn encoder(&'static self) -> ~Encoder;
+
     /// Creates a new decoder.
     fn decoder(&'static self) -> ~Decoder;
+
     /// Returns a preferred replacement sequence for the encoder. Normally `?` encoded in given
     /// encoding. Note that this is fixed to `"\ufffd"` for the decoder.
-    fn preferred_replacement_seq(&'static self) -> ~[u8] { ~[0x3f] /* "?" */ }
-}
+    fn preferred_replacement_seq(&self) -> ~[u8] { ~[0x3f] /* "?" */ }
 
-/// Utilities for character encodings.
-pub trait EncodingUtil<T:Encoding> {
     /// An easy-to-use interface to `Encoder`. On the encoder error `trap` is called, which may
     /// return a replacement sequence to continue processing, or a failure to return the error.
-    fn encode<Trap:EncoderTrap<T>>(&'static self, input: &str, trap: Trap) -> Result<~[u8],~str>;
-    /// An easy-to-use interface to `Decoder`. On the decoder error `trap` is called, which may
-    /// return a replacement string to continue processing, or a failure to return the error.
-    fn decode<Trap:DecoderTrap<T>>(&'static self, input: &[u8], trap: Trap) -> Result<~str,~str>;
-}
-
-impl<T:Encoding> EncodingUtil<T> for T {
     #[inline]
-    fn encode<Trap:EncoderTrap<T>>(&'static self, input: &str, mut trap: Trap) -> Result<~[u8],~str> {
+    fn encode<Trap:EncoderTrap>(&'static self, input: &str, mut trap: Trap) -> Result<~[u8],~str> {
         let mut encoder = self.encoder();
         let mut remaining = input;
         let mut ret = ~[];
@@ -118,7 +111,7 @@ impl<T:Encoding> EncodingUtil<T> for T {
         loop {
             match encoder.raw_feed(remaining, &mut ret) {
                 Some(err) => {
-                    match trap.encoder_trap(self, err.problem) {
+                    match trap.encoder_trap(self as &Encoding, err.problem) {
                         Some(s) => { ret.push_all(s); }
                         None => { return Err(err.cause.into_owned()); }
                     }
@@ -130,7 +123,7 @@ impl<T:Encoding> EncodingUtil<T> for T {
 
         match encoder.raw_finish(&mut ret) {
             Some(err) => {
-                match trap.encoder_trap(self, err.problem) {
+                match trap.encoder_trap(self as &Encoding, err.problem) {
                     Some(s) => { ret.push_all(s); }
                     None => { return Err(err.cause.into_owned()); }
                 }
@@ -140,8 +133,10 @@ impl<T:Encoding> EncodingUtil<T> for T {
         Ok(ret)
     }
 
+    /// An easy-to-use interface to `Decoder`. On the decoder error `trap` is called, which may
+    /// return a replacement string to continue processing, or a failure to return the error.
     #[inline]
-    fn decode<Trap:DecoderTrap<T>>(&'static self, input: &[u8], mut trap: Trap) -> Result<~str,~str> {
+    fn decode<Trap:DecoderTrap>(&'static self, input: &[u8], mut trap: Trap) -> Result<~str,~str> {
         let mut decoder = self.decoder();
         let mut remaining = input;
         let mut ret = ~"";
@@ -149,7 +144,7 @@ impl<T:Encoding> EncodingUtil<T> for T {
         loop {
             match decoder.raw_feed(remaining, &mut ret) {
                 Some(err) => {
-                    match trap.decoder_trap(self, err.problem) {
+                    match trap.decoder_trap(self as &Encoding, err.problem) {
                         Some(s) => { ret.push_str(s); }
                         None => { return Err(err.cause.into_owned()); }
                     }
@@ -161,7 +156,7 @@ impl<T:Encoding> EncodingUtil<T> for T {
 
         match decoder.raw_finish(&mut ret) {
             Some(err) => {
-                match trap.decoder_trap(self, err.problem) {
+                match trap.decoder_trap(self as &Encoding, err.problem) {
                     Some(s) => { ret.push_str(s); }
                     None => { return Err(err.cause.into_owned()); }
                 }
@@ -174,28 +169,28 @@ impl<T:Encoding> EncodingUtil<T> for T {
 
 /// Encoder trap, which handles encoder errors. Note that a function with the same arguments as
 /// `EncoderTrap::encoder_trap` is also a valid encoder trap.
-pub trait EncoderTrap<T:Encoding> {
+pub trait EncoderTrap {
     /// Handles an encoder error. Returns a replacement sequence or gives up by returning `None`.
-    fn encoder_trap(&mut self, encoding: &'static T, input: &str) -> Option<~[u8]>;
+    fn encoder_trap(&mut self, encoding: &Encoding, input: &str) -> Option<~[u8]>;
 }
 
 /// Decoder trap, which handles decoder errors. Note that a function with the same arguments as
 /// `DecoderTrap::decoder_trap` is also a valid decoder trap.
-pub trait DecoderTrap<T:Encoding> {
+pub trait DecoderTrap {
     /// Handles a decoder error. Returns a replacement string or gives up by returning `None`.
-    fn decoder_trap(&mut self, encoding: &'static T, input: &[u8]) -> Option<~str>;
+    fn decoder_trap(&mut self, encoding: &Encoding, input: &[u8]) -> Option<~str>;
 }
 
-impl<'self,T:Encoding> EncoderTrap<T> for &'self fn(&str) -> ~[u8] {
+impl<'self> EncoderTrap for &'self fn(&str) -> ~[u8] {
     #[inline(always)]
-    fn encoder_trap(&mut self, _encoding: &'static T, input: &str) -> Option<~[u8]> {
+    fn encoder_trap(&mut self, _encoding: &Encoding, input: &str) -> Option<~[u8]> {
         Some((*self)(input))
     }
 }
 
-impl<'self,T:Encoding> DecoderTrap<T> for &'self fn(&[u8]) -> ~str {
+impl<'self> DecoderTrap for &'self fn(&[u8]) -> ~str {
     #[inline(always)]
-    fn decoder_trap(&mut self, _encoding: &'static T, input: &[u8]) -> Option<~str> {
+    fn decoder_trap(&mut self, _encoding: &Encoding, input: &[u8]) -> Option<~str> {
         Some((*self)(input))
     }
 }
@@ -203,16 +198,16 @@ impl<'self,T:Encoding> DecoderTrap<T> for &'self fn(&[u8]) -> ~str {
 /// A built-in trap which gives up every encoder and decoder error.
 pub struct Strict;
 
-impl<T:Encoding> EncoderTrap<T> for Strict {
+impl EncoderTrap for Strict {
     #[inline]
-    fn encoder_trap(&mut self, _encoding: &'static T, _input: &str) -> Option<~[u8]> {
+    fn encoder_trap(&mut self, _encoding: &Encoding, _input: &str) -> Option<~[u8]> {
         None
     }
 }
 
-impl<T:Encoding> DecoderTrap<T> for Strict {
+impl DecoderTrap for Strict {
     #[inline]
-    fn decoder_trap(&mut self, _encoding: &'static T, _input: &[u8]) -> Option<~str> {
+    fn decoder_trap(&mut self, _encoding: &Encoding, _input: &[u8]) -> Option<~str> {
         None
     }
 }
@@ -221,16 +216,16 @@ impl<T:Encoding> DecoderTrap<T> for Strict {
 /// the decoder and an encoding-specified character (normally `"?"`) for the encoder.
 pub struct Replace;
 
-impl<T:Encoding> EncoderTrap<T> for Replace {
+impl EncoderTrap for Replace {
     #[inline]
-    fn encoder_trap(&mut self, encoding: &'static T, _input: &str) -> Option<~[u8]> {
+    fn encoder_trap(&mut self, encoding: &Encoding, _input: &str) -> Option<~[u8]> {
         Some(encoding.preferred_replacement_seq())
     }
 }
 
-impl<T:Encoding> DecoderTrap<T> for Replace {
+impl DecoderTrap for Replace {
     #[inline]
-    fn decoder_trap(&mut self, _encoding: &'static T, _input: &[u8]) -> Option<~str> {
+    fn decoder_trap(&mut self, _encoding: &Encoding, _input: &[u8]) -> Option<~str> {
         Some(~"\ufffd")
     }
 }
@@ -238,16 +233,16 @@ impl<T:Encoding> DecoderTrap<T> for Replace {
 /// A built-in trap which ignores any error.
 pub struct Ignore;
 
-impl<T:Encoding> EncoderTrap<T> for Ignore {
+impl EncoderTrap for Ignore {
     #[inline]
-    fn encoder_trap(&mut self, _encoding: &'static T, _input: &str) -> Option<~[u8]> {
+    fn encoder_trap(&mut self, _encoding: &Encoding, _input: &str) -> Option<~[u8]> {
         Some(~[])
     }
 }
 
-impl<T:Encoding> DecoderTrap<T> for Ignore {
+impl DecoderTrap for Ignore {
     #[inline]
-    fn decoder_trap(&mut self, _encoding: &'static T, _input: &[u8]) -> Option<~str> {
+    fn decoder_trap(&mut self, _encoding: &Encoding, _input: &[u8]) -> Option<~str> {
         Some(~"")
     }
 }

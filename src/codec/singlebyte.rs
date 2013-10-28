@@ -15,7 +15,7 @@ pub struct SingleByteEncoding {
 }
 
 impl Encoding for SingleByteEncoding {
-    fn name(&'static self) -> &'static str { self.name }
+    fn name(&self) -> &'static str { self.name }
     fn encoder(&'static self) -> ~Encoder { ~SingleByteEncoder { encoding: self } as ~Encoder }
     fn decoder(&'static self) -> ~Decoder { ~SingleByteDecoder { encoding: self } as ~Decoder }
 }
