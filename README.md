@@ -21,9 +21,7 @@ To encode a string with unrepresentable characters:
 all::ISO_8859_2.encode("Acme\xa9", Strict); // => Err(...)
 all::ISO_8859_2.encode("Acme\xa9", Replace); // => Ok(~[65,99,109,101,63])
 all::ISO_8859_2.encode("Acme\xa9", Ignore); // => Ok(~[65,99,109,101])
-
-let trap: &fn(&str) -> ~[u8] = |_| ~[1,2,3]; // custom encoder trap
-all::ISO_8859_2.encode("Acme\xa9", trap); // => Ok(~[65,99,109,101,1,2,3])
+all::ISO_8859_2.encode("Acme\xa9", NcrEscape); // => Ok(~[65,99,109,101,38,23,50,51,51,59])
 ~~~~
 
 To decode a byte sequence:
@@ -38,23 +36,20 @@ To decode a byte sequence with invalid sequences:
 all::ISO_8859_6.decode([65,99,109,101,169], Strict); // => Err(...)
 all::ISO_8859_6.decode([65,99,109,101,169], Replace); // => Ok(~"Acme\ufffd")
 all::ISO_8859_6.decode([65,99,109,101,169], Ignore); // => Ok(~"Acme")
-
-let trap: &fn(&[u8]) -> ~str = |_| ~"whatever"; // custom decoder trap
-all::ISO_8859_6.decode([65,99,109,101,169], trap); // => Ok(~"Acmewhatever")
 ~~~~
 
 A practical example of custom encoder traps:
 
 ~~~~ {.rust}
-pub struct HexNcrEscape; // hexadecimal numeric character reference
-impl EncoderTrap for HexNcrEscape {
-    fn encoder_trap(&mut self, _encoder: &Encoder, input: &str) -> Option<~[u8]> {
-        let escapes: ~[~str] =
-            input.iter().map(|ch| format!("&\\#x{:x};", ch as int)).collect();
-        let escapes = escapes.concat();
-        Some(escapes.as_bytes().to_owned())
-    }
+// hexadecimal numeric character reference replacement
+fn hex_ncr_escape(_encoder: &Encoder, input: &str, output: &mut ByteWriter) -> bool {
+    let escapes: ~[~str] =
+        input.iter().map(|ch| format!("&\\#x{:x};", ch as int)).collect();
+    let escapes = escapes.concat();
+    output.write_bytes(escapes.as_bytes());
+    true
 }
+static HexNcrEscape: Trap = EncoderTrap(hex_ncr_escape);
 
 let orig = ~"Hello, 世界!";
 let encoded = all::ASCII.encode(orig, HexNcrEscape).unwrap();

@@ -12,14 +12,20 @@ pub struct ErrorEncoding;
 
 impl Encoding for ErrorEncoding {
     fn name(&self) -> &'static str { "error" }
-    fn encoder(&self) -> ~Encoder { ~ErrorEncoder as ~Encoder }
-    fn decoder(&self) -> ~Decoder { ~ErrorDecoder as ~Decoder }
+    fn encoder(&self) -> ~Encoder { ErrorEncoder::new() }
+    fn decoder(&self) -> ~Decoder { ErrorDecoder::new() }
 }
 
 #[deriving(Clone)]
 pub struct ErrorEncoder;
 
+impl ErrorEncoder {
+    pub fn new() -> ~Encoder { ~ErrorEncoder as ~Encoder }
+}
+
 impl Encoder for ErrorEncoder {
+    fn from_self(&self) -> ~Encoder { ErrorEncoder::new() }
+
     fn raw_feed(&mut self, input: &str, _output: &mut ByteWriter) -> (uint, Option<CodecError>) {
         if input.len() > 0 {
             let str::CharRange {ch: _, next} = input.char_range_at(0);
@@ -37,7 +43,13 @@ impl Encoder for ErrorEncoder {
 #[deriving(Clone)]
 pub struct ErrorDecoder;
 
+impl ErrorDecoder {
+    pub fn new() -> ~Decoder { ~ErrorDecoder as ~Decoder }
+}
+
 impl Decoder for ErrorDecoder {
+    fn from_self(&self) -> ~Decoder { ErrorDecoder::new() }
+
     fn raw_feed(&mut self, input: &[u8], _output: &mut StringWriter) -> (uint, Option<CodecError>) {
         if input.len() > 0 {
             (0, Some(CodecError { upto: 1, cause: "invalid sequence".into_send_str() }))

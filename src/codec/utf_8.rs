@@ -38,16 +38,21 @@ pub struct UTF8Encoding;
 impl Encoding for UTF8Encoding {
     fn name(&self) -> &'static str { "utf-8" }
     fn whatwg_name(&self) -> Option<&'static str> { Some("utf-8") }
-    fn encoder(&self) -> ~Encoder { ~UTF8Encoder as ~Encoder }
-    fn decoder(&self) -> ~Decoder {
-        ~UTF8Decoder { queuelen: 0, queue: [0, ..4], state: INITIAL_STATE } as ~Decoder
-    }
+    fn encoder(&self) -> ~Encoder { UTF8Encoder::new() }
+    fn decoder(&self) -> ~Decoder { UTF8Decoder::new() }
 }
 
 #[deriving(Clone)]
 pub struct UTF8Encoder;
 
+impl UTF8Encoder {
+    pub fn new() -> ~Encoder { ~UTF8Encoder as ~Encoder }
+}
+
 impl Encoder for UTF8Encoder {
+    fn from_self(&self) -> ~Encoder { UTF8Encoder::new() }
+    fn is_ascii_compatible(&self) -> bool { true }
+
     fn raw_feed(&mut self, input: &str, output: &mut ByteWriter) -> (uint, Option<CodecError>) {
         unsafe {
             let input: &[u8] = cast::transmute(input);
@@ -66,6 +71,12 @@ pub struct UTF8Decoder {
     queuelen: uint,
     queue: [u8, ..4],
     state: u8,
+}
+
+impl UTF8Decoder {
+    pub fn new() -> ~Decoder {
+        ~UTF8Decoder { queuelen: 0, queue: [0, ..4], state: INITIAL_STATE } as ~Decoder
+    }
 }
 
 impl Clone for UTF8Decoder {
@@ -116,6 +127,9 @@ static REJECT_STATE: u8 = 12;
 static REJECT_STATE_WITH_BACKUP: u8 = REJECT_STATE | 1;
 
 impl Decoder for UTF8Decoder {
+    fn from_self(&self) -> ~Decoder { UTF8Decoder::new() }
+    fn is_ascii_compatible(&self) -> bool { true }
+
     fn raw_feed(&mut self, input: &[u8], output: &mut StringWriter) -> (uint, Option<CodecError>) {
         output.writer_hint(input.len());
 

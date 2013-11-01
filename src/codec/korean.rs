@@ -14,14 +14,21 @@ pub struct Windows949Encoding;
 impl Encoding for Windows949Encoding {
     fn name(&self) -> &'static str { "windows-949" }
     fn whatwg_name(&self) -> Option<&'static str> { Some("euc-kr") } // WHATWG compatibility
-    fn encoder(&self) -> ~Encoder { ~Windows949Encoder as ~Encoder }
-    fn decoder(&self) -> ~Decoder { ~Windows949Decoder { lead: 0 } as ~Decoder }
+    fn encoder(&self) -> ~Encoder { Windows949Encoder::new() }
+    fn decoder(&self) -> ~Decoder { Windows949Decoder::new() }
 }
 
 #[deriving(Clone)]
 pub struct Windows949Encoder;
 
+impl Windows949Encoder {
+    pub fn new() -> ~Encoder { ~Windows949Encoder as ~Encoder }
+}
+
 impl Encoder for Windows949Encoder {
+    fn from_self(&self) -> ~Encoder { Windows949Encoder::new() }
+    fn is_ascii_compatible(&self) -> bool { true }
+
     fn raw_feed(&mut self, input: &str, output: &mut ByteWriter) -> (uint, Option<CodecError>) {
         output.writer_hint(input.len());
 
@@ -62,7 +69,14 @@ pub struct Windows949Decoder {
     lead: u8
 }
 
+impl Windows949Decoder {
+    pub fn new() -> ~Decoder { ~Windows949Decoder { lead: 0 } as ~Decoder }
+}
+
 impl Decoder for Windows949Decoder {
+    fn from_self(&self) -> ~Decoder { Windows949Decoder::new() }
+    fn is_ascii_compatible(&self) -> bool { true }
+
     fn raw_feed(&mut self, input: &[u8], output: &mut StringWriter) -> (uint, Option<CodecError>) {
         output.writer_hint(input.len());
 

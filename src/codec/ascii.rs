@@ -12,14 +12,21 @@ pub struct ASCIIEncoding;
 
 impl Encoding for ASCIIEncoding {
     fn name(&self) -> &'static str { "ascii" }
-    fn encoder(&self) -> ~Encoder { ~ASCIIEncoder as ~Encoder }
-    fn decoder(&self) -> ~Decoder { ~ASCIIDecoder as ~Decoder }
+    fn encoder(&self) -> ~Encoder { ASCIIEncoder::new() }
+    fn decoder(&self) -> ~Decoder { ASCIIDecoder::new() }
 }
 
 #[deriving(Clone)]
 pub struct ASCIIEncoder;
 
+impl ASCIIEncoder {
+    pub fn new() -> ~Encoder { ~ASCIIEncoder as ~Encoder }
+}
+
 impl Encoder for ASCIIEncoder {
+    fn from_self(&self) -> ~Encoder { ASCIIEncoder::new() }
+    fn is_ascii_compatible(&self) -> bool { true }
+
     fn raw_feed(&mut self, input: &str, output: &mut ByteWriter) -> (uint, Option<CodecError>) {
         output.writer_hint(input.len());
 
@@ -43,7 +50,14 @@ impl Encoder for ASCIIEncoder {
 #[deriving(Clone)]
 pub struct ASCIIDecoder;
 
+impl ASCIIDecoder {
+    pub fn new() -> ~Decoder { ~ASCIIDecoder as ~Decoder }
+}
+
 impl Decoder for ASCIIDecoder {
+    fn from_self(&self) -> ~Decoder { ASCIIDecoder::new() }
+    fn is_ascii_compatible(&self) -> bool { true }
+
     fn raw_feed(&mut self, input: &[u8], output: &mut StringWriter) -> (uint, Option<CodecError>) {
         output.writer_hint(input.len());
                                         

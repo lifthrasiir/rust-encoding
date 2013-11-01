@@ -131,9 +131,12 @@ impl<T:OwnedStr+Container> StringWriter for T {
 /// Encoder converting a Unicode string into a byte sequence.
 /// This is a lower level interface, and normally `Encoding::encode` should be used instead.
 pub trait Encoder {
-    /// Returns a preferred replacement sequence for the encoder.
-    /// Normally `?` encoded in given encoding.
-    fn preferred_replacement_seq(&self) -> ~[u8] { ~[0x3f] /* "?" */ }
+    /// Creates a fresh `Encoder` instance which parameters are same as `self`.
+    fn from_self(&self) -> ~Encoder;
+
+    /// Returns true if this encoding is compatible to ASCII,
+    /// i.e. U+0000 through U+007F always map to bytes 00 through 7F and nothing else.
+    fn is_ascii_compatible(&self) -> bool { false }
 
     /// Feeds given portion of string to the encoder,
     /// pushes the an encoded byte sequence at the end of the given output,
@@ -176,6 +179,13 @@ pub trait Encoder {
 /// Encoder converting a byte sequence into a Unicode string.
 /// This is a lower level interface, and normally `Encoding::decode` should be used instead.
 pub trait Decoder {
+    /// Creates a fresh `Decoder` instance which parameters are same as `self`.
+    fn from_self(&self) -> ~Decoder;
+
+    /// Returns true if this encoding is compatible to ASCII,
+    /// i.e. bytes 00 through 7F always map to U+0000 through U+007F and nothing else.
+    fn is_ascii_compatible(&self) -> bool { false }
+
     /// Feeds given portion of byte sequence to the encoder,
     /// pushes the a decoded string at the end of the given output,
     /// and returns an offset to the first unprocessed byte
@@ -235,8 +245,7 @@ pub trait Encoding {
     /// On the encoder error `trap` is called,
     /// which may return a replacement sequence to continue processing,
     /// or a failure to return the error.
-    fn encode<Trap:EncoderTrap>(&'static self, input: &str,
-                                mut trap: Trap) -> Result<~[u8],SendStr> {
+    fn encode(&'static self, input: &str, trap: Trap) -> Result<~[u8],SendStr> {
         let mut encoder = self.encoder();
         let mut remaining = input;
         let mut unprocessed = ~"";
@@ -248,9 +257,8 @@ pub trait Encoding {
             match err {
                 Some(err) => {
                     unprocessed.push_str(remaining.slice(offset, err.upto));
-                    match trap.encoder_trap(encoder, unprocessed) {
-                        Some(s) => { ret.push_all(s); }
-                        None => { return Err(err.cause); }
+                    if !trap.encoder_trap(encoder, unprocessed, &mut ret as &mut ByteWriter) {
+                        return Err(err.cause);
                     }
                     unprocessed.clear();
                     remaining = remaining.slice(err.upto, remaining.len());
@@ -264,9 +272,8 @@ pub trait Encoding {
 
         match encoder.raw_finish(&mut ret as &mut ByteWriter) {
             Some(err) => {
-                match trap.encoder_trap(encoder, unprocessed) {
-                    Some(s) => { ret.push_all(s); }
-                    None => { return Err(err.cause); }
+                if !trap.encoder_trap(encoder, unprocessed, &mut ret as &mut ByteWriter) {
+                    return Err(err.cause);
                 }
             }
             None => {}
@@ -278,8 +285,7 @@ pub trait Encoding {
     /// On the decoder error `trap` is called,
     /// which may return a replacement string to continue processing,
     /// or a failure to return the error.
-    fn decode<Trap:DecoderTrap>(&'static self, input: &[u8],
-                                mut trap: Trap) -> Result<~str,SendStr> {
+    fn decode(&'static self, input: &[u8], trap: Trap) -> Result<~str,SendStr> {
         let mut decoder = self.decoder();
         let mut remaining = input;
         let mut unprocessed = ~[];
@@ -291,9 +297,8 @@ pub trait Encoding {
             match err {
                 Some(err) => {
                     unprocessed.push_all(remaining.slice(offset, err.upto));
-                    match trap.decoder_trap(decoder, unprocessed) {
-                        Some(s) => { ret.push_str(s); }
-                        None => { return Err(err.cause); }
+                    if !trap.decoder_trap(decoder, unprocessed, &mut ret as &mut StringWriter) {
+                        return Err(err.cause);
                     }
                     unprocessed.clear();
                     remaining = remaining.slice(err.upto, remaining.len());
@@ -307,9 +312,8 @@ pub trait Encoding {
 
         match decoder.raw_finish(&mut ret as &mut StringWriter) {
             Some(err) => {
-                match trap.decoder_trap(decoder, unprocessed) {
-                    Some(s) => { ret.push_str(s); }
-                    None => { return Err(err.cause); }
+                if !trap.decoder_trap(decoder, unprocessed, &mut ret as &mut StringWriter) {
+                    return Err(err.cause);
                 }
             }
             None => {}
@@ -318,88 +322,84 @@ pub trait Encoding {
     }
 }
 
-/// Encoder trap, which handles encoder errors.
-/// Note that a function with the same arguments as `EncoderTrap::encoder_trap`
-/// is also a valid encoder trap.
-pub trait EncoderTrap {
-    /// Handles an encoder error.
-    /// Returns a replacement sequence or gives up by returning `None`.
-    fn encoder_trap(&mut self, encoder: &Encoder, input: &str) -> Option<~[u8]>;
+/// A type of the bare function in `EncoderTrap` values.
+pub type EncoderTrapFunc =
+    extern "Rust" fn(encoder: &Encoder, input: &str, output: &mut ByteWriter) -> bool;
+
+/// A type of the bare function in `DecoderTrap` values.
+pub type DecoderTrapFunc =
+    extern "Rust" fn(decoder: &Decoder, input: &[u8], output: &mut StringWriter) -> bool;
+
+/// Trap, which handles decoder and encoder errors.
+/// Some traps can be used both for decoders (D) and encoders (E), others cannot.
+pub enum Trap {
+    /// D/E: Immediately fails on errors.
+    /// Corresponds to WHATWG "fatal" error algorithm.
+    Strict,
+    /// D/E: Replaces an error with a fixed sequence.
+    /// The string is either U+FFFD (decoder) or `?` in given encoding (encoder).
+    /// Note that the encoder trap fails when `?` cannot be represented in given encoding.
+    /// Corresponds to WHATWG "replacement"/"URL" error algorithms.
+    Replace,
+    /// D/E: Silently ignores an error, effectively replacing it with an empty sequence.
+    Ignore,
+    /// E: Replaces an error with XML numeric character references (e.g. `&#1234;`).
+    /// The encoder trap fails when NCRs cannot be represented in given encoding.
+    /// Corresponds to WHATWG "<form>" error algorithms.
+    NcrEscape,
+    /// E: Calls given function to handle encoder errors.
+    /// The function is given the current encoder, input and output writer,
+    /// and should return true only when it is fine to keep going.
+    EncoderTrap(EncoderTrapFunc),
+    /// D: Calls given function to handle decoder errors.
+    /// The function is given the current decoder, input and output writer,
+    /// and should return true only when it is fine to keep going.
+    DecoderTrap(DecoderTrapFunc),
 }
 
-/// Decoder trap, which handles decoder errors.
-/// Note that a function with the same arguments as `DecoderTrap::decoder_trap`
-/// is also a valid decoder trap.
-pub trait DecoderTrap {
-    /// Handles a decoder error.
-    /// Returns a replacement string or gives up by returning `None`.
-    fn decoder_trap(&mut self, decoder: &Decoder, input: &[u8]) -> Option<~str>;
-}
+impl Trap {
+    /// Handles an encoder error. May write to the output writer.
+    /// Returns true only when it is fine to keep going.
+    fn encoder_trap(&self, encoder: &Encoder, input: &str, output: &mut ByteWriter) -> bool {
+        fn reencode(encoder: &Encoder, input: &str, output: &mut ByteWriter,
+                    trapname: &str) -> bool {
+            if encoder.is_ascii_compatible() { // optimization!
+                output.write_bytes(input.as_bytes());
+            } else {
+                let mut e = encoder.from_self();
+                let (_, err) = e.raw_feed(input, output);
+                if err.is_some() || e.raw_finish(output).is_some() {
+                    fail!("%s cannot reencode a replacement string", trapname);
+                }
+            }
+            true
+        }
 
-impl<'self> EncoderTrap for &'self fn(&str) -> ~[u8] {
-    #[inline(always)]
-    fn encoder_trap(&mut self, _encoder: &Encoder, input: &str) -> Option<~[u8]> {
-        Some((*self)(input))
+        match *self {
+            Strict => false,
+            Replace => reencode(encoder, "?", output, "Replace"),
+            Ignore => true,
+            NcrEscape => {
+                let mut escapes = ~"";
+                for ch in input.iter() { escapes.push_str(format!("&\\#{:d};", ch as int)); }
+                reencode(encoder, escapes, output, "NcrEscape")
+            },
+            EncoderTrap(func) => func(encoder, input, output),
+            DecoderTrap(*) => fail!("DecoderTrap cannot be used with encoders"),
+        }
     }
-}
 
-impl<'self> DecoderTrap for &'self fn(&[u8]) -> ~str {
-    #[inline(always)]
-    fn decoder_trap(&mut self, _decoder: &Decoder, input: &[u8]) -> Option<~str> {
-        Some((*self)(input))
-    }
-}
-
-/// A built-in trap which gives up every encoder and decoder error.
-pub struct Strict;
-
-impl EncoderTrap for Strict {
-    #[inline]
-    fn encoder_trap(&mut self, _encoder: &Encoder, _input: &str) -> Option<~[u8]> {
-        None
-    }
-}
-
-impl DecoderTrap for Strict {
-    #[inline]
-    fn decoder_trap(&mut self, _decoder: &Decoder, _input: &[u8]) -> Option<~str> {
-        None
-    }
-}
-
-/// A built-in trap which replaces any error into a replacement character,
-/// which is `"\ufffd"` for the decoder
-/// and an encoding-specified character (normally `"?"`) for the encoder.
-pub struct Replace;
-
-impl EncoderTrap for Replace {
-    #[inline]
-    fn encoder_trap(&mut self, encoder: &Encoder, _input: &str) -> Option<~[u8]> {
-        Some(encoder.preferred_replacement_seq())
-    }
-}
-
-impl DecoderTrap for Replace {
-    #[inline]
-    fn decoder_trap(&mut self, _decoder: &Decoder, _input: &[u8]) -> Option<~str> {
-        Some(~"\ufffd")
-    }
-}
-
-/// A built-in trap which ignores any error.
-pub struct Ignore;
-
-impl EncoderTrap for Ignore {
-    #[inline]
-    fn encoder_trap(&mut self, _encoder: &Encoder, _input: &str) -> Option<~[u8]> {
-        Some(~[])
-    }
-}
-
-impl DecoderTrap for Ignore {
-    #[inline]
-    fn decoder_trap(&mut self, _decoder: &Decoder, _input: &[u8]) -> Option<~str> {
-        Some(~"")
+    /// Handles a decoder error. May write to the output writer.
+    /// Returns true only when it is fine to keep going.
+    fn decoder_trap(&self, decoder: &Decoder, input: &[u8], output: &mut StringWriter) -> bool {
+        match *self {
+            Strict => false,
+            Replace => { output.write_char('\ufffd'); true },
+            Ignore => true,
+            NcrEscape => fail!("NcrEscape cannot be used with decoders"),
+            EncoderTrap(*) => fail!("EncoderTrap cannot be used with decoders"),
+            DecoderTrap(func) => func(decoder, input, output),
+        }
     }
 }
 

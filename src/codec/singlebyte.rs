@@ -17,16 +17,25 @@ pub struct SingleByteEncoding {
 impl Encoding for SingleByteEncoding {
     fn name(&self) -> &'static str { self.name }
     fn whatwg_name(&self) -> Option<&'static str> { self.whatwg_name }
-    fn encoder(&'static self) -> ~Encoder { ~SingleByteEncoder { encoding: self } as ~Encoder }
-    fn decoder(&'static self) -> ~Decoder { ~SingleByteDecoder { encoding: self } as ~Decoder }
+    fn encoder(&'static self) -> ~Encoder { SingleByteEncoder::new(self.index_backward) }
+    fn decoder(&'static self) -> ~Decoder { SingleByteDecoder::new(self.index_forward) }
 }
 
 #[deriving(Clone)]
 pub struct SingleByteEncoder {
-    encoding: &'static SingleByteEncoding,
+    index_backward: extern "Rust" fn(u16) -> u8,
+}
+
+impl SingleByteEncoder {
+    pub fn new(index_backward: extern "Rust" fn(u16) -> u8) -> ~Encoder {
+        ~SingleByteEncoder { index_backward: index_backward } as ~Encoder
+    }
 }
 
 impl Encoder for SingleByteEncoder {
+    fn from_self(&self) -> ~Encoder { SingleByteEncoder::new(self.index_backward) }
+    fn is_ascii_compatible(&self) -> bool { true }
+
     fn raw_feed(&mut self, input: &str, output: &mut ByteWriter) -> (uint, Option<CodecError>) {
         output.writer_hint(input.len());
 
@@ -36,7 +45,7 @@ impl Encoder for SingleByteEncoder {
                 loop;
             }
             if ch <= '\uffff' {
-                let index = (self.encoding.index_backward)(ch as u16);
+                let index = (self.index_backward)(ch as u16);
                 if index != 0xff {
                     output.write_byte((index + 0x80) as u8);
                     loop;
@@ -56,10 +65,19 @@ impl Encoder for SingleByteEncoder {
 
 #[deriving(Clone)]
 pub struct SingleByteDecoder {
-    encoding: &'static SingleByteEncoding,
+    index_forward: extern "Rust" fn(u8) -> u16,
+}
+
+impl SingleByteDecoder {
+    pub fn new(index_forward: extern "Rust" fn(u8) -> u16) -> ~Decoder {
+        ~SingleByteDecoder { index_forward: index_forward } as ~Decoder
+    }
 }
 
 impl Decoder for SingleByteDecoder {
+    fn from_self(&self) -> ~Decoder { SingleByteDecoder::new(self.index_forward) }
+    fn is_ascii_compatible(&self) -> bool { true }
+
     fn raw_feed(&mut self, input: &[u8], output: &mut StringWriter) -> (uint, Option<CodecError>) {
         output.writer_hint(input.len());
 
@@ -69,7 +87,7 @@ impl Decoder for SingleByteDecoder {
             if input[i] <= 0x7f {
                 output.write_char(input[i] as char);
             } else {
-                let ch = (self.encoding.index_forward)(input[i] - 0x80);
+                let ch = (self.index_forward)(input[i] - 0x80);
                 if ch != 0xffff {
                     output.write_char(as_char(ch));
                 } else {

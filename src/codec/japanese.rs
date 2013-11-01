@@ -15,14 +15,21 @@ pub struct EUCJPEncoding;
 impl Encoding for EUCJPEncoding {
     fn name(&self) -> &'static str { "euc-jp" }
     fn whatwg_name(&self) -> Option<&'static str> { Some("euc-jp") }
-    fn encoder(&self) -> ~Encoder { ~EUCJPEncoder as ~Encoder }
-    fn decoder(&self) -> ~Decoder { ~EUCJPDecoder { first: 0, second: 0 } as ~Decoder }
+    fn encoder(&self) -> ~Encoder { EUCJPEncoder::new() }
+    fn decoder(&self) -> ~Decoder { EUCJPDecoder::new() }
 }
 
 #[deriving(Clone)]
 pub struct EUCJPEncoder;
 
+impl EUCJPEncoder {
+    pub fn new() -> ~Encoder { ~EUCJPEncoder as ~Encoder }
+}
+
 impl Encoder for EUCJPEncoder {
+    fn from_self(&self) -> ~Encoder { EUCJPEncoder::new() }
+    fn is_ascii_compatible(&self) -> bool { true }
+
     fn raw_feed(&mut self, input: &str, output: &mut ByteWriter) -> (uint, Option<CodecError>) {
         output.writer_hint(input.len());
 
@@ -64,7 +71,14 @@ pub struct EUCJPDecoder {
     second: u8,
 }
 
+impl EUCJPDecoder {
+    pub fn new() -> ~Decoder { ~EUCJPDecoder { first: 0, second: 0 } as ~Decoder }
+}
+
 impl Decoder for EUCJPDecoder {
+    fn from_self(&self) -> ~Decoder { EUCJPDecoder::new() }
+    fn is_ascii_compatible(&self) -> bool { true }
+
     fn raw_feed(&mut self, input: &[u8], output: &mut StringWriter) -> (uint, Option<CodecError>) {
         output.writer_hint(input.len());
 
@@ -253,14 +267,21 @@ pub struct ShiftJISEncoding;
 impl Encoding for ShiftJISEncoding {
     fn name(&self) -> &'static str { "shift-jis" }
     fn whatwg_name(&self) -> Option<&'static str> { Some("shift_jis") }
-    fn encoder(&self) -> ~Encoder { ~ShiftJISEncoder as ~Encoder }
-    fn decoder(&self) -> ~Decoder { ~ShiftJISDecoder { lead: 0 } as ~Decoder }
+    fn encoder(&self) -> ~Encoder { ShiftJISEncoder::new() }
+    fn decoder(&self) -> ~Decoder { ShiftJISDecoder::new() }
 }
 
 #[deriving(Clone)]
 pub struct ShiftJISEncoder;
 
+impl ShiftJISEncoder {
+    pub fn new() -> ~Encoder { ~ShiftJISEncoder as ~Encoder }
+}
+
 impl Encoder for ShiftJISEncoder {
+    fn from_self(&self) -> ~Encoder { ShiftJISEncoder::new() }
+    fn is_ascii_compatible(&self) -> bool { true }
+
     fn raw_feed(&mut self, input: &str, output: &mut ByteWriter) -> (uint, Option<CodecError>) {
         output.writer_hint(input.len());
 
@@ -300,7 +321,14 @@ pub struct ShiftJISDecoder {
     lead: u8
 }
 
+impl ShiftJISDecoder {
+    pub fn new() -> ~Decoder { ~ShiftJISDecoder { lead: 0 } as ~Decoder }
+}
+
 impl Decoder for ShiftJISDecoder {
+    fn from_self(&self) -> ~Decoder { ShiftJISDecoder::new() }
+    fn is_ascii_compatible(&self) -> bool { true }
+
     fn raw_feed(&mut self, input: &[u8], output: &mut StringWriter) -> (uint, Option<CodecError>) {
         output.writer_hint(input.len());
 
