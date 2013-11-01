@@ -53,8 +53,21 @@ static HexNcrEscape: Trap = EncoderTrap(hex_ncr_escape);
 
 let orig = ~"Hello, 世界!";
 let encoded = all::ASCII.encode(orig, HexNcrEscape).unwrap();
-let decoded = all::ASCII.decode(encoded, Strict).unwrap();
-assert_eq!(decoded, ~"Hello, &#x4e16;&#x754c;!");
+all::ASCII.decode(encoded, Strict); // => Ok(~"Hello, &#x4e16;&#x754c;!")
+~~~~
+
+Getting the encoding from the string label,
+as specified in the WHATWG Encoding standard:
+
+~~~~ {.rust}
+let euckr = label::encoding_from_whatwg_label("euc-kr").unwrap();
+euckr.name(); // => "windows-949"
+euckr.whatwg_name(); // => Some("euc-kr"), for the sake of compatibility
+let broken = &[0xbf, 0xec, 0xbf, 0xcd, 0xff, 0xbe, 0xd3];
+euckr.decode(broken, Replace); // => Ok(~"\uc6b0\uc640\ufffd\uc559")
+
+// corresponding rust-encoding native API:
+all::WINDOWS_949.decode(broken, Replace); // => Ok(~"\uc6b0\uc640\ufffd\uc559")
 ~~~~
 
 Supported Encodings
