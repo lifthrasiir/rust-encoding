@@ -58,6 +58,7 @@ pub mod index {
     pub mod gbk;
     pub mod jis0208;
     pub mod jis0212;
+    pub mod whatwg_x_user_defined;
 }
 
 /// Codec implementations.
@@ -68,9 +69,11 @@ pub mod codec {
     pub mod utf_8;
     pub mod korean;
     pub mod japanese;
+    pub mod whatwg;
 }
 
 pub mod all;
+pub mod label;
 
 pub mod whatwg;
 
@@ -113,23 +116,17 @@ mod tests {
         assert_eq!(decoded, ~"Hello, &#x4e16;&#x754c;!");
     }
 
-    /*
     #[test]
     fn test_readme_whatwg() {
-        let mut euckr = whatwg::TextDecoder::new(Some(~"euc-kr")).unwrap();
-        assert_eq!(euckr.encoding(), ~"euc-kr"); // although it is actually windows-949
+        let mut euckr = label::encoding_from_whatwg_label("euc-kr").unwrap();
+        assert_eq!(euckr.name(), "windows-949");
+        assert_eq!(euckr.whatwg_name(), Some("euc-kr")); // for the sake of compatibility
         let broken = &[0xbf, 0xec, 0xbf, 0xcd, 0xff, 0xbe, 0xd3];
-        assert_eq!(euckr.decode_buffer(Some(broken)), Ok(~"\uc6b0\uc640\ufffd\uc559"));
+        // does not work for now
+        //assert_eq!(euckr.decode(broken, Replace), Ok(~"\uc6b0\uc640\ufffd\uc559"));
 
-        // this is different from rust-encoding's default behavior:
-        let decoded = all::WINDOWS_949.decode(broken, Replace);
-        assert_eq!(decoded, Ok(~"\uc6b0\uc640\ufffd\ufffd"));
-
-        // explanation:
-        //   what WHATWG expects:        [BF EC] [BF CD] [FF]* [BE D3]
-        //   what rust-encoding expects: [BF EC] [BF CD] [FF BE]* [D3]*
-        //   sequences marked * are considered invalid and replaced by U+FFFD.
+        // corresponding rust-encoding native API:
+        assert_eq!(all::WINDOWS_949.decode(broken, Replace), Ok(~"\uc6b0\uc640\ufffd\uc559"));
     }
-    */
 }
 

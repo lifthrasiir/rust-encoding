@@ -37,6 +37,7 @@ pub struct UTF8Encoding;
 
 impl Encoding for UTF8Encoding {
     fn name(&self) -> &'static str { "utf-8" }
+    fn whatwg_name(&self) -> Option<&'static str> { Some("utf-8") }
     fn encoder(&self) -> ~Encoder { ~UTF8Encoder as ~Encoder }
     fn decoder(&self) -> ~Decoder {
         ~UTF8Decoder { queuelen: 0, queue: [0, ..4], state: INITIAL_STATE } as ~Decoder

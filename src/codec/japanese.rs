@@ -14,6 +14,7 @@ pub struct EUCJPEncoding;
 
 impl Encoding for EUCJPEncoding {
     fn name(&self) -> &'static str { "euc-jp" }
+    fn whatwg_name(&self) -> Option<&'static str> { Some("euc-jp") }
     fn encoder(&self) -> ~Encoder { ~EUCJPEncoder as ~Encoder }
     fn decoder(&self) -> ~Decoder { ~EUCJPDecoder { first: 0, second: 0 } as ~Decoder }
 }
@@ -255,6 +256,7 @@ pub struct ShiftJISEncoding;
 
 impl Encoding for ShiftJISEncoding {
     fn name(&self) -> &'static str { "shift-jis" }
+    fn whatwg_name(&self) -> Option<&'static str> { Some("shift_jis") }
     fn encoder(&self) -> ~Encoder { ~ShiftJISEncoder as ~Encoder }
     fn decoder(&self) -> ~Decoder { ~ShiftJISDecoder { lead: 0 } as ~Decoder }
 }

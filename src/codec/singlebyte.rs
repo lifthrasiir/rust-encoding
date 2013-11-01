@@ -9,12 +9,14 @@ use types::*;
 
 pub struct SingleByteEncoding {
     name: &'static str,
+    whatwg_name: Option<&'static str>,
     index_forward: extern "Rust" fn(u8) -> u16,
     index_backward: extern "Rust" fn(u16) -> u8,
 }
 
 impl Encoding for SingleByteEncoding {
     fn name(&self) -> &'static str { self.name }
+    fn whatwg_name(&self) -> Option<&'static str> { self.whatwg_name }
     fn encoder(&'static self) -> ~Encoder { ~SingleByteEncoder { encoding: self } as ~Encoder }
     fn decoder(&'static self) -> ~Decoder { ~SingleByteDecoder { encoding: self } as ~Decoder }
 }

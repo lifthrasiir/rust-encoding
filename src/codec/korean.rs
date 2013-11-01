@@ -13,6 +13,7 @@ pub struct Windows949Encoding;
 
 impl Encoding for Windows949Encoding {
     fn name(&self) -> &'static str { "windows-949" }
+    fn whatwg_name(&self) -> Option<&'static str> { Some("euc-kr") } // WHATWG compatibility
     fn encoder(&self) -> ~Encoder { ~Windows949Encoder as ~Encoder }
     fn decoder(&self) -> ~Decoder { ~Windows949Decoder { lead: 0 } as ~Decoder }
 }

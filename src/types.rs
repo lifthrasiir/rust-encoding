@@ -132,6 +132,8 @@ impl<T:OwnedStr+Container> StringWriter for T {
 /// This is a lower level interface, and normally `Encoding::encode` should be used instead.
 pub trait Encoder {
     /// Returns a reference to the encoding implemented by this encoder.
+    /// Note that multiple encodings may share a single `Encoder` implementation,
+    /// and this method will return only (perhaps representative) one of them.
     fn encoding(&self) -> &'static Encoding;
 
     /// Feeds given portion of string to the encoder,
@@ -176,6 +178,8 @@ pub trait Encoder {
 /// This is a lower level interface, and normally `Encoding::decode` should be used instead.
 pub trait Decoder {
     /// Returns a reference to the encoding implemented by this decoder.
+    /// Note that multiple encodings may share a single `Decoder` implementation,
+    /// and this method will return only (perhaps representative) one of them.
     fn encoding(&self) -> &'static Encoding;
 
     /// Feeds given portion of byte sequence to the encoder,
@@ -219,7 +223,13 @@ pub trait Decoder {
 /// Character encoding.
 pub trait Encoding {
     /// Returns the canonical name of given encoding.
+    /// This name is guaranteed to be unique across built-in encodings,
+    /// but it is not normative and would be at most arbitrary.
     fn name(&self) -> &'static str;
+
+    /// Returns a name of given encoding defined in the WHATWG Encoding standard, if any.
+    /// This name often differs from `name` due to the compatibility reason.
+    fn whatwg_name(&self) -> Option<&'static str> { None }
 
     /// Creates a new encoder.
     fn encoder(&'static self) -> ~Encoder;
