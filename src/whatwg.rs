@@ -18,7 +18,6 @@
  * at best arbitrary (it is not wrong though).
  */
 
-use std::util::swap;
 use std::ascii::StrAsciiExt;
 use all;
 use types;
@@ -357,6 +356,7 @@ mod tests {
     }
 }
 
+/*
 #[deriving(Eq,Clone)]
 pub struct TextDecoderOptions {
     fatal: bool
@@ -443,7 +443,7 @@ impl TextDecoder {
             feed_first_bytes = false;
         }
 
-        fn handle_error<'r>(decoder: &mut ~types::Decoder, mut err: types::DecoderError<'r>,
+        fn handle_error<'r>(decoder: &mut ~types::Decoder, mut err: types::CodecError,
                             ret: &mut types::StringWriter) {
             loop {
                 ret.write_char('\ufffd');
@@ -561,4 +561,5 @@ impl TextEncoder {
         Ok(ret)
     }
 }
+*/
 

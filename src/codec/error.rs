@@ -22,21 +22,16 @@ pub struct ErrorEncoder;
 impl Encoder for ErrorEncoder {
     fn encoding(&self) -> &'static Encoding { &ErrorEncoding as &'static Encoding }
 
-    fn raw_feed<'r>(&mut self, input: &'r str,
-                    _output: &mut ByteWriter) -> Option<EncoderError<'r>> {
+    fn raw_feed(&mut self, input: &str, _output: &mut ByteWriter) -> (uint, Option<CodecError>) {
         if input.len() > 0 {
-            let str::CharRange {ch, next} = input.char_range_at(0);
-            Some(CodecError {
-                remaining: input.slice_from(next),
-                problem: str::from_char(ch),
-                cause: "unrepresentable character".into_send_str(),
-            })
+            let str::CharRange {ch: _, next} = input.char_range_at(0);
+            (0, Some(CodecError { upto: next, cause: "unrepresentable character".into_send_str() }))
         } else {
-            None
+            (0, None)
         }
     }
 
-    fn raw_finish(&mut self, _output: &mut ByteWriter) -> Option<EncoderError<'static>> {
+    fn raw_finish(&mut self, _output: &mut ByteWriter) -> Option<CodecError> {
         None
     }
 }
@@ -47,20 +42,15 @@ pub struct ErrorDecoder;
 impl Decoder for ErrorDecoder {
     fn encoding(&self) -> &'static Encoding { &ErrorEncoding as &'static Encoding }
 
-    fn raw_feed<'r>(&mut self, input: &'r [u8],
-                    _output: &mut StringWriter) -> Option<DecoderError<'r>> {
+    fn raw_feed(&mut self, input: &[u8], _output: &mut StringWriter) -> (uint, Option<CodecError>) {
         if input.len() > 0 {
-            Some(CodecError {
-                remaining: input.slice(1, input.len()),
-                problem: ~[input[0]],
-                cause: "invalid sequence".into_send_str(),
-            })
+            (0, Some(CodecError { upto: 1, cause: "invalid sequence".into_send_str() }))
         } else {
-            None
+            (0, None)
         }
     }
 
-    fn raw_finish(&mut self, _output: &mut StringWriter) -> Option<DecoderError<'static>> {
+    fn raw_finish(&mut self, _output: &mut StringWriter) -> Option<CodecError> {
         None
     }
 }
@@ -70,37 +60,24 @@ mod tests {
     use super::ErrorEncoding;
     use types::*;
 
-    fn strip_cause<T,Remaining,Problem>(result: (T,Option<CodecError<Remaining,Problem>>))
-                                    -> (T,Option<(Remaining,Problem)>) {
-        match result {
-            (processed, None) => (processed, None),
-            (processed, Some(CodecError { remaining, problem, cause: _cause })) =>
-                (processed, Some((remaining, problem)))
-        }
-    }
-
-    macro_rules! assert_result(
-        ($lhs:expr, $rhs:expr) => (assert_eq!(strip_cause($lhs), $rhs))
-    )
-
     #[test]
     fn test_encoder() {
         let mut e = ErrorEncoding.encoder();
-        assert_result!(e.test_feed("A"), (~[], Some(("", ~"A"))));
-        assert_result!(e.test_feed("BC"), (~[], Some(("C", ~"B"))));
-        assert_result!(e.test_feed(""), (~[], None));
-        assert_result!(e.test_feed("\xa0"), (~[], Some(("", ~"\xa0"))));
-        assert_result!(e.test_finish(), (~[], None));
+        assert_feed_err!(e, "", "A", "", []);
+        assert_feed_err!(e, "", "B", "C", []);
+        assert_feed_ok!(e, "", "", []);
+        assert_feed_err!(e, "", "\xa0", "", []);
+        assert_finish_ok!(e, []);
     }
 
     #[test]
     fn test_decoder() {
         let mut d = ErrorEncoding.decoder();
-        assert_result!(d.test_feed(&[0x41]), (~"", Some((&[], ~[0x41]))));
-        assert_result!(d.test_feed(&[0x42, 0x43]), (~"", Some((&[0x43], ~[0x42]))));
-        assert_result!(d.test_feed(&[]), (~"", None));
-        assert_result!(d.test_feed(&[0xa0]), (~"", Some((&[], ~[0xa0]))));
-        assert_result!(d.test_finish(), (~"", None));
+        assert_feed_err!(d, [], [0x41], [], "");
+        assert_feed_err!(d, [], [0x42], [0x43], "");
+        assert_feed_ok!(d, [], [], "");
+        assert_feed_err!(d, [], [0xa0], [], "");
+        assert_finish_ok!(d, "");
     }
 }
 

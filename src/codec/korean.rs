@@ -4,7 +4,6 @@
 
 //! Legacy Korean encodings based on KS X 1001.
 
-use std::str;
 use util::{as_char, StrCharIndex};
 use index = index::euc_kr;
 use types::*;
@@ -24,23 +23,18 @@ pub struct Windows949Encoder;
 impl Encoder for Windows949Encoder {
     fn encoding(&self) -> &'static Encoding { &Windows949Encoding as &'static Encoding }
 
-    fn raw_feed<'r>(&mut self, input: &'r str,
-                    output: &mut ByteWriter) -> Option<EncoderError<'r>> {
+    fn raw_feed(&mut self, input: &str, output: &mut ByteWriter) -> (uint, Option<CodecError>) {
         output.writer_hint(input.len());
 
-        let mut err = None;
-        for ((_,j), ch) in input.index_iter() {
+        for ((i,j), ch) in input.index_iter() {
             if ch <= '\u007f' {
                 output.write_byte(ch as u8);
             } else {
                 let ptr = index::backward(ch as u32);
                 if ptr == 0xffff {
-                    err = Some(CodecError {
-                        remaining: input.slice_from(j),
-                        problem: str::from_char(ch),
-                        cause: "unrepresentable character".into_send_str(),
-                    });
-                    break;
+                    return (i, Some(CodecError {
+                        upto: j, cause: "unrepresentable character".into_send_str()
+                    }));
                 } else if ptr < (26 + 26 + 126) * (0xc7 - 0x81) {
                     let lead = ptr / (26 + 26 + 126) + 0x81;
                     let trail = ptr % (26 + 26 + 126);
@@ -56,10 +50,10 @@ impl Encoder for Windows949Encoder {
                 }
             }
         }
-        err
+        (input.len(), None)
     }
 
-    fn raw_finish(&mut self, _output: &mut ByteWriter) -> Option<EncoderError<'static>> {
+    fn raw_finish(&mut self, _output: &mut ByteWriter) -> Option<CodecError> {
         None
     }
 }
@@ -72,16 +66,12 @@ pub struct Windows949Decoder {
 impl Decoder for Windows949Decoder {
     fn encoding(&self) -> &'static Encoding { &Windows949Encoding as &'static Encoding }
 
-    fn raw_feed<'r>(&mut self, input: &'r [u8],
-                    output: &mut StringWriter) -> Option<DecoderError<'r>> {
+    fn raw_feed(&mut self, input: &[u8], output: &mut StringWriter) -> (uint, Option<CodecError>) {
         output.writer_hint(input.len());
 
-        let mut i = 0;
-        let len = input.len();
-
-        if i < len && self.lead != 0 {
-            let lead = self.lead as uint;
-            let trail = input[i] as uint;
+        fn map_two_bytes(lead: u8, trail: u8) -> u32 {
+            let lead = lead as uint;
+            let trail = trail as uint;
             let index = match (lead, trail) {
                 (0x81..0xc6, 0x41..0x5a) =>
                     (26 + 26 + 126) * (lead - 0x81) + trail - 0x41,
@@ -93,68 +83,59 @@ impl Decoder for Windows949Decoder {
                     (26 + 26 + 126) * (0xc7 - 0x81) + (lead - 0xc7) * 94 + trail - 0xa1,
                 (_, _) => 0xffff,
             };
-            match index::forward(index as u16) {
-                0xffff => {
-                    self.lead = 0;
-                    let inclusive = (trail >= 0x80); // true if the trail byte is in the problem
-                    return Some(CodecError {
-                        remaining: input.slice(if inclusive {i+1} else {i}, len),
-                        problem: if inclusive {~[lead as u8, trail as u8]} else {~[lead as u8]},
-                        cause: "invalid sequence".into_send_str(),
-                    });
-                }
-                ch => { output.write_char(as_char(ch)); }
+            index::forward(index as u16)
+        }
+
+        let mut i = 0;
+        let mut processed = 0;
+        let len = input.len();
+
+        if i < len && self.lead != 0 {
+            let ch = map_two_bytes(self.lead, input[i]);
+            if ch == 0xffff {
+                self.lead = 0;
+                return (processed, Some(CodecError {
+                    upto: i, cause: "invalid sequence".into_send_str()
+                }));
             }
+            output.write_char(as_char(ch));
             i += 1;
         }
 
         self.lead = 0;
+        processed = i;
         while i < len {
-            if input[i] < 0x80 {
-                output.write_char(input[i] as char);
-            } else {
-                i += 1;
-                if i >= len { // we wait for a trail byte even if the lead is obviously invalid
-                    self.lead = input[i-1];
-                    break;
-                }
-
-                let lead = input[i-1] as uint;
-                let trail = input[i] as uint;
-                let index = match (lead, trail) {
-                    (0x81..0xc6, 0x41..0x5a) =>
-                        (26 + 26 + 126) * (lead - 0x81) + trail - 0x41,
-                    (0x81..0xc6, 0x61..0x7a) =>
-                        (26 + 26 + 126) * (lead - 0x81) + 26 + trail - 0x61,
-                    (0x81..0xc6, 0x81..0xfe) =>
-                        (26 + 26 + 126) * (lead - 0x81) + 26 + 26 + trail - 0x81,
-                    (0xc7..0xfe, 0xa1..0xfe) =>
-                        (26 + 26 + 126) * (0xc7 - 0x81) + (lead - 0xc7) * 94 + trail - 0xa1,
-                    (_, _) => 0xffff,
-                };
-                match index::forward(index as u16) {
-                    0xffff => {
-                        let inclusive = (trail >= 0x80); // true if the trail byte is in the problem
-                        return Some(CodecError {
-                            remaining: input.slice(if inclusive {i+1} else {i}, len),
-                            problem: if inclusive {~[lead as u8, trail as u8]}
-                                             else {~[lead as u8]},
-                            cause: "invalid sequence".into_send_str(),
-                        });
+            match input[i] {
+                0x00..0x7f => { output.write_char(input[i] as char); }
+                0x81..0xfe => {
+                    i += 1;
+                    if i >= len {
+                        self.lead = input[i-1];
+                        break;
                     }
-                    ch => { output.write_char(as_char(ch)); }
+                    let ch = map_two_bytes(input[i-1], input[i]);
+                    if ch == 0xffff {
+                        return (processed, Some(CodecError {
+                            upto: i, cause: "invalid sequence".into_send_str()
+                        }));
+                    }
+                    output.write_char(as_char(ch));
+                }
+                _ => {
+                    return (processed, Some(CodecError {
+                        upto: i+1, cause: "invalid sequence".into_send_str()
+                    }));
                 }
             }
             i += 1;
+            processed = i;
         }
-        None
+        (processed, None)
     }
 
-    fn raw_finish(&mut self, _output: &mut StringWriter) -> Option<DecoderError<'static>> {
+    fn raw_finish(&mut self, _output: &mut StringWriter) -> Option<CodecError> {
         if self.lead != 0 {
-            Some(CodecError { remaining: &[],
-                              problem: ~[self.lead],
-                              cause: "incomplete sequence".into_send_str() })
+            Some(CodecError { upto: 0, cause: "incomplete sequence".into_send_str() })
         } else {
             None
         }
@@ -162,75 +143,67 @@ impl Decoder for Windows949Decoder {
 }
 
 #[cfg(test)]
-mod euckr_tests {
+mod windows949_tests {
     use super::Windows949Encoding;
     use types::*;
-
-    fn strip_cause<T,Remaining,Problem>(result: (T,Option<CodecError<Remaining,Problem>>))
-                                    -> (T,Option<(Remaining,Problem)>) {
-        match result {
-            (processed, None) => (processed, None),
-            (processed, Some(CodecError { remaining, problem, cause: _cause })) =>
-                (processed, Some((remaining, problem)))
-        }
-    }
-
-    macro_rules! assert_result(
-        ($lhs:expr, $rhs:expr) => (assert_eq!(strip_cause($lhs), $rhs))
-    )
 
     #[test]
     fn test_encoder_valid() {
         let mut e = Windows949Encoding.encoder();
-        assert_result!(e.test_feed("A"), (~[0x41], None));
-        assert_result!(e.test_feed("BC"), (~[0x42, 0x43], None));
-        assert_result!(e.test_feed(""), (~[], None));
-        assert_result!(e.test_feed("\uac00"), (~[0xb0, 0xa1], None));
-        assert_result!(e.test_feed("\ub098\ub2e4"), (~[0xb3, 0xaa, 0xb4, 0xd9], None));
-        assert_result!(e.test_feed("\ubdc1\u314b\ud7a3"), (~[0x94, 0xee, 0xa4, 0xbb, 0xc6, 0x52], None));
-        assert_result!(e.test_finish(), (~[], None));
+        assert_feed_ok!(e, "A", "", [0x41]);
+        assert_feed_ok!(e, "BC", "", [0x42, 0x43]);
+        assert_feed_ok!(e, "", "", []);
+        assert_feed_ok!(e, "\uac00", "", [0xb0, 0xa1]);
+        assert_feed_ok!(e, "\ub098\ub2e4", "", [0xb3, 0xaa, 0xb4, 0xd9]);
+        assert_feed_ok!(e, "\ubdc1\u314b\ud7a3", "", [0x94, 0xee, 0xa4, 0xbb, 0xc6, 0x52]);
+        assert_finish_ok!(e, []);
     }
 
     #[test]
     fn test_encoder_invalid() {
         let mut e = Windows949Encoding.encoder();
-        assert_result!(e.test_feed("\uffff"), (~[], Some(("", ~"\uffff"))));
-        assert_result!(e.test_feed("?\uffff!"), (~[0x3f], Some(("!", ~"\uffff"))));
-        assert_result!(e.test_finish(), (~[], None));
+        assert_feed_err!(e, "", "\uffff", "", []);
+        assert_feed_err!(e, "?", "\uffff", "!", [0x3f]);
+        assert_finish_ok!(e, []);
     }
 
     #[test]
     fn test_decoder_valid() {
         let mut d = Windows949Encoding.decoder();
-        assert_result!(d.test_feed(&[0x41]), (~"A", None));
-        assert_result!(d.test_feed(&[0x42, 0x43]), (~"BC", None));
-        assert_result!(d.test_feed(&[]), (~"", None));
-        assert_result!(d.test_feed(&[0xb0, 0xa1]), (~"\uac00", None));
-        assert_result!(d.test_feed(&[0xb3, 0xaa, 0xb4, 0xd9]), (~"\ub098\ub2e4", None));
-        assert_result!(d.test_feed(&[0x94, 0xee, 0xa4, 0xbb, 0xc6, 0x52]),
-                       (~"\ubdc1\u314b\ud7a3", None));
-        assert_result!(d.test_finish(), (~"", None));
+        assert_feed_ok!(d, [0x41], [], "A");
+        assert_feed_ok!(d, [0x42, 0x43], [], "BC");
+        assert_feed_ok!(d, [], [], "");
+        assert_feed_ok!(d, [0xb0, 0xa1], [], "\uac00");
+        assert_feed_ok!(d, [0xb3, 0xaa, 0xb4, 0xd9], [], "\ub098\ub2e4");
+        assert_feed_ok!(d, [0x94, 0xee, 0xa4, 0xbb, 0xc6, 0x52], [], "\ubdc1\u314b\ud7a3");
+        assert_finish_ok!(d, "");
     }
 
     #[test]
     fn test_decoder_valid_partial() {
         let mut d = Windows949Encoding.decoder();
-        assert_result!(d.test_feed(&[0xb0]), (~"", None));
-        assert_result!(d.test_feed(&[0xa1]), (~"\uac00", None));
-        assert_result!(d.test_feed(&[0xb3, 0xaa, 0xb4]), (~"\ub098", None));
-        assert_result!(d.test_feed(&[0xd9, 0x94]), (~"\ub2e4", None));
-        assert_result!(d.test_feed(&[0xee, 0xa4, 0xbb, 0xc6, 0x52]), (~"\ubdc1\u314b\ud7a3", None));
-        assert_result!(d.test_finish(), (~"", None));
+        assert_feed_ok!(d, [], [0xb0], "");
+        assert_feed_ok!(d, [0xa1], [], "\uac00");
+        assert_feed_ok!(d, [0xb3, 0xaa], [0xb4], "\ub098");
+        assert_feed_ok!(d, [0xd9], [0x94], "\ub2e4");
+        assert_feed_ok!(d, [0xee, 0xa4, 0xbb, 0xc6, 0x52], [], "\ubdc1\u314b\ud7a3");
+        assert_finish_ok!(d, "");
     }
 
     #[test]
     fn test_decoder_invalid_lone_lead_immediate_test_finish() {
-        for i in range(0x80u16, 0x100) {
+        for i in range(0x81, 0xff) {
             let i = i as u8;
             let mut d = Windows949Encoding.decoder();
-            assert_result!(d.test_feed(&[i]), (~"", None)); // wait for a trail
-            assert_result!(d.test_finish(), (~"", Some((&[], ~[i]))));
+            assert_feed_ok!(d, [], [i], ""); // wait for a trail
+            assert_finish_err!(d, "");
         }
+
+        // 80/FF: immediate failure
+        let mut d = Windows949Encoding.decoder();
+        assert_feed_err!(d, [], [0x80], [], "");
+        assert_feed_err!(d, [], [0xff], [], "");
+        assert_finish_ok!(d, "");
     }
 
     #[test]
@@ -238,8 +211,8 @@ mod euckr_tests {
         for i in range(0x80, 0x100) {
             let i = i as u8;
             let mut d = Windows949Encoding.decoder();
-            assert_result!(d.test_feed(&[i, 0x20]), (~"", Some((&[0x20], ~[i]))));
-            assert_result!(d.test_finish(), (~"", None));
+            assert_feed_err!(d, [], [i], [0x20], "");
+            assert_finish_ok!(d, "");
         }
     }
 
@@ -248,9 +221,9 @@ mod euckr_tests {
         for i in range(0x80u16, 0x100) {
             let i = i as u8;
             let mut d = Windows949Encoding.decoder();
-            assert_result!(d.test_feed(&[i, 0x80]), (~"", Some((&[], ~[i, 0x80]))));
-            assert_result!(d.test_feed(&[i, 0xff]), (~"", Some((&[], ~[i, 0xff]))));
-            assert_result!(d.test_finish(), (~"", None));
+            assert_feed_err!(d, [], [i], [0x80], "");
+            assert_feed_err!(d, [], [i], [0xff], "");
+            assert_finish_ok!(d, "");
         }
     }
 
@@ -258,11 +231,11 @@ mod euckr_tests {
     fn test_decoder_invalid_boundary() {
         // U+D7A3 (C6 52) is the last Hangul syllable not in KS X 1001, C6 53 is invalid.
         // note that since the trail byte may coincide with ASCII, the trail byte 53 is
-        // not considered to be in the problem. this behavior is intentional.
+        // not considered to be in the problem. this is compatible to WHATWG Encoding standard.
         let mut d = Windows949Encoding.decoder();
-        assert_result!(d.test_feed(&[0xc6]), (~"", None));
-        assert_result!(d.test_feed(&[0x53]), (~"", Some((&[0x53], ~[0xc6]))));
-        assert_result!(d.test_finish(), (~"", None));
+        assert_feed_ok!(d, [], [0xc6], "");
+        assert_feed_err!(d, [], [], [0x53], "");
+        assert_finish_ok!(d, "");
     }
 }
 

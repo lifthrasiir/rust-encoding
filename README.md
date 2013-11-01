@@ -46,34 +46,20 @@ all::ISO_8859_6.decode([65,99,109,101,169], trap); // => Ok(~"Acmewhatever")
 A practical example of custom encoder traps:
 
 ~~~~ {.rust}
-pub struct XmlEscape;
-impl<T:Encoding> EncoderTrap<T> for XmlEscape {
-    fn encoder_trap(&mut self, _encoding: &T, input: &str) -> Option<~[u8]> {
+pub struct HexNcrEscape; // hexadecimal numeric character reference
+impl EncoderTrap for HexNcrEscape {
+    fn encoder_trap(&mut self, _encoding: &Encoding, input: &str) -> Option<~[u8]> {
         let escapes: ~[~str] =
-            input.iter().map(|ch| format!("&\\#{};", ch as int)).collect();
+            input.iter().map(|ch| format!("&\\#x{:x};", ch as int)).collect();
         let escapes = escapes.concat();
         Some(escapes.as_bytes().to_owned())
     }
 }
 
 let orig = ~"Hello, 世界!";
-let encoded = all::ASCII.encode(orig, XmlEscape).unwrap();
+let encoded = all::ASCII.encode(orig, HexNcrEscape).unwrap();
 let decoded = all::ASCII.decode(encoded, Strict).unwrap();
-assert_eq!(decoded, ~"Hello, &#19990;&#30028;!");
-~~~~
-
-An alternative API compatible to WHATWG Encoding standard, also demonstrating
-getting the encoding from the string label:
-
-~~~~ {.rust}
-use encoding::whatwg;
-let mut euckr = whatwg::TextDecoder::new(Some(~"euc-kr")).unwrap();
-euckr.encoding(); // => ~"euc-kr"
-let broken = &[0xbf, 0xec, 0xbf, 0xcd, 0xff, 0xbe, 0xd3];
-euckr.decode_buffer(Some(broken)); // => Ok(~"\uc6b0\uc640\ufffd\uc559")
-
-// this is different from rust-encoding's default behavior:
-let decoded = all::WINDOWS_949.decode(broken, Replace); // => Ok(~"\uc6b0\uc640\ufffd\ufffd")
+assert_eq!(decoded, ~"Hello, &#x4e16;&#x754c;!");
 ~~~~
 
 Supported Encodings

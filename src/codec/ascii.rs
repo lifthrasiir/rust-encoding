@@ -4,7 +4,6 @@
 
 //! 7-bit ASCII encoding.
 
-use std::str;
 use util::StrCharIndex;
 use types::*;
 
@@ -23,27 +22,22 @@ pub struct ASCIIEncoder;
 impl Encoder for ASCIIEncoder {
     fn encoding(&self) -> &'static Encoding { &ASCIIEncoding as &'static Encoding }
 
-    fn raw_feed<'r>(&mut self, input: &'r str,
-                    output: &mut ByteWriter) -> Option<EncoderError<'r>> {
+    fn raw_feed(&mut self, input: &str, output: &mut ByteWriter) -> (uint, Option<CodecError>) {
         output.writer_hint(input.len());
 
-        let mut err = None;
-        for ((_,j), ch) in input.index_iter() {
+        for ((i,j), ch) in input.index_iter() {
             if ch <= '\u007f' {
                 output.write_byte(ch as u8);
             } else {
-                err = Some(CodecError {
-                    remaining: input.slice_from(j),
-                    problem: str::from_char(ch),
-                    cause: "unrepresentable character".into_send_str(),
-                });
-                break;
+                return (i, Some(CodecError {
+                    upto: j, cause: "unrepresentable character".into_send_str()
+                }));
             }
         }
-        err
+        (input.len(), None)
     }
 
-    fn raw_finish(&mut self, _output: &mut ByteWriter) -> Option<EncoderError<'static>> {
+    fn raw_finish(&mut self, _output: &mut ByteWriter) -> Option<CodecError> {
         None
     }
 }
@@ -54,8 +48,7 @@ pub struct ASCIIDecoder;
 impl Decoder for ASCIIDecoder {
     fn encoding(&self) -> &'static Encoding { &ASCIIEncoding as &'static Encoding }
 
-    fn raw_feed<'r>(&mut self, input: &'r [u8],
-                    output: &mut StringWriter) -> Option<DecoderError<'r>> {
+    fn raw_feed(&mut self, input: &[u8], output: &mut StringWriter) -> (uint, Option<CodecError>) {
         output.writer_hint(input.len());
                                         
         let mut i = 0;
@@ -64,18 +57,16 @@ impl Decoder for ASCIIDecoder {
             if input[i] <= 0x7f {
                 output.write_char(input[i] as char);
             } else {
-                return Some(CodecError {
-                    remaining: input.slice(i+1, len),
-                    problem: ~[input[i]],
-                    cause: "invalid sequence".into_send_str(),
-                });
+                return (i, Some(CodecError {
+                    upto: i+1, cause: "invalid sequence".into_send_str()
+                }));
             }
             i += 1;
         }
-        None
+        (i, None)
     }
 
-    fn raw_finish(&mut self, _output: &mut StringWriter) -> Option<DecoderError<'static>> {
+    fn raw_finish(&mut self, _output: &mut StringWriter) -> Option<CodecError> {
         None
     }
 }
@@ -85,37 +76,24 @@ mod tests {
     use super::ASCIIEncoding;
     use types::*;
 
-    fn strip_cause<T,Remaining,Problem>(result: (T,Option<CodecError<Remaining,Problem>>))
-                                    -> (T,Option<(Remaining,Problem)>) {
-        match result {
-            (processed, None) => (processed, None),
-            (processed, Some(CodecError { remaining, problem, cause: _cause })) =>
-                (processed, Some((remaining, problem)))
-        }
-    }
-
-    macro_rules! assert_result(
-        ($lhs:expr, $rhs:expr) => (assert_eq!(strip_cause($lhs), $rhs))
-    )
-
     #[test]
     fn test_encoder() {
         let mut e = ASCIIEncoding.encoder();
-        assert_result!(e.test_feed("A"), (~[0x41], None));
-        assert_result!(e.test_feed("BC"), (~[0x42, 0x43], None));
-        assert_result!(e.test_feed(""), (~[], None));
-        assert_result!(e.test_feed("\xa0"), (~[], Some(("", ~"\xa0"))));
-        assert_result!(e.test_finish(), (~[], None));
+        assert_feed_ok!(e, "A", "", [0x41]);
+        assert_feed_ok!(e, "BC", "", [0x42, 0x43]);
+        assert_feed_ok!(e, "", "", []);
+        assert_feed_err!(e, "", "\xa0", "", []);
+        assert_finish_ok!(e, []);
     }
 
     #[test]
     fn test_decoder() {
         let mut d = ASCIIEncoding.decoder();
-        assert_result!(d.test_feed(&[0x41]), (~"A", None));
-        assert_result!(d.test_feed(&[0x42, 0x43]), (~"BC", None));
-        assert_result!(d.test_feed(&[]), (~"", None));
-        assert_result!(d.test_feed(&[0xa0]), (~"", Some((&[], ~[0xa0]))));
-        assert_result!(d.test_finish(), (~"", None));
+        assert_feed_ok!(d, [0x41], [], "A");
+        assert_feed_ok!(d, [0x42, 0x43], [], "BC");
+        assert_feed_ok!(d, [], [], "");
+        assert_feed_err!(d, [], [0xa0], [], "");
+        assert_finish_ok!(d, "");
     }
 }
 

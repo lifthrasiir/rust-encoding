@@ -20,6 +20,7 @@
 pub use self::types::*; // reexport
 
 mod util;
+#[cfg(test)] mod testutils;
 
 pub mod types;
 
@@ -95,23 +96,24 @@ mod tests {
     }
 
     #[test]
-    fn test_readme_xml_escape() {
-        pub struct XmlEscape;
-        impl EncoderTrap for XmlEscape {
+    fn test_readme_hex_ncr_escape() {
+        pub struct HexNcrEscape; // hexadecimal numeric character reference
+        impl EncoderTrap for HexNcrEscape {
             fn encoder_trap(&mut self, _encoding: &Encoding, input: &str) -> Option<~[u8]> {
                 let escapes: ~[~str] =
-                    input.iter().map(|ch| format!("&\\#{};", ch as int)).collect();
+                    input.iter().map(|ch| format!("&\\#x{:x};", ch as int)).collect();
                 let escapes = escapes.concat();
                 Some(escapes.as_bytes().to_owned())
             }
         }
 
         let orig = ~"Hello, 世界!";
-        let encoded = all::ASCII.encode(orig, XmlEscape).unwrap();
+        let encoded = all::ASCII.encode(orig, HexNcrEscape).unwrap();
         let decoded = all::ASCII.decode(encoded, Strict).unwrap();
-        assert_eq!(decoded, ~"Hello, &#19990;&#30028;!");
+        assert_eq!(decoded, ~"Hello, &#x4e16;&#x754c;!");
     }
 
+    /*
     #[test]
     fn test_readme_whatwg() {
         let mut euckr = whatwg::TextDecoder::new(Some(~"euc-kr")).unwrap();
@@ -128,5 +130,6 @@ mod tests {
         //   what rust-encoding expects: [BF EC] [BF CD] [FF BE]* [D3]*
         //   sequences marked * are considered invalid and replaced by U+FFFD.
     }
+    */
 }
 
