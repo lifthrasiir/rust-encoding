@@ -115,7 +115,7 @@ mod tests {
     #[test]
     fn test_readme_whatwg() {
         let mut euckr = whatwg::TextDecoder::new(Some(~"euc-kr")).unwrap();
-        assert_eq!(euckr.encoding(), ~"euc-kr"); // although it is actually windows-949
+        assert_eq!(euckr.encoding(), "euc-kr"); // although it is actually windows-949
         let broken = &[0xbf, 0xec, 0xbf, 0xcd, 0xff, 0xbe, 0xd3];
         assert_eq!(euckr.decode_buffer(Some(broken)), Ok(~"\uc6b0\uc640\ufffd\uc559"));
 

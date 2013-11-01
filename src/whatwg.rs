@@ -25,8 +25,16 @@ use types;
 
 mod whatwg_encodings {
     use all;
+    use index;
     use types::*;
     use codec::singlebyte::SingleByteEncoding;
+
+    // Same index as iso-8859-8 but different name:
+    pub static ISO_8859_8_I: &'static SingleByteEncoding = &SingleByteEncoding {
+        name: "iso-8859-8-i",
+        index_forward: index::iso_8859_8::forward,
+        index_backward: index::iso_8859_8::backward,
+    };
 
     /// Replacement encoding used to solve a particular attack vector due to mismatching server and
     /// client supports for encodings. It is rarely useful outside.
@@ -58,20 +66,20 @@ mod whatwg_encodings {
     };
 }
 
-/// Returns an encoding and canonical name from given label if any.
+/// Returns an encoding from given label, or None for unknown labels.
 /// Follows WHATWG Encoding Standard "get an encoding" algorithm:
 /// http://encoding.spec.whatwg.org/#decode
-pub fn encoding_from_label(label: &str) -> Option<(&'static types::Encoding, &'static str)> {
+pub fn encoding_from_label(label: &str) -> Option<&'static types::Encoding> {
     match label.trim_chars(& &[' ', '\n', '\r', '\t', '\x0C']).to_ascii_lower().as_slice() {
         "unicode-1-1-utf-8" |
         "utf-8" |
         "utf8" =>
-            Some((all::UTF_8 as &'static types::Encoding, "utf-8")),
+            Some(all::UTF_8 as &'static types::Encoding),
         "866" |
         "cp866" |
         "csibm866" |
         "ibm866" =>
-            Some((all::IBM866 as &'static types::Encoding, "ibm866")),
+            Some(all::IBM866 as &'static types::Encoding),
         "csisolatin2" |
         "iso-8859-2" |
         "iso-ir-101" |
@@ -81,7 +89,7 @@ pub fn encoding_from_label(label: &str) -> Option<(&'static types::Encoding, &'s
         "iso_8859-2:1987" |
         "l2" |
         "latin2" =>
-            Some((all::ISO_8859_2 as &'static types::Encoding, "iso-8859-2")),
+            Some(all::ISO_8859_2 as &'static types::Encoding),
         "csisolatin3" |
         "iso-8859-3" |
         "iso-ir-109" |
@@ -91,7 +99,7 @@ pub fn encoding_from_label(label: &str) -> Option<(&'static types::Encoding, &'s
         "iso_8859-3:1988" |
         "l3" |
         "latin3" =>
-            Some((all::ISO_8859_3 as &'static types::Encoding, "iso-8859-3")),
+            Some(all::ISO_8859_3 as &'static types::Encoding),
         "csisolatin4" |
         "iso-8859-4" |
         "iso-ir-110" |
@@ -101,7 +109,7 @@ pub fn encoding_from_label(label: &str) -> Option<(&'static types::Encoding, &'s
         "iso_8859-4:1988" |
         "l4" |
         "latin4" =>
-            Some((all::ISO_8859_4 as &'static types::Encoding, "iso-8859-4")),
+            Some(all::ISO_8859_4 as &'static types::Encoding),
         "csisolatincyrillic" |
         "cyrillic" |
         "iso-8859-5" |
@@ -110,7 +118,7 @@ pub fn encoding_from_label(label: &str) -> Option<(&'static types::Encoding, &'s
         "iso88595" |
         "iso_8859-5" |
         "iso_8859-5:1988" =>
-            Some((all::ISO_8859_5 as &'static types::Encoding, "iso-8859-5")),
+            Some(all::ISO_8859_5 as &'static types::Encoding),
         "arabic" |
         "asmo-708" |
         "csiso88596e" |
@@ -125,7 +133,7 @@ pub fn encoding_from_label(label: &str) -> Option<(&'static types::Encoding, &'s
         "iso88596" |
         "iso_8859-6" |
         "iso_8859-6:1987" =>
-            Some((all::ISO_8859_6 as &'static types::Encoding, "iso-8859-6")),
+            Some(all::ISO_8859_6 as &'static types::Encoding),
         "csisolatingreek" |
         "ecma-118" |
         "elot_928" |
@@ -138,7 +146,7 @@ pub fn encoding_from_label(label: &str) -> Option<(&'static types::Encoding, &'s
         "iso_8859-7" |
         "iso_8859-7:1987" |
         "sun_eu_greek" =>
-            Some((all::ISO_8859_7 as &'static types::Encoding, "iso-8859-7")),
+            Some(all::ISO_8859_7 as &'static types::Encoding),
         "csiso88598e" |
         "csisolatinhebrew" |
         "hebrew" |
@@ -150,11 +158,11 @@ pub fn encoding_from_label(label: &str) -> Option<(&'static types::Encoding, &'s
         "iso_8859-8" |
         "iso_8859-8:1988" |
         "visual" =>
-            Some((all::ISO_8859_8 as &'static types::Encoding, "iso-8859-8")),
+            Some(all::ISO_8859_8 as &'static types::Encoding),
         "csiso88598i" |
         "iso-8859-8-i" |
         "logical" =>
-            Some((all::ISO_8859_8 as &'static types::Encoding, "iso-8859-8-i")),
+            Some(whatwg_encodings::ISO_8859_8_I as &'static types::Encoding),
         "csisolatin6" |
         "iso-8859-10" |
         "iso-ir-157" |
@@ -162,52 +170,52 @@ pub fn encoding_from_label(label: &str) -> Option<(&'static types::Encoding, &'s
         "iso885910" |
         "l6" |
         "latin6" =>
-            Some((all::ISO_8859_10 as &'static types::Encoding, "iso-8859-10")),
+            Some(all::ISO_8859_10 as &'static types::Encoding),
         "iso-8859-13" |
         "iso8859-13" |
         "iso885913" =>
-            Some((all::ISO_8859_13 as &'static types::Encoding, "iso-8859-13")),
+            Some(all::ISO_8859_13 as &'static types::Encoding),
         "iso-8859-14" |
         "iso8859-14" |
         "iso885914" =>
-            Some((all::ISO_8859_14 as &'static types::Encoding, "iso-8859-14")),
+            Some(all::ISO_8859_14 as &'static types::Encoding),
         "csisolatin9" |
         "iso-8859-15" |
         "iso8859-15" |
         "iso885915" |
         "iso_8859-15" |
         "l9" =>
-            Some((all::ISO_8859_15 as &'static types::Encoding, "iso-8859-15")),
+            Some(all::ISO_8859_15 as &'static types::Encoding),
         "iso-8859-16" =>
-            Some((all::ISO_8859_16 as &'static types::Encoding, "iso-8859-16")),
+            Some(all::ISO_8859_16 as &'static types::Encoding),
         "cskoi8r" |
         "koi" |
         "koi8" |
         "koi8-r" |
         "koi8_r" =>
-            Some((all::KOI8_R as &'static types::Encoding, "koi8-r")),
+            Some(all::KOI8_R as &'static types::Encoding),
         "koi8-u" =>
-            Some((all::KOI8_U as &'static types::Encoding, "koi8-u")),
+            Some(all::KOI8_U as &'static types::Encoding),
         "csmacintosh" |
         "mac" |
         "macintosh" |
         "x-mac-roman" =>
-            Some((all::MACINTOSH as &'static types::Encoding, "macintosh")),
+            Some(all::MACINTOSH as &'static types::Encoding),
         "dos-874" |
         "iso-8859-11" |
         "iso8859-11" |
         "iso885911" |
         "tis-620" |
         "windows-874" =>
-            Some((all::WINDOWS_874 as &'static types::Encoding, "windows-874")),
+            Some(all::WINDOWS_874 as &'static types::Encoding),
         "cp1250" |
         "windows-1250" |
         "x-cp1250" =>
-            Some((all::WINDOWS_1250 as &'static types::Encoding, "windows-1250")),
+            Some(all::WINDOWS_1250 as &'static types::Encoding),
         "cp1251" |
         "windows-1251" |
         "x-cp1251" =>
-            Some((all::WINDOWS_1251 as &'static types::Encoding, "windows-1251")),
+            Some(all::WINDOWS_1251 as &'static types::Encoding),
         "ansi_x3.4-1968" |
         "ascii" |
         "cp1252" |
@@ -225,11 +233,11 @@ pub fn encoding_from_label(label: &str) -> Option<(&'static types::Encoding, &'s
         "us-ascii" |
         "windows-1252" |
         "x-cp1252" =>
-            Some((all::WINDOWS_1252 as &'static types::Encoding, "windows-1252")),
+            Some(all::WINDOWS_1252 as &'static types::Encoding),
         "cp1253" |
         "windows-1253" |
         "x-cp1253" =>
-            Some((all::WINDOWS_1253 as &'static types::Encoding, "windows-1253")),
+            Some(all::WINDOWS_1253 as &'static types::Encoding),
         "cp1254" |
         "csisolatin5" |
         "iso-8859-9" |
@@ -242,26 +250,26 @@ pub fn encoding_from_label(label: &str) -> Option<(&'static types::Encoding, &'s
         "latin5" |
         "windows-1254" |
         "x-cp1254" =>
-            Some((all::WINDOWS_1254 as &'static types::Encoding, "windows-1254")),
+            Some(all::WINDOWS_1254 as &'static types::Encoding),
         "cp1255" |
         "windows-1255" |
         "x-cp1255" =>
-            Some((all::WINDOWS_1255 as &'static types::Encoding, "windows-1255")),
+            Some(all::WINDOWS_1255 as &'static types::Encoding),
         "cp1256" |
         "windows-1256" |
         "x-cp1256" =>
-            Some((all::WINDOWS_1256 as &'static types::Encoding, "windows-1256")),
+            Some(all::WINDOWS_1256 as &'static types::Encoding),
         "cp1257" |
         "windows-1257" |
         "x-cp1257" =>
-            Some((all::WINDOWS_1257 as &'static types::Encoding, "windows-1257")),
+            Some(all::WINDOWS_1257 as &'static types::Encoding),
         "cp1258" |
         "windows-1258" |
         "x-cp1258" =>
-            Some((all::WINDOWS_1258 as &'static types::Encoding, "windows-1258")),
+            Some(all::WINDOWS_1258 as &'static types::Encoding),
         "x-mac-cyrillic" |
         "x-mac-ukrainian" =>
-            Some((all::X_MAC_CYRILLIC as &'static types::Encoding, "x-mac-cyrillic")),
+            Some(all::X_MAC_CYRILLIC as &'static types::Encoding),
         /*
         "chinese" |
         "csgb2312" |
@@ -272,26 +280,26 @@ pub fn encoding_from_label(label: &str) -> Option<(&'static types::Encoding, &'s
         "gbk" |
         "iso-ir-58" |
         "x-gbk" =>
-            Some((all::GBK as &'static types::Encoding, "gbk")),
+            Some(all::GBK as &'static types::Encoding),
         "gb18030" =>
-            Some((all::GB18030 as &'static types::Encoding, "gb18030")),
+            Some(all::GB18030 as &'static types::Encoding),
         "hz-gb-2312" =>
-            Some((all::HZ_GB_2312 as &'static types::Encoding, "hz-gb-2312")),
+            Some(all::HZ_GB_2312 as &'static types::Encoding),
         "big5" |
         "big5-hkscs" |
         "cn-big5" |
         "csbig5" |
         "x-x-big5" =>
-            Some((all::BIG5 as &'static types::Encoding, "big5")),
+            Some(all::BIG5 as &'static types::Encoding),
         */
         "cseucpkdfmtjapanese" |
         "euc-jp" |
         "x-euc-jp" =>
-            Some((all::EUC_JP as &'static types::Encoding, "euc-jp")),
+            Some(all::EUC_JP as &'static types::Encoding),
         /*
         "csiso2022jp" |
         "iso-2022-jp" =>
-            Some((all::ISO_2022_JP as &'static types::Encoding, "iso-2022-jp")),
+            Some(all::ISO_2022_JP as &'static types::Encoding),
         */
         "csshiftjis" |
         "ms_kanji" |
@@ -300,7 +308,7 @@ pub fn encoding_from_label(label: &str) -> Option<(&'static types::Encoding, &'s
         "sjis" |
         "windows-31j" |
         "x-sjis" =>
-            Some((all::SHIFT_JIS as &'static types::Encoding, "shift_jis")),
+            Some(all::SHIFT_JIS as &'static types::Encoding),
         "cseuckr" |
         "csksc56011987" |
         "euc-kr" |
@@ -311,24 +319,24 @@ pub fn encoding_from_label(label: &str) -> Option<(&'static types::Encoding, &'s
         "ksc5601" |
         "ksc_5601" |
         "windows-949" =>
-            Some((all::WINDOWS_949 as &'static types::Encoding, "euc-kr")),
+            Some(all::WINDOWS_949 as &'static types::Encoding),
         /*
         "csiso2022kr" |
         "iso-2022-kr" =>
-            Some((all::ISO_2022_KR as &'static types::Encoding, "iso-2022-kr")),
+            Some(all::ISO_2022_KR as &'static types::Encoding),
         */
         "iso-2022-cn" |
         "iso-2022-cn-ext" =>
-            Some((whatwg_encodings::REPLACEMENT as &'static types::Encoding, "replacement")),
+            Some(whatwg_encodings::REPLACEMENT as &'static types::Encoding),
         /*
         "utf-16be" =>
-            Some((all::UTF_16BE as &'static types::Encoding, "utf-16be")),
+            Some(all::UTF_16BE as &'static types::Encoding),
         "utf-16" |
         "utf-16le" =>
-            Some((all::UTF_16LE as &'static types::Encoding, "utf-16le")),
+            Some(all::UTF_16LE as &'static types::Encoding),
         */
         "x-user-defined" =>
-            Some((whatwg_encodings::X_USER_DEFINED as &'static types::Encoding, "x-user-defined")),
+            Some(whatwg_encodings::X_USER_DEFINED as &'static types::Encoding),
         _ => None
     }
 }
@@ -376,7 +384,6 @@ impl TextDecodeOptions {
 }
 
 pub struct TextDecoder {
-    whatwg_name: &'static str,
     encoding: &'static types::Encoding,
     decoder: ~types::Decoder,
     fatal: bool,
@@ -395,22 +402,23 @@ impl TextDecoder {
         let label = label.unwrap_or(~"utf-8");
         let ret = encoding_from_label(label);
         if ret.is_none() { return Err(~"TypeError"); }
-        let (encoding, whatwg_name) = ret.unwrap();
-        if whatwg_name == "replacement" { return Err(~"TypeError"); }
+        let encoding = ret.unwrap();
+        let name = encoding.name();
+        if name == "replacement" { return Err(~"TypeError"); }
 
-        let ignorable_first_bytes = match whatwg_name {
+        let ignorable_first_bytes = match name {
             &"utf-16le" => ~[0xff, 0xfe],
             &"utf-16be" => ~[0xfe, 0xff],
             &"utf-8" => ~[0xef, 0xbb, 0xbf],
             _ => ~[],
         };
-        Ok(TextDecoder { whatwg_name: whatwg_name, encoding: encoding, decoder: encoding.decoder(),
+        Ok(TextDecoder { encoding: encoding, decoder: encoding.decoder(),
                          fatal: options.fatal, bom_seen: false, first_bytes: ~[],
                          ignorable_first_bytes: ignorable_first_bytes })
     }
 
-    pub fn encoding(&self) -> ~str {
-        self.whatwg_name.to_owned()
+    pub fn encoding(&self) -> &'static str {
+        self.encoding.name()
     }
 
     // XXX conflicts with `types::Decoder::decode`
@@ -516,7 +524,6 @@ impl TextEncodeOptions {
 }
 
 pub struct TextEncoder {
-    whatwg_name: &'static str,
     encoding: &'static types::Encoding,
     encoder: ~types::Encoder,
 }
@@ -526,17 +533,17 @@ impl TextEncoder {
         let label = label.unwrap_or(~"utf-8");
         let ret = encoding_from_label(label);
         if ret.is_none() { return Err(~"TypeError"); }
-        let (encoding, whatwg_name) = ret.unwrap();
-        if whatwg_name != "utf-8" && whatwg_name != "utf-16le" && whatwg_name != "utf-16be" {
+        let encoding = ret.unwrap();
+        let name = encoding.name();
+        if name != "utf-8" && name != "utf-16le" && name != "utf-16be" {
             return Err(~"TypeError");
         }
 
-        Ok(TextEncoder { whatwg_name: whatwg_name, encoding: encoding,
-                         encoder: encoding.encoder() })
+        Ok(TextEncoder { encoding: encoding, encoder: encoding.encoder() })
     }
 
-    pub fn encoding(&self) -> ~str {
-        self.whatwg_name.to_owned()
+    pub fn encoding(&self) -> &'static str {
+        self.encoding.name()
     }
 
     // XXX conflicts with `types::Encoder::encode`
