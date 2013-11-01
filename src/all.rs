@@ -64,6 +64,7 @@ unique!(var=SHIFT_JIS, mod=japanese, val=ShiftJISEncoding)
 
 pub mod whatwg {
     use codec;
+    use index;
 
     pub static X_USER_DEFINED: &'static codec::singlebyte::SingleByteEncoding =
         &codec::singlebyte::SingleByteEncoding {
@@ -73,6 +74,7 @@ pub mod whatwg {
             index_backward: codec::whatwg::x_user_defined_backward,
         };
 
+    singlebyte_whatwg!(var=ISO_8859_8_I, mod=iso_8859_8, name="iso-8859-8-i")
     unique!(var=REPLACEMENT, mod=whatwg, val=EncoderOnlyUTF8Encoding)
 }
 

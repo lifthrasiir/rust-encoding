@@ -103,7 +103,7 @@ pub fn encoding_from_whatwg_label(label: &str) -> Option<&'static types::Encodin
         "csiso88598i" |
         "iso-8859-8-i" |
         "logical" =>
-            Some(all::ISO_8859_8 as &'static types::Encoding),
+            Some(all::whatwg::ISO_8859_8_I as &'static types::Encoding),
         "csisolatin6" |
         "iso-8859-10" |
         "iso-ir-157" |
