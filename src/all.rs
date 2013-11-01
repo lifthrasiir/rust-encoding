@@ -63,11 +63,16 @@ unique!(var=EUC_JP, mod=japanese, val=EUCJPEncoding)
 unique!(var=SHIFT_JIS, mod=japanese, val=ShiftJISEncoding)
 
 pub mod whatwg {
-    use index;
     use codec;
 
-    singlebyte_whatwg!(var=X_USER_DEFINED, mod=whatwg_x_user_defined,
-                       name="pua-mapped-binary", whatwg="x-user-defined")
+    pub static X_USER_DEFINED: &'static codec::singlebyte::SingleByteEncoding =
+        &codec::singlebyte::SingleByteEncoding {
+            name: "pua-mapped-binary",
+            whatwg_name: Some("x-user-defined"),
+            index_forward: codec::whatwg::x_user_defined_forward,
+            index_backward: codec::whatwg::x_user_defined_backward,
+        };
+
     unique!(var=REPLACEMENT, mod=whatwg, val=EncoderOnlyUTF8Encoding)
 }
 

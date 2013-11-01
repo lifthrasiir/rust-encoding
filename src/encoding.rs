@@ -58,7 +58,6 @@ pub mod index {
     pub mod gbk;
     pub mod jis0208;
     pub mod jis0212;
-    pub mod whatwg_x_user_defined;
 }
 
 /// Codec implementations.
