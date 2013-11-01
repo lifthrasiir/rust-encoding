@@ -101,7 +101,7 @@ mod tests {
     fn test_readme_hex_ncr_escape() {
         pub struct HexNcrEscape; // hexadecimal numeric character reference
         impl EncoderTrap for HexNcrEscape {
-            fn encoder_trap(&mut self, _encoding: &Encoding, input: &str) -> Option<~[u8]> {
+            fn encoder_trap(&mut self, _encoder: &Encoder, input: &str) -> Option<~[u8]> {
                 let escapes: ~[~str] =
                     input.iter().map(|ch| format!("&\\#x{:x};", ch as int)).collect();
                 let escapes = escapes.concat();

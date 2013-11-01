@@ -20,8 +20,6 @@ impl Encoding for ASCIIEncoding {
 pub struct ASCIIEncoder;
 
 impl Encoder for ASCIIEncoder {
-    fn encoding(&self) -> &'static Encoding { &ASCIIEncoding as &'static Encoding }
-
     fn raw_feed(&mut self, input: &str, output: &mut ByteWriter) -> (uint, Option<CodecError>) {
         output.writer_hint(input.len());
 
@@ -46,8 +44,6 @@ impl Encoder for ASCIIEncoder {
 pub struct ASCIIDecoder;
 
 impl Decoder for ASCIIDecoder {
-    fn encoding(&self) -> &'static Encoding { &ASCIIEncoding as &'static Encoding }
-
     fn raw_feed(&mut self, input: &[u8], output: &mut StringWriter) -> (uint, Option<CodecError>) {
         output.writer_hint(input.len());
                                         

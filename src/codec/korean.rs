@@ -22,8 +22,6 @@ impl Encoding for Windows949Encoding {
 pub struct Windows949Encoder;
 
 impl Encoder for Windows949Encoder {
-    fn encoding(&self) -> &'static Encoding { &Windows949Encoding as &'static Encoding }
-
     fn raw_feed(&mut self, input: &str, output: &mut ByteWriter) -> (uint, Option<CodecError>) {
         output.writer_hint(input.len());
 
@@ -65,8 +63,6 @@ pub struct Windows949Decoder {
 }
 
 impl Decoder for Windows949Decoder {
-    fn encoding(&self) -> &'static Encoding { &Windows949Encoding as &'static Encoding }
-
     fn raw_feed(&mut self, input: &[u8], output: &mut StringWriter) -> (uint, Option<CodecError>) {
         output.writer_hint(input.len());
 

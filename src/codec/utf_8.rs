@@ -48,8 +48,6 @@ impl Encoding for UTF8Encoding {
 pub struct UTF8Encoder;
 
 impl Encoder for UTF8Encoder {
-    fn encoding(&self) -> &'static Encoding { &UTF8Encoding as &'static Encoding }
-
     fn raw_feed(&mut self, input: &str, output: &mut ByteWriter) -> (uint, Option<CodecError>) {
         unsafe {
             let input: &[u8] = cast::transmute(input);
@@ -118,8 +116,6 @@ static REJECT_STATE: u8 = 12;
 static REJECT_STATE_WITH_BACKUP: u8 = REJECT_STATE | 1;
 
 impl Decoder for UTF8Decoder {
-    fn encoding(&self) -> &'static Encoding { &UTF8Encoding as &'static Encoding }
-
     fn raw_feed(&mut self, input: &[u8], output: &mut StringWriter) -> (uint, Option<CodecError>) {
         output.writer_hint(input.len());
 

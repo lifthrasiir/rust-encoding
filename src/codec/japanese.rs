@@ -23,8 +23,6 @@ impl Encoding for EUCJPEncoding {
 pub struct EUCJPEncoder;
 
 impl Encoder for EUCJPEncoder {
-    fn encoding(&self) -> &'static Encoding { &EUCJPEncoding as &'static Encoding }
-
     fn raw_feed(&mut self, input: &str, output: &mut ByteWriter) -> (uint, Option<CodecError>) {
         output.writer_hint(input.len());
 
@@ -67,8 +65,6 @@ pub struct EUCJPDecoder {
 }
 
 impl Decoder for EUCJPDecoder {
-    fn encoding(&self) -> &'static Encoding { &EUCJPEncoding as &'static Encoding }
-
     fn raw_feed(&mut self, input: &[u8], output: &mut StringWriter) -> (uint, Option<CodecError>) {
         output.writer_hint(input.len());
 
@@ -265,8 +261,6 @@ impl Encoding for ShiftJISEncoding {
 pub struct ShiftJISEncoder;
 
 impl Encoder for ShiftJISEncoder {
-    fn encoding(&self) -> &'static Encoding { &ShiftJISEncoding as &'static Encoding }
-
     fn raw_feed(&mut self, input: &str, output: &mut ByteWriter) -> (uint, Option<CodecError>) {
         output.writer_hint(input.len());
 
@@ -307,8 +301,6 @@ pub struct ShiftJISDecoder {
 }
 
 impl Decoder for ShiftJISDecoder {
-    fn encoding(&self) -> &'static Encoding { &ShiftJISEncoding as &'static Encoding }
-
     fn raw_feed(&mut self, input: &[u8], output: &mut StringWriter) -> (uint, Option<CodecError>) {
         output.writer_hint(input.len());
 

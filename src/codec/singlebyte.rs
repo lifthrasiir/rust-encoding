@@ -27,8 +27,6 @@ pub struct SingleByteEncoder {
 }
 
 impl Encoder for SingleByteEncoder {
-    fn encoding(&self) -> &'static Encoding { self.encoding as &'static Encoding }
-
     fn raw_feed(&mut self, input: &str, output: &mut ByteWriter) -> (uint, Option<CodecError>) {
         output.writer_hint(input.len());
 
@@ -62,8 +60,6 @@ pub struct SingleByteDecoder {
 }
 
 impl Decoder for SingleByteDecoder {
-    fn encoding(&self) -> &'static Encoding { self.encoding as &'static Encoding }
-
     fn raw_feed(&mut self, input: &[u8], output: &mut StringWriter) -> (uint, Option<CodecError>) {
         output.writer_hint(input.len());
 
