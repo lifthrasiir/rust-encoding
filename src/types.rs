@@ -369,7 +369,7 @@ impl Trap {
                 let mut e = encoder.from_self();
                 let (_, err) = e.raw_feed(input, output);
                 if err.is_some() || e.raw_finish(output).is_some() {
-                    fail!("%s cannot reencode a replacement string", trapname);
+                    fail!("{:s} cannot reencode a replacement string", trapname);
                 }
             }
             true

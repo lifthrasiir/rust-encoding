@@ -4769,7 +4769,7 @@ mod tests {
     fn test_correct_table() {
         for i in range(0u32, 0x10000) {
             let i = i as u16;
-            if i == 6555 { loop; }
+            if i == 6555 { continue; }
             let j = forward(i);
             if j != 0xffff { assert_eq!(backward(j), i); }
         }

@@ -17,6 +17,8 @@
 #[license = "MIT"];
 #[crate_type = "lib"];
 
+#[feature(globs, macro_rules)];
+
 pub use self::types::*; // reexport
 
 mod util;

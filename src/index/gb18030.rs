@@ -96,10 +96,10 @@ mod tests {
     fn test_correct_table() {
         for i in range(0u32, 189002) {
             let j = forward(i);
-            if j == 0xffffffff { loop; }
+            if j == 0xffffffff { continue; }
             let i_ = backward(j);
-            if i_ == 0xffffffff { loop; }
-            assert!(i_ == i, "backward(forward(%?)) = backward(%?) = %? != %?", i, j, i_, i);
+            if i_ == 0xffffffff { continue; }
+            assert!(i_ == i, "backward(forward({:?})) = backward({:?}) = {:?} != {:?}", i, j, i_, i);
         }
     }
 }

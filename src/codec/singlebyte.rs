@@ -44,13 +44,13 @@ impl Encoder for SingleByteEncoder {
         for ((i,j), ch) in input.index_iter() {
             if ch <= '\u007f' {
                 output.write_byte(ch as u8);
-                loop;
+                continue;
             }
             if ch <= '\uffff' {
                 let index = (self.index_backward)(ch as u16);
                 if index != 0xff {
                     output.write_byte((index + 0x80) as u8);
-                    loop;
+                    continue;
                 }
             }
             return (i, Some(CodecError {
