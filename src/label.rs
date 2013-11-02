@@ -211,7 +211,6 @@ pub fn encoding_from_whatwg_label(label: &str) -> Option<&'static types::Encodin
         "x-mac-cyrillic" |
         "x-mac-ukrainian" =>
             Some(all::X_MAC_CYRILLIC as &'static types::Encoding),
-        /*
         "chinese" |
         "csgb2312" |
         "csiso58gb231280" |
@@ -221,7 +220,8 @@ pub fn encoding_from_whatwg_label(label: &str) -> Option<&'static types::Encodin
         "gbk" |
         "iso-ir-58" |
         "x-gbk" =>
-            Some(all::GBK as &'static types::Encoding),
+            Some(all::GBK18030 as &'static types::Encoding),
+        /*
         "gb18030" =>
             Some(all::GB18030 as &'static types::Encoding),
         "hz-gb-2312" =>
@@ -249,7 +249,7 @@ pub fn encoding_from_whatwg_label(label: &str) -> Option<&'static types::Encodin
         "sjis" |
         "windows-31j" |
         "x-sjis" =>
-            Some(all::SHIFT_JIS as &'static types::Encoding),
+            Some(all::WINDOWS_31J as &'static types::Encoding),
         "cseuckr" |
         "csksc56011987" |
         "euc-kr" |

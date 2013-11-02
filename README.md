@@ -87,4 +87,5 @@ Rust-encoding is a work in progress and this list will certainly be updated.
 * Multi byte encodings in WHATWG Encoding Standard:
     * Windows code page 949 (`euc-kr`, since the strict EUC-KR is hardly used)
     * EUC-JP and Shift_JIS
+    * GB 18030 version of GBK
 

@@ -279,7 +279,7 @@ mod eucjp_tests {
 }
 
 /**
- * Windows code page 932, i.e. Shift_JIS with IBM/NEC extensions. (XXX misnomer)
+ * Windows code page 932, i.e. Shift_JIS with IBM/NEC extensions.
  *
  * This is a Japanese encoding for JIS X 0208
  * compatible to the original assignments of JIS X 0201 (`[21-7E A1-DF]`).
@@ -294,25 +294,25 @@ mod eucjp_tests {
  * since the second byte of JIS X 0208 can have its MSB unset.
  */
 #[deriving(Clone)]
-pub struct ShiftJISEncoding;
+pub struct Windows31JEncoding;
 
-impl Encoding for ShiftJISEncoding {
-    fn name(&self) -> &'static str { "shift-jis" }
-    fn whatwg_name(&self) -> Option<&'static str> { Some("shift_jis") }
-    fn encoder(&self) -> ~Encoder { ShiftJISEncoder::new() }
-    fn decoder(&self) -> ~Decoder { ShiftJISDecoder::new() }
+impl Encoding for Windows31JEncoding {
+    fn name(&self) -> &'static str { "windows-31j" }
+    fn whatwg_name(&self) -> Option<&'static str> { Some("shift_jis") } // WHATWG compatibility
+    fn encoder(&self) -> ~Encoder { Windows31JEncoder::new() }
+    fn decoder(&self) -> ~Decoder { Windows31JDecoder::new() }
 }
 
 /// An encoder for Shift_JIS with IBM/NEC extensions.
 #[deriving(Clone)]
-pub struct ShiftJISEncoder;
+pub struct Windows31JEncoder;
 
-impl ShiftJISEncoder {
-    pub fn new() -> ~Encoder { ~ShiftJISEncoder as ~Encoder }
+impl Windows31JEncoder {
+    pub fn new() -> ~Encoder { ~Windows31JEncoder as ~Encoder }
 }
 
-impl Encoder for ShiftJISEncoder {
-    fn from_self(&self) -> ~Encoder { ShiftJISEncoder::new() }
+impl Encoder for Windows31JEncoder {
+    fn from_self(&self) -> ~Encoder { Windows31JEncoder::new() }
     fn is_ascii_compatible(&self) -> bool { true }
 
     fn raw_feed(&mut self, input: &str, output: &mut ByteWriter) -> (uint, Option<CodecError>) {
@@ -351,16 +351,16 @@ impl Encoder for ShiftJISEncoder {
 
 /// A decoder for Shift_JIS with IBM/NEC extensions.
 #[deriving(Clone)]
-pub struct ShiftJISDecoder {
+pub struct Windows31JDecoder {
     lead: u8
 }
 
-impl ShiftJISDecoder {
-    pub fn new() -> ~Decoder { ~ShiftJISDecoder { lead: 0 } as ~Decoder }
+impl Windows31JDecoder {
+    pub fn new() -> ~Decoder { ~Windows31JDecoder { lead: 0 } as ~Decoder }
 }
 
-impl Decoder for ShiftJISDecoder {
-    fn from_self(&self) -> ~Decoder { ShiftJISDecoder::new() }
+impl Decoder for Windows31JDecoder {
+    fn from_self(&self) -> ~Decoder { Windows31JDecoder::new() }
     fn is_ascii_compatible(&self) -> bool { true }
 
     fn raw_feed(&mut self, input: &[u8], output: &mut StringWriter) -> (uint, Option<CodecError>) {
@@ -443,13 +443,13 @@ impl Decoder for ShiftJISDecoder {
 }
 
 #[cfg(test)]
-mod shiftjis_tests {
-    use super::ShiftJISEncoding;
+mod windows31j_tests {
+    use super::Windows31JEncoding;
     use types::*;
 
     #[test]
     fn test_encoder_valid() {
-        let mut e = ShiftJISEncoding.encoder();
+        let mut e = Windows31JEncoding.encoder();
         assert_feed_ok!(e, "A", "", [0x41]);
         assert_feed_ok!(e, "BC", "", [0x42, 0x43]);
         assert_feed_ok!(e, "", "", []);
@@ -463,7 +463,7 @@ mod shiftjis_tests {
 
     #[test]
     fn test_encoder_invalid() {
-        let mut e = ShiftJISEncoding.encoder();
+        let mut e = Windows31JEncoding.encoder();
         assert_feed_err!(e, "", "\uffff", "", []);
         assert_feed_err!(e, "?", "\uffff", "!", [0x3f]);
         assert_feed_err!(e, "", "\u736c", "\u8c78", []);
@@ -472,7 +472,7 @@ mod shiftjis_tests {
 
     #[test]
     fn test_decoder_valid() {
-        let mut d = ShiftJISEncoding.decoder();
+        let mut d = Windows31JEncoding.decoder();
         assert_feed_ok!(d, [0x41], [], "A");
         assert_feed_ok!(d, [0x42, 0x43], [], "BC");
         assert_feed_ok!(d, [], [], "");

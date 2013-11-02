@@ -68,6 +68,7 @@ pub mod codec {
     pub mod utf_8;
     pub mod korean;
     pub mod japanese;
+    pub mod simpchinese;
     pub mod whatwg;
 }
 

@@ -60,7 +60,8 @@ singlebyte_whatwg!(var=X_MAC_CYRILLIC, mod=x_mac_cyrillic, name="x-mac-cyrillic"
 unique!(var=UTF_8, mod=utf_8, val=UTF8Encoding)
 unique!(var=WINDOWS_949, mod=korean, val=Windows949Encoding)
 unique!(var=EUC_JP, mod=japanese, val=EUCJPEncoding)
-unique!(var=SHIFT_JIS, mod=japanese, val=ShiftJISEncoding)
+unique!(var=WINDOWS_31J, mod=japanese, val=Windows31JEncoding)
+unique!(var=GBK18030, mod=simpchinese, val=GBK18030Encoding)
 
 pub mod whatwg {
     use codec;
