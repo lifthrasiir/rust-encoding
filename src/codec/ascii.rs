@@ -7,6 +7,12 @@
 use util::StrCharIndex;
 use types::*;
 
+/**
+ * ASCII, also known as ISO/IEC 646:US.
+ *
+ * It is both a basis and a lowest common denominator of many other encodings
+ * including UTF-8, which Rust internally assumes.
+ */
 #[deriving(Clone)]
 pub struct ASCIIEncoding;
 
@@ -16,6 +22,7 @@ impl Encoding for ASCIIEncoding {
     fn decoder(&self) -> ~Decoder { ASCIIDecoder::new() }
 }
 
+/// An encoder for ASCII.
 #[deriving(Clone)]
 pub struct ASCIIEncoder;
 
@@ -47,6 +54,7 @@ impl Encoder for ASCIIEncoder {
     }
 }
 
+/// A decoder for ASCII.
 #[deriving(Clone)]
 pub struct ASCIIDecoder;
 

@@ -9,6 +9,21 @@ use index0208 = index::jis0208;
 use index0212 = index::jis0212;
 use types::*;
 
+/**
+ * EUC-JP. (XXX with asymmetric JIS X 0212 support)
+ *
+ * This is a Japanese encoding created from three JIS character sets:
+ *
+ * - JIS X 0201, which lower half is ISO/IEC 646:JP (US-ASCII with yen sign and overline)
+ *   and upper half contains legacy half-width Katakanas.
+ * - JIS X 0208, a primary graphic character set (94x94).
+ * - JIS X 0212, a supplementary graphic character set (94x94).
+ *
+ * EUC-JP contains the lower half of JIS X 0201 in G0 (`[21-7E]`),
+ * JIS X 0208 in G1 (`[A1-FE] [A1-FE]`),
+ * the upper half of JIS X 0212 in G2 (`8E [A1-DF]`), and
+ * JIS X 0212 in G3 (`8F [A1-FE] [A1-FE]`).
+ */
 #[deriving(Clone)]
 pub struct EUCJPEncoding;
 
@@ -16,9 +31,10 @@ impl Encoding for EUCJPEncoding {
     fn name(&self) -> &'static str { "euc-jp" }
     fn whatwg_name(&self) -> Option<&'static str> { Some("euc-jp") }
     fn encoder(&self) -> ~Encoder { EUCJPEncoder::new() }
-    fn decoder(&self) -> ~Decoder { EUCJPDecoder::new() }
+    fn decoder(&self) -> ~Decoder { EUCJP0212Decoder::new() }
 }
 
+/// An encoder for EUC-JP with unused G3 character set.
 #[deriving(Clone)]
 pub struct EUCJPEncoder;
 
@@ -65,18 +81,19 @@ impl Encoder for EUCJPEncoder {
     }
 }
 
+/// A decoder for EUC-JP with JIS X 0212 in G3.
 #[deriving(Clone)]
-pub struct EUCJPDecoder {
+pub struct EUCJP0212Decoder {
     first: u8,
     second: u8,
 }
 
-impl EUCJPDecoder {
-    pub fn new() -> ~Decoder { ~EUCJPDecoder { first: 0, second: 0 } as ~Decoder }
+impl EUCJP0212Decoder {
+    pub fn new() -> ~Decoder { ~EUCJP0212Decoder { first: 0, second: 0 } as ~Decoder }
 }
 
-impl Decoder for EUCJPDecoder {
-    fn from_self(&self) -> ~Decoder { EUCJPDecoder::new() }
+impl Decoder for EUCJP0212Decoder {
+    fn from_self(&self) -> ~Decoder { EUCJP0212Decoder::new() }
     fn is_ascii_compatible(&self) -> bool { true }
 
     fn raw_feed(&mut self, input: &[u8], output: &mut StringWriter) -> (uint, Option<CodecError>) {
@@ -261,6 +278,21 @@ mod eucjp_tests {
     // TODO more tests
 }
 
+/**
+ * Windows code page 932, i.e. Shift_JIS with IBM/NEC extensions. (XXX misnomer)
+ *
+ * This is a Japanese encoding for JIS X 0208
+ * compatible to the original assignments of JIS X 0201 (`[21-7E A1-DF]`).
+ * The 94 by 94 region of JIS X 0208 is sliced, or rather "shifted" into
+ * the odd half (odd row number) and even half (even row number),
+ * and merged into the 188 by 47 region mapped to `[81-9F E0-EF] [40-7E 80-FC]`.
+ * The remaining area, `[80 A0 F0-FF] [40-7E 80-FC]`, has been subjected to
+ * numerous extensions incompatible to each other.
+ * This particular implementation uses IBM/NEC extensions
+ * which assigns more characters to `[F0-FC 80-FC]` and also to the Private Use Area (PUA).
+ * It requires some cares to handle
+ * since the second byte of JIS X 0208 can have its MSB unset.
+ */
 #[deriving(Clone)]
 pub struct ShiftJISEncoding;
 
@@ -271,6 +303,7 @@ impl Encoding for ShiftJISEncoding {
     fn decoder(&self) -> ~Decoder { ShiftJISDecoder::new() }
 }
 
+/// An encoder for Shift_JIS with IBM/NEC extensions.
 #[deriving(Clone)]
 pub struct ShiftJISEncoder;
 
@@ -316,6 +349,7 @@ impl Encoder for ShiftJISEncoder {
     }
 }
 
+/// A decoder for Shift_JIS with IBM/NEC extensions.
 #[deriving(Clone)]
 pub struct ShiftJISDecoder {
     lead: u8

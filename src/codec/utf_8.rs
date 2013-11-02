@@ -22,16 +22,26 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/*!
- * UTF-8, the universal encoding.
- *
- * The UTF-8 scanner used by this module is heavily based on Bjoern Hoehrmann's
- * [Flexible and Economical UTF-8 Decoder](http://bjoern.hoehrmann.de/utf-8/decoder/dfa/).
- */
+//! UTF-8, the universal encoding.
 
 use std::{str, cast};
 use types::*;
 
+/**
+ * UTF-8 (UCS Transformation Format, 8-bit).
+ *
+ * This is a Unicode encoding compatible to ASCII (ISO/IEC 646:US)
+ * and able to represent all Unicode codepoints uniquely and unambiguously.
+ * It has a variable-length design,
+ * where one codepoint may use 1 (up to U+007F), 2 (up to U+07FF), 3 (up to U+FFFF)
+ * and 4 bytes (up to U+10FFFF) depending on its value.
+ * The first byte of the sequence is distinct from other "continuation" bytes of the sequence
+ * making UTF-8 self-synchronizable and easy to handle.
+ * It has a fixed endianness, and can be lexicographically sorted by codepoints.
+ *
+ * The UTF-8 scanner used by this module is heavily based on Bjoern Hoehrmann's
+ * [Flexible and Economical UTF-8 Decoder](http://bjoern.hoehrmann.de/utf-8/decoder/dfa/).
+ */
 #[deriving(Clone)]
 pub struct UTF8Encoding;
 
@@ -42,6 +52,7 @@ impl Encoding for UTF8Encoding {
     fn decoder(&self) -> ~Decoder { UTF8Decoder::new() }
 }
 
+/// An encoder for UTF-8.
 #[deriving(Clone)]
 pub struct UTF8Encoder;
 
@@ -67,6 +78,7 @@ impl Encoder for UTF8Encoder {
     }
 }
 
+/// A decoder for UTF-8.
 pub struct UTF8Decoder {
     queuelen: uint,
     queue: [u8, ..4],

@@ -8,6 +8,17 @@ use util::{as_char, StrCharIndex};
 use index = index::euc_kr;
 use types::*;
 
+/**
+ * Windows code page 949.
+ *
+ * This is a Korean encoding derived from EUC-KR,
+ * which is so widespread that most occurrences of EUC-KR actually mean this encoding.
+ * Unlike KS X 1001 (and EUC-KR) which only contains a set of 2,350 common Hangul syllables,
+ * it assigns remaining 8,822 Hangul syllables to the two-byte sequence
+ * which second byte have its MSB unset (i.e. `[81-C6] [41-5A 61-7A 81-FE]`).
+ * Its design strongly resembles that of Shift_JIS but less prone to errors
+ * since the set of MSB-unset second bytes is much limited compared to Shift_JIS.
+ */
 #[deriving(Clone)]
 pub struct Windows949Encoding;
 
@@ -18,6 +29,7 @@ impl Encoding for Windows949Encoding {
     fn decoder(&self) -> ~Decoder { Windows949Decoder::new() }
 }
 
+/// An encoder for Windows code page 949.
 #[deriving(Clone)]
 pub struct Windows949Encoder;
 
@@ -64,6 +76,7 @@ impl Encoder for Windows949Encoder {
     }
 }
 
+/// A decoder for Windows code page 949.
 #[deriving(Clone)]
 pub struct Windows949Decoder {
     lead: u8

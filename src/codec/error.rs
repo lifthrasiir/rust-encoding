@@ -7,6 +7,7 @@
 use std::str;
 use types::*;
 
+/// An encoding that returns encoder/decoder error for every case.
 #[deriving(Clone)]
 pub struct ErrorEncoding;
 
@@ -16,6 +17,7 @@ impl Encoding for ErrorEncoding {
     fn decoder(&self) -> ~Decoder { ErrorDecoder::new() }
 }
 
+/// An encoder that always returns error.
 #[deriving(Clone)]
 pub struct ErrorEncoder;
 
@@ -40,6 +42,7 @@ impl Encoder for ErrorEncoder {
     }
 }
 
+/// A decoder that always returns error.
 #[deriving(Clone)]
 pub struct ErrorDecoder;
 
