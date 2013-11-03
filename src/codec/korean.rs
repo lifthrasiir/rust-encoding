@@ -158,7 +158,9 @@ impl Decoder for Windows949Decoder {
     }
 
     fn raw_finish(&mut self, _output: &mut StringWriter) -> Option<CodecError> {
-        if self.lead != 0 {
+        let lead = self.lead;
+        self.lead = 0;
+        if lead != 0 {
             Some(CodecError { upto: 0, cause: "incomplete sequence".into_send_str() })
         } else {
             None
@@ -259,6 +261,15 @@ mod windows949_tests {
         let mut d = Windows949Encoding.decoder();
         assert_feed_ok!(d, [], [0xc6], "");
         assert_feed_err!(d, [], [], [0x53], "");
+        assert_finish_ok!(d, "");
+    }
+
+    #[test]
+    fn test_decoder_feed_after_finish() {
+        let mut d = Windows949Encoding.decoder();
+        assert_feed_ok!(d, [0xb0, 0xa1], [0xb0], "\uac00");
+        assert_finish_err!(d, "");
+        assert_feed_ok!(d, [0xb0, 0xa1], [], "\uac00");
         assert_finish_ok!(d, "");
     }
 }

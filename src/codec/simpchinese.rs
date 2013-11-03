@@ -158,7 +158,9 @@ impl Decoder for GBK18030Decoder {
     }
 
     fn raw_finish(&mut self, _output: &mut StringWriter) -> Option<CodecError> {
-        if self.first != 0 {
+        let first = self.first;
+        self.first = 0;
+        if first != 0 {
             Some(CodecError { upto: 0, cause: "incomplete sequence".into_send_str() })
         } else {
             None
@@ -209,5 +211,14 @@ mod gbk18030_tests {
     }
 
     // TODO more tests
+
+    #[test]
+    fn test_decoder_feed_after_finish() {
+        let mut d = GBK18030Encoding.decoder();
+        assert_feed_ok!(d, [0xd2, 0xbb], [0xd2], "\u4e00");
+        assert_finish_err!(d, "");
+        assert_feed_ok!(d, [0xd2, 0xbb], [], "\u4e00");
+        assert_finish_ok!(d, "");
+    }
 }
 

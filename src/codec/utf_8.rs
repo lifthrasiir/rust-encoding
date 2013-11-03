@@ -192,10 +192,14 @@ impl Decoder for UTF8Decoder {
     }
 
     fn raw_finish(&mut self, _output: &mut StringWriter) -> Option<CodecError> {
-        if self.state != ACCEPT_STATE {
+        let state = self.state;
+        let queuelen = self.queuelen;
+        self.state = INITIAL_STATE;
+        self.queuelen = 0;
+        if state != ACCEPT_STATE {
             Some(CodecError { upto: 0, cause: "incomplete sequence".into_send_str() })
         } else {
-            assert!(self.queuelen == 0);
+            assert!(queuelen == 0);
             None
         }
     }
@@ -566,6 +570,15 @@ mod tests {
 
         let mut d = UTF8Encoding.decoder();
         assert_feed_err!(d, [], [0xf0], [0x8f, 0xbf, 0xbf], "");
+        assert_finish_ok!(d, "");
+    }
+
+    #[test]
+    fn test_feed_after_finish() {
+        let mut d = UTF8Encoding.decoder();
+        assert_feed_ok!(d, [0xc2, 0x80], [0xc2], "\x80");
+        assert_finish_err!(d, "");
+        assert_feed_ok!(d, [0xc2, 0x80], [], "\x80");
         assert_finish_ok!(d, "");
     }
 }

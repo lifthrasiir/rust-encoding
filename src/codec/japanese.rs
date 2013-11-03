@@ -223,7 +223,11 @@ impl Decoder for EUCJP0212Decoder {
     }
 
     fn raw_finish(&mut self, _output: &mut StringWriter) -> Option<CodecError> {
-        if self.second != 0 || self.first != 0 {
+        let first = self.first;
+        let second = self.second;
+        self.first = 0;
+        self.second = 0;
+        if second != 0 || first != 0 {
             Some(CodecError { upto: 0, cause: "incomplete sequence".into_send_str() })
         } else {
             None
@@ -276,6 +280,15 @@ mod eucjp_tests {
     }
 
     // TODO more tests
+
+    #[test]
+    fn test_decoder_feed_after_finish() {
+        let mut d = EUCJPEncoding.decoder();
+        assert_feed_ok!(d, [0xa4, 0xa2], [0xa4], "\u3042");
+        assert_finish_err!(d, "");
+        assert_feed_ok!(d, [0xa4, 0xa2], [], "\u3042");
+        assert_finish_ok!(d, "");
+    }
 }
 
 /**
@@ -434,7 +447,9 @@ impl Decoder for Windows31JDecoder {
     }
 
     fn raw_finish(&mut self, _output: &mut StringWriter) -> Option<CodecError> {
-        if self.lead != 0 {
+        let lead = self.lead;
+        self.lead = 0;
+        if lead != 0 {
             Some(CodecError { upto: 0, cause: "incomplete sequence".into_send_str() })
         } else {
             None
@@ -485,5 +500,14 @@ mod windows31j_tests {
     }
 
     // TODO more tests
+
+    #[test]
+    fn test_decoder_feed_after_finish() {
+        let mut d = Windows31JEncoding.decoder();
+        assert_feed_ok!(d, [0x82, 0xa0], [0x82], "\u3042");
+        assert_finish_err!(d, "");
+        assert_feed_ok!(d, [0x82, 0xa0], [], "\u3042");
+        assert_finish_ok!(d, "");
+    }
 }
 
