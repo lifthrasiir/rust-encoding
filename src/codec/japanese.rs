@@ -123,7 +123,9 @@ impl Decoder for EUCJP0212Decoder {
         let mut processed = 0;
         let len = input.len();
 
-        if i < len && self.first != 0 {
+        if i >= len { return (processed, None); }
+
+        if self.first != 0 {
             match (self.first, input[i]) {
                 (0x8e, 0xa1..0xdf) => {
                     output.write_char(as_char(0xff61 + input[i] as uint - 0xa1));
@@ -145,9 +147,10 @@ impl Decoder for EUCJP0212Decoder {
                 }
             }
             i += 1;
+            if i >= len { return (processed, None); }
         }
 
-        if i < len && self.second != 0 {
+        if self.second != 0 {
             let ch = map_two_0212_bytes(self.second, input[i]);
             if ch == 0xffff {
                 self.second = 0;
@@ -398,7 +401,9 @@ impl Decoder for Windows31JDecoder {
         let mut processed = 0;
         let len = input.len();
 
-        if i < len && self.lead != 0 {
+        if i >= len { return (processed, None); }
+
+        if self.lead != 0 {
             let ch = map_two_0208_bytes(self.lead, input[i]);
             if ch == 0xffff {
                 self.lead = 0;

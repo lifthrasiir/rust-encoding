@@ -221,9 +221,9 @@ pub fn encoding_from_whatwg_label(label: &str) -> Option<&'static types::Encodin
         "iso-ir-58" |
         "x-gbk" =>
             Some(all::GBK18030 as &'static types::Encoding),
-        /*
         "gb18030" =>
             Some(all::GB18030 as &'static types::Encoding),
+        /*
         "hz-gb-2312" =>
             Some(all::HZ_GB_2312 as &'static types::Encoding),
         "big5" |
@@ -261,11 +261,8 @@ pub fn encoding_from_whatwg_label(label: &str) -> Option<&'static types::Encodin
         "ksc_5601" |
         "windows-949" =>
             Some(all::WINDOWS_949 as &'static types::Encoding),
-        /*
         "csiso2022kr" |
-        "iso-2022-kr" =>
-            Some(all::ISO_2022_KR as &'static types::Encoding),
-        */
+        "iso-2022-kr" |
         "iso-2022-cn" |
         "iso-2022-cn-ext" =>
             Some(all::whatwg::REPLACEMENT as &'static types::Encoding),

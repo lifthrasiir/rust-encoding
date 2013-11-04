@@ -114,7 +114,9 @@ impl Decoder for Windows949Decoder {
         let mut processed = 0;
         let len = input.len();
 
-        if i < len && self.lead != 0 {
+        if i >= len { return (processed, None); }
+
+        if self.lead != 0 {
             let ch = map_two_bytes(self.lead, input[i]);
             if ch == 0xffff {
                 self.lead = 0;

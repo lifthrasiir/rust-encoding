@@ -56,6 +56,7 @@ pub mod index {
     pub mod big5;
     pub mod euc_kr;
     pub mod gbk;
+    pub mod gb18030;
     pub mod jis0208;
     pub mod jis0212;
 }

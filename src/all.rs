@@ -62,6 +62,7 @@ unique!(var=WINDOWS_949, mod=korean, val=Windows949Encoding)
 unique!(var=EUC_JP, mod=japanese, val=EUCJPEncoding)
 unique!(var=WINDOWS_31J, mod=japanese, val=Windows31JEncoding)
 unique!(var=GBK18030, mod=simpchinese, val=GBK18030Encoding)
+unique!(var=GB18030, mod=simpchinese, val=GB18030Encoding)
 
 pub mod whatwg {
     use codec;

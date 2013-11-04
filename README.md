@@ -86,6 +86,7 @@ Rust-encoding is a work in progress and this list will certainly be updated.
       1254 (instead of ISO-8859-9), 1255, 1256, 1257, 1258
 * Multi byte encodings in WHATWG Encoding Standard:
     * Windows code page 949 (`euc-kr`, since the strict EUC-KR is hardly used)
-    * EUC-JP and Shift_JIS
-    * GB 18030 version of GBK
+    * EUC-JP and WIndows code page 932 (`shift_jis`,
+      since it's the most widespread extension to Shift_JIS)
+    * GB 18030 and its GBK subset
 
