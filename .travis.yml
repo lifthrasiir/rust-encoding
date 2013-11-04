@@ -5,4 +5,7 @@ install:
   - sudo apt-get install rust-nightly
 script:
   - ./configure
-  - make check
+  - make check RUSTFLAGS=
+branches:
+  only:
+    - rust-0.9-pre
