@@ -48,8 +48,8 @@ impl Encoder for SingleByteEncoder {
             }
             if ch <= '\uffff' {
                 let index = (self.index_backward)(ch as u16);
-                if index != 0xff {
-                    output.write_byte((index + 0x80) as u8);
+                if index != 0 {
+                    output.write_byte(index);
                     continue;
                 }
             }
@@ -90,7 +90,7 @@ impl Decoder for SingleByteDecoder {
             if input[i] <= 0x7f {
                 output.write_char(input[i] as char);
             } else {
-                let ch = (self.index_forward)(input[i] - 0x80);
+                let ch = (self.index_forward)(input[i]);
                 if ch != 0xffff {
                     output.write_char(as_char(ch));
                 } else {
@@ -107,6 +107,12 @@ impl Decoder for SingleByteDecoder {
     fn raw_finish(&mut self, _output: &mut StringWriter) -> Option<CodecError> {
         None
     }
+}
+
+/// Algorithmic mapping for ISO 8859-1.
+pub mod iso_8859_1 {
+    #[inline] pub fn forward(code: u8) -> u16 { code as u16 }
+    #[inline] pub fn backward(code: u16) -> u8 { if (code & !0x7f) == 0x80 {code as u8} else {0} }
 }
 
 #[cfg(test)]

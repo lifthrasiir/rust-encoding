@@ -49,15 +49,14 @@ def generate_single_byte_index(name):
         print >>f
         print >>f, '#[inline]'
         print >>f, 'pub fn forward(code: u8) -> u16 {'
-        print >>f, '    FORWARD_TABLE[code as uint]'
+        print >>f, '    FORWARD_TABLE[(code - 0x80) as uint]'
         print >>f, '}'
         print >>f
-        print >>f, '#[inline]'
         print >>f, 'pub fn backward(code: u16) -> u8 {'
         print >>f, '    match code {'
         write_comma_separated(f, '        ',
-            ['%d => %d, ' % (value, i) for i, value in enumerate(data) if value is not None] +
-            ['_ => 255'])
+            ['%d => %d, ' % (value, i+128) for i, value in enumerate(data) if value is not None] +
+            ['_ => 0'])
         print >>f, '    }'
         print >>f, '}'
         print >>f
@@ -67,7 +66,8 @@ def generate_single_byte_index(name):
         print >>f
         print >>f, '    #[test]'
         print >>f, '    fn test_correct_table() {'
-        print >>f, '        for i in range(0u8, 128) {'
+        print >>f, '        for i in range(128, 256) {'
+        print >>f, '            let i = i as u8;'
         print >>f, '            let j = forward(i);'
         print >>f, '            if j != 0xffff { assert_eq!(backward(j), i); }'
         print >>f, '        }'
@@ -92,6 +92,15 @@ def generate_multi_byte_index(name):
             invdata[value] = key
         else:
             dups.append(key)
+
+    # Big5 has four two-letter forward mappings, we use special entries for them
+    if name == 'big5':
+        specialidx = [1133, 1135, 1164, 1166]
+        assert all(key not in data for key in specialidx)
+        assert all(value not in invdata for value in xrange(len(specialidx)))
+        for value, key in enumerate(specialidx):
+            data[key] = value
+            dups.append(key) # no consistency testing for them
 
     # generate a trie with a minimal amount of data
     maxvalue = max(data.values()) + 1
@@ -178,8 +187,8 @@ def generate_multi_byte_index(name):
         print >>f, '    fn test_correct_table() {'
         print >>f, '        for i in range(0u32, 0x10000) {'
         print >>f, '            let i = i as u16;'
-        for i in dups:
-            print >>f, '            if i == %d { loop; }' % i
+        for i in sorted(dups):
+            print >>f, '            if i == %d { continue; }' % i
         print >>f, '            let j = forward(i);'
         print >>f, '            if j != 0xffff { assert_eq!(backward(j), i); }'
         print >>f, '        }'
@@ -263,10 +272,10 @@ def generate_multi_byte_range_lbound_index(name):
         print >>f, '    fn test_correct_table() {'
         print >>f, '        for i in range(%du32, %d) {' % (minkey, maxkey+2)
         print >>f, '            let j = forward(i);'
-        print >>f, '            if j == 0xffffffff { loop; }'
+        print >>f, '            if j == 0xffffffff { continue; }'
         print >>f, '            let i_ = backward(j);'
-        print >>f, '            if i_ == 0xffffffff { loop; }'
-        print >>f, '            assert!(i_ == i, "backward(forward(%?)) = backward(%?) = %? != %?", i, j, i_, i);'
+        print >>f, '            if i_ == 0xffffffff { continue; }'
+        print >>f, '            assert!(i_ == i, "backward(forward({})) = backward({}) = {} != {}", i, j, i_, i);'
         print >>f, '        }'
         print >>f, '    }'
         print >>f, '}'

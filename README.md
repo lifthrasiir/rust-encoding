@@ -12,7 +12,7 @@ To encode a string:
 
 ~~~~ {.rust}
 use encoding::*;
-all::ISO_8859_2.encode("caf\xe9", Strict); // => Ok(~[99,97,102,233])
+all::ISO_8859_1.encode("caf\xe9", Strict); // => Ok(~[99,97,102,233])
 ~~~~
 
 To encode a string with unrepresentable characters:
@@ -27,7 +27,7 @@ all::ISO_8859_2.encode("Acme\xa9", NcrEscape); // => Ok(~[65,99,109,101,38,23,50
 To decode a byte sequence:
 
 ~~~~ {.rust}
-all::ISO_8859_2.decode([99,97,102,233], Strict); // => Ok(~"caf\xe9")
+all::ISO_8859_1.decode([99,97,102,233], Strict); // => Ok(~"caf\xe9")
 ~~~~
 
 To decode a byte sequence with invalid sequences:
@@ -77,16 +77,19 @@ Rust-encoding is a work in progress and this list will certainly be updated.
 
 * 7-bit strict ASCII (`ascii`)
 * UTF-8 (`utf-8`)
+* UTF-16 in little endian (`utf-16` or `utf-16le`) and big endian (`utf-16be`)
 * All single byte encoding in WHATWG Encoding Standard:
     * IBM code page 866
-    * ISO-8859-{2,3,4,5,6,7,8,10,13,14,15,16}
+    * ISO 8859-{2,3,4,5,6,7,8,10,13,14,15,16}
     * KOI8-R, KOI8-U
     * MacRoman (`macintosh`), Macintosh Cyrillic encoding (`x-mac-cyrillic`)
     * Windows code page 874, 1250, 1251, 1252 (instead of ISO-8859-1), 1253,
       1254 (instead of ISO-8859-9), 1255, 1256, 1257, 1258
 * Multi byte encodings in WHATWG Encoding Standard:
     * Windows code page 949 (`euc-kr`, since the strict EUC-KR is hardly used)
-    * EUC-JP and WIndows code page 932 (`shift_jis`,
+    * EUC-JP and Windows code page 932 (`shift_jis`,
       since it's the most widespread extension to Shift_JIS)
     * GB 18030 and its GBK subset
+    * Big5-2003 with HKSCS-2008 extensions
+* ISO 8859-1 (distinct from Windows code page 1252)
 

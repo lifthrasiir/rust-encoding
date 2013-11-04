@@ -99,7 +99,7 @@ mod tests {
             if j == 0xffffffff { continue; }
             let i_ = backward(j);
             if i_ == 0xffffffff { continue; }
-            assert!(i_ == i, "backward(forward({:?})) = backward({:?}) = {:?} != {:?}", i, j, i_, i);
+            assert!(i_ == i, "backward(forward({})) = backward({}) = {} != {}", i, j, i_, i);
         }
     }
 }
