@@ -49,14 +49,14 @@ def generate_single_byte_index(name):
         print >>f
         print >>f, '#[inline]'
         print >>f, 'pub fn forward(code: u8) -> u16 {'
-        print >>f, '    FORWARD_TABLE[code as uint]'
+        print >>f, '    FORWARD_TABLE[(code - 0x80) as uint]'
         print >>f, '}'
         print >>f
         print >>f, 'pub fn backward(code: u16) -> u8 {'
         print >>f, '    match code {'
         write_comma_separated(f, '        ',
-            ['%d => %d, ' % (value, i) for i, value in enumerate(data) if value is not None] +
-            ['_ => 255'])
+            ['%d => %d, ' % (value, i+128) for i, value in enumerate(data) if value is not None] +
+            ['_ => 0'])
         print >>f, '    }'
         print >>f, '}'
         print >>f
@@ -66,7 +66,8 @@ def generate_single_byte_index(name):
         print >>f
         print >>f, '    #[test]'
         print >>f, '    fn test_correct_table() {'
-        print >>f, '        for i in range(0u8, 128) {'
+        print >>f, '        for i in range(128, 256) {'
+        print >>f, '            let i = i as u8;'
         print >>f, '            let j = forward(i);'
         print >>f, '            if j != 0xffff { assert_eq!(backward(j), i); }'
         print >>f, '        }'

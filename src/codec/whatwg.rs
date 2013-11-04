@@ -23,12 +23,12 @@ impl Encoding for EncoderOnlyUTF8Encoding {
 pub mod x_user_defined {
     #[inline]
     pub fn forward(code: u8) -> u16 {
-        0xf780 + (code as u16)
+        0xf700 | (code as u16)
     }
 
     #[inline]
     pub fn backward(code: u16) -> u8 {
-        if 0xf780 <= code && code <= 0xf7ff {(code - 0xf780) as u8} else {0xff}
+        if (code & !0x7f) == 0xf780 {(code & 0xff) as u8} else {0}
     }
 }
 
