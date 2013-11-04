@@ -63,6 +63,7 @@ unique!(var=EUC_JP, mod=japanese, val=EUCJPEncoding)
 unique!(var=WINDOWS_31J, mod=japanese, val=Windows31JEncoding)
 unique!(var=GBK18030, mod=simpchinese, val=GBK18030Encoding)
 unique!(var=GB18030, mod=simpchinese, val=GB18030Encoding)
+unique!(var=BIG5_2003, mod=tradchinese, val=BigFive2003Encoding)
 
 pub mod whatwg {
     use codec;

@@ -226,13 +226,13 @@ pub fn encoding_from_whatwg_label(label: &str) -> Option<&'static types::Encodin
         /*
         "hz-gb-2312" =>
             Some(all::HZ_GB_2312 as &'static types::Encoding),
+        */
         "big5" |
         "big5-hkscs" |
         "cn-big5" |
         "csbig5" |
         "x-x-big5" =>
-            Some(all::BIG5 as &'static types::Encoding),
-        */
+            Some(all::BIG5_2003 as &'static types::Encoding),
         "cseucpkdfmtjapanese" |
         "euc-jp" |
         "x-euc-jp" =>

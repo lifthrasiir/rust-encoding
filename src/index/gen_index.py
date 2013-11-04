@@ -92,6 +92,15 @@ def generate_multi_byte_index(name):
         else:
             dups.append(key)
 
+    # Big5 has four two-letter forward mappings, we use special entries for them
+    if name == 'big5':
+        specialidx = [1133, 1135, 1164, 1166]
+        assert all(key not in data for key in specialidx)
+        assert all(value not in invdata for value in xrange(len(specialidx)))
+        for value, key in enumerate(specialidx):
+            data[key] = value
+            dups.append(key) # no consistency testing for them
+
     # generate a trie with a minimal amount of data
     maxvalue = max(data.values()) + 1
     best = 0xffffffff
@@ -177,7 +186,7 @@ def generate_multi_byte_index(name):
         print >>f, '    fn test_correct_table() {'
         print >>f, '        for i in range(0u32, 0x10000) {'
         print >>f, '            let i = i as u16;'
-        for i in dups:
+        for i in sorted(dups):
             print >>f, '            if i == %d { loop; }' % i
         print >>f, '            let j = forward(i);'
         print >>f, '            if j != 0xffff { assert_eq!(backward(j), i); }'

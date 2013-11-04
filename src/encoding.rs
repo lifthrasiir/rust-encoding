@@ -70,6 +70,7 @@ pub mod codec {
     pub mod korean;
     pub mod japanese;
     pub mod simpchinese;
+    pub mod tradchinese;
     pub mod whatwg;
 }
 
