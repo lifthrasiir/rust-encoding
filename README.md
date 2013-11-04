@@ -77,6 +77,7 @@ Rust-encoding is a work in progress and this list will certainly be updated.
 
 * 7-bit strict ASCII (`ascii`)
 * UTF-8 (`utf-8`)
+* UTF-16 in little endian (`utf-16` or `utf-16le`) and big endian (`utf-16be`)
 * All single byte encoding in WHATWG Encoding Standard:
     * IBM code page 866
     * ISO-8859-{2,3,4,5,6,7,8,10,13,14,15,16}

@@ -67,6 +67,7 @@ pub mod codec {
     pub mod ascii;
     pub mod singlebyte;
     pub mod utf_8;
+    pub mod utf_16;
     pub mod korean;
     pub mod japanese;
     pub mod simpchinese;

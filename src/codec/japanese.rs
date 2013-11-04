@@ -126,7 +126,8 @@ impl Decoder for EUCJP0212Decoder {
         if i >= len { return (processed, None); }
 
         if self.first != 0 {
-            match (self.first, input[i]) {
+            let first = self.first;
+            match (first, input[i]) {
                 (0x8e, 0xa1..0xdf) => {
                     output.write_char(as_char(0xff61 + input[i] as uint - 0xa1));
                 }
@@ -147,7 +148,10 @@ impl Decoder for EUCJP0212Decoder {
                 }
             }
             i += 1;
-            if i >= len { return (processed, None); }
+            if i >= len {
+                self.first = 0;
+                return (processed, None);
+            }
         }
 
         if self.second != 0 {

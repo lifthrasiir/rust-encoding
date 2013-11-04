@@ -266,13 +266,11 @@ pub fn encoding_from_whatwg_label(label: &str) -> Option<&'static types::Encodin
         "iso-2022-cn" |
         "iso-2022-cn-ext" =>
             Some(all::whatwg::REPLACEMENT as &'static types::Encoding),
-        /*
         "utf-16be" =>
             Some(all::UTF_16BE as &'static types::Encoding),
         "utf-16" |
         "utf-16le" =>
             Some(all::UTF_16LE as &'static types::Encoding),
-        */
         "x-user-defined" =>
             Some(all::whatwg::X_USER_DEFINED as &'static types::Encoding),
         _ => None
