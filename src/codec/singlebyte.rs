@@ -109,6 +109,12 @@ impl Decoder for SingleByteDecoder {
     }
 }
 
+/// Algorithmic mapping for ISO 8859-1.
+pub mod iso_8859_1 {
+    #[inline] pub fn forward(code: u8) -> u16 { (code + 0x80) as u16 }
+    #[inline] pub fn backward(code: u16) -> u8 { if code < 0x100 {(code - 0x80) as u8} else {0xff} }
+}
+
 #[cfg(test)]
 mod tests {
     use all::ISO_8859_2;

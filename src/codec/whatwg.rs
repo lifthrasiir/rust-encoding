@@ -19,14 +19,16 @@ impl Encoding for EncoderOnlyUTF8Encoding {
     fn decoder(&self) -> ~Decoder { codec::error::ErrorEncoding.decoder() }
 }
 
-// indices for x-user-defined encoding
-#[inline]
-pub fn x_user_defined_forward(code: u8) -> u16 {
-    0xf780 + (code as u16)
-}
+/// Algorithmic mapping for `x-user-defined` encoding.
+pub mod x_user_defined {
+    #[inline]
+    pub fn forward(code: u8) -> u16 {
+        0xf780 + (code as u16)
+    }
 
-#[inline]
-pub fn x_user_defined_backward(code: u16) -> u8 {
-    if 0xf780 <= code && code <= 0xf7ff {(code - 0xf780) as u8} else {0xff}
+    #[inline]
+    pub fn backward(code: u16) -> u8 {
+        if 0xf780 <= code && code <= 0xf7ff {(code - 0xf780) as u8} else {0xff}
+    }
 }
 
