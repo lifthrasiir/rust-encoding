@@ -52,7 +52,6 @@ def generate_single_byte_index(name):
         print >>f, '    FORWARD_TABLE[code as uint]'
         print >>f, '}'
         print >>f
-        print >>f, '#[inline]'
         print >>f, 'pub fn backward(code: u16) -> u8 {'
         print >>f, '    match code {'
         write_comma_separated(f, '        ',

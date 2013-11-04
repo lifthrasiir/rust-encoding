@@ -25,7 +25,6 @@ pub fn forward(code: u8) -> u16 {
     FORWARD_TABLE[code as uint]
 }
 
-#[inline]
 pub fn backward(code: u16) -> u8 {
     match code {
         1026 => 0, 1027 => 1, 8218 => 2, 1107 => 3, 8222 => 4, 8230 => 5,
