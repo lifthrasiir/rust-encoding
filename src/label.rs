@@ -2,7 +2,7 @@
 // Copyright (c) 2013, Kang Seonghoon.
 // See README.md and LICENSE.txt for details.
 
-//! An interface for retrieving an encoding (or a set of encodings) from a string label.
+//! An interface for retrieving an encoding (or a set of encodings) from a string/numeric label.
 
 use std::ascii::StrAsciiExt;
 use all;
@@ -273,6 +273,56 @@ pub fn encoding_from_whatwg_label(label: &str) -> Option<&'static types::Encodin
             Some(all::UTF_16LE as &'static types::Encoding),
         "x-user-defined" =>
             Some(all::whatwg::X_USER_DEFINED as &'static types::Encoding),
+        _ => None
+    }
+}
+
+/// Returns an encoding from Windows code page number.
+/// http://msdn.microsoft.com/en-us/library/windows/desktop/dd317756%28v=vs.85%29.aspx
+/// Sometimes it can return a *superset* of the requested encoding, e.g. for several CJK encodings.
+pub fn encoding_from_windows_code_page(cp: uint) -> Option<&'static types::Encoding> {
+    match cp {
+        65001 => Some(all::UTF_8 as &'static types::Encoding),
+        866 => Some(all::IBM866 as &'static types::Encoding),
+        28591 => Some(all::ISO_8859_1 as &'static types::Encoding),
+        28592 => Some(all::ISO_8859_2 as &'static types::Encoding),
+        28593 => Some(all::ISO_8859_3 as &'static types::Encoding),
+        28594 => Some(all::ISO_8859_4 as &'static types::Encoding),
+        28595 => Some(all::ISO_8859_5 as &'static types::Encoding),
+        28596 => Some(all::ISO_8859_6 as &'static types::Encoding),
+        28597 => Some(all::ISO_8859_7 as &'static types::Encoding),
+        28598 => Some(all::ISO_8859_8 as &'static types::Encoding),
+        38598 => Some(all::whatwg::ISO_8859_8_I as &'static types::Encoding),
+        28603 => Some(all::ISO_8859_13 as &'static types::Encoding),
+        28605 => Some(all::ISO_8859_15 as &'static types::Encoding),
+        20866 => Some(all::KOI8_R as &'static types::Encoding),
+        21866 => Some(all::KOI8_U as &'static types::Encoding),
+        10000 => Some(all::MACINTOSH as &'static types::Encoding),
+        874 => Some(all::WINDOWS_874 as &'static types::Encoding),
+        1250 => Some(all::WINDOWS_1250 as &'static types::Encoding),
+        1251 => Some(all::WINDOWS_1251 as &'static types::Encoding),
+        1252 => Some(all::WINDOWS_1252 as &'static types::Encoding),
+        1253 => Some(all::WINDOWS_1253 as &'static types::Encoding),
+        1254 => Some(all::WINDOWS_1254 as &'static types::Encoding),
+        1255 => Some(all::WINDOWS_1255 as &'static types::Encoding),
+        1256 => Some(all::WINDOWS_1256 as &'static types::Encoding),
+        1257 => Some(all::WINDOWS_1257 as &'static types::Encoding),
+        1258 => Some(all::WINDOWS_1258 as &'static types::Encoding),
+        1259 => Some(all::X_MAC_CYRILLIC as &'static types::Encoding),
+        936 => Some(all::GBK18030 as &'static types::Encoding),
+        54936 => Some(all::GB18030 as &'static types::Encoding),
+        /*
+        52936 => Some(all::HZ_GB_2312 as &'static types::Encoding),
+        */
+        950 => Some(all::BIG5_2003 as &'static types::Encoding),
+        20932 => Some(all::EUC_JP as &'static types::Encoding),
+        /*
+        50220 => Some(all::ISO_2022_JP as &'static types::Encoding),
+        */
+        932 => Some(all::WINDOWS_31J as &'static types::Encoding),
+        949 => Some(all::WINDOWS_949 as &'static types::Encoding),
+        1201 => Some(all::UTF_16BE as &'static types::Encoding),
+        1200 => Some(all::UTF_16LE as &'static types::Encoding),
         _ => None
     }
 }
