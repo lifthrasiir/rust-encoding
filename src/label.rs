@@ -346,9 +346,9 @@ mod tests {
 
     #[bench]
     fn bench_encoding_from_whatwg_label(harness: &mut extra::test::BenchHarness) {
-        do harness.iter() {
+        harness.iter(|| {
             encoding_from_whatwg_label("iso-8859-bazinga");
-        }
+        })
     }
 }
 

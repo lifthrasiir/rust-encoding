@@ -403,7 +403,7 @@ impl EncoderTrap {
             EncodeIgnore => true,
             EncodeNcrEscape => {
                 let mut escapes = ~"";
-                for ch in input.iter() { escapes.push_str(format!("&\\#{:d};", ch as int)); }
+                for ch in input.chars() { escapes.push_str(format!("&\\#{:d};", ch as int)); }
                 reencode(encoder, escapes, output, "NcrEscape")
             },
             EncoderTrap(func) => func(encoder, input, output),

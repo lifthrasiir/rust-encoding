@@ -259,7 +259,7 @@ impl Encoder for GB18030Encoder {
     fn raw_feed(&mut self, input: &str, output: &mut ByteWriter) -> (uint, Option<CodecError>) {
         output.writer_hint(input.len());
 
-        for ch in input.iter() {
+        for ch in input.chars() {
             if ch < '\u0080' {
                 output.write_byte(ch as u8);
             } else {
