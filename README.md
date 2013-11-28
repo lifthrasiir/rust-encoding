@@ -12,30 +12,30 @@ To encode a string:
 
 ~~~~ {.rust}
 use encoding::*;
-all::ISO_8859_1.encode("caf\xe9", Strict); // => Ok(~[99,97,102,233])
+all::ISO_8859_1.encode("caf\xe9", EncodeStrict); // => Ok(~[99,97,102,233])
 ~~~~
 
 To encode a string with unrepresentable characters:
 
 ~~~~ {.rust}
-all::ISO_8859_2.encode("Acme\xa9", Strict); // => Err(...)
-all::ISO_8859_2.encode("Acme\xa9", Replace); // => Ok(~[65,99,109,101,63])
-all::ISO_8859_2.encode("Acme\xa9", Ignore); // => Ok(~[65,99,109,101])
-all::ISO_8859_2.encode("Acme\xa9", NcrEscape); // => Ok(~[65,99,109,101,38,23,50,51,51,59])
+all::ISO_8859_2.encode("Acme\xa9", EncodeStrict); // => Err(...)
+all::ISO_8859_2.encode("Acme\xa9", EncodeReplace); // => Ok(~[65,99,109,101,63])
+all::ISO_8859_2.encode("Acme\xa9", EncodeIgnore); // => Ok(~[65,99,109,101])
+all::ISO_8859_2.encode("Acme\xa9", EncodeNcrEscape); // => Ok(~[65,99,109,101,38,23,50,51,51,59])
 ~~~~
 
 To decode a byte sequence:
 
 ~~~~ {.rust}
-all::ISO_8859_1.decode([99,97,102,233], Strict); // => Ok(~"caf\xe9")
+all::ISO_8859_1.decode([99,97,102,233], DecodeStrict); // => Ok(~"caf\xe9")
 ~~~~
 
 To decode a byte sequence with invalid sequences:
 
 ~~~~ {.rust}
-all::ISO_8859_6.decode([65,99,109,101,169], Strict); // => Err(...)
-all::ISO_8859_6.decode([65,99,109,101,169], Replace); // => Ok(~"Acme\ufffd")
-all::ISO_8859_6.decode([65,99,109,101,169], Ignore); // => Ok(~"Acme")
+all::ISO_8859_6.decode([65,99,109,101,169], DecodeStrict); // => Err(...)
+all::ISO_8859_6.decode([65,99,109,101,169], DecodeReplace); // => Ok(~"Acme\ufffd")
+all::ISO_8859_6.decode([65,99,109,101,169], DecodeIgnore); // => Ok(~"Acme")
 ~~~~
 
 A practical example of custom encoder traps:
@@ -49,11 +49,11 @@ fn hex_ncr_escape(_encoder: &Encoder, input: &str, output: &mut ByteWriter) -> b
     output.write_bytes(escapes.as_bytes());
     true
 }
-static HexNcrEscape: Trap = EncoderTrap(hex_ncr_escape);
+let HexNcrEscape = EncoderTrap(hex_ncr_escape);
 
 let orig = ~"Hello, 世界!";
 let encoded = all::ASCII.encode(orig, HexNcrEscape).unwrap();
-all::ASCII.decode(encoded, Strict); // => Ok(~"Hello, &#x4e16;&#x754c;!")
+all::ASCII.decode(encoded, DecodeStrict); // => Ok(~"Hello, &#x4e16;&#x754c;!")
 ~~~~
 
 Getting the encoding from the string label,
@@ -64,10 +64,10 @@ let euckr = label::encoding_from_whatwg_label("euc-kr").unwrap();
 euckr.name(); // => "windows-949"
 euckr.whatwg_name(); // => Some("euc-kr"), for the sake of compatibility
 let broken = &[0xbf, 0xec, 0xbf, 0xcd, 0xff, 0xbe, 0xd3];
-euckr.decode(broken, Replace); // => Ok(~"\uc6b0\uc640\ufffd\uc559")
+euckr.decode(broken, DecodeReplace); // => Ok(~"\uc6b0\uc640\ufffd\uc559")
 
 // corresponding rust-encoding native API:
-all::WINDOWS_949.decode(broken, Replace); // => Ok(~"\uc6b0\uc640\ufffd\uc559")
+all::WINDOWS_949.decode(broken, DecodeReplace); // => Ok(~"\uc6b0\uc640\ufffd\uc559")
 ~~~~
 
 Supported Encodings
