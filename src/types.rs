@@ -411,3 +411,20 @@ impl EncoderTrap {
     }
 }
 
+
+/// Determine the encoding by looking for a Byte Order Mark (BOM)
+/// and decoded a single string in memory.
+/// Return the result and the used encoding.
+pub fn decode(input: &[u8], trap: DecoderTrap, fallback_encoding: &'static Encoding)
+           -> (Result<~str,SendStr>, &'static Encoding) {
+    use all::{UTF_8, UTF_16LE, UTF_16BE};
+    if input.starts_with([0xEF, 0xBB, 0xBF]) {
+        (UTF_8.decode(input.slice_from(3), trap), UTF_8 as &'static Encoding)
+    } else if input.starts_with([0xFE, 0xFF]) {
+        (UTF_16BE.decode(input.slice_from(2), trap), UTF_16BE as &'static Encoding)
+    } else if input.starts_with([0xFF, 0xFE]) {
+        (UTF_16LE.decode(input.slice_from(2), trap), UTF_16LE as &'static Encoding)
+    } else {
+        (fallback_encoding.decode(input, trap), fallback_encoding)
+    }
+}
