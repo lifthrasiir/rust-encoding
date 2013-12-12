@@ -224,6 +224,10 @@ pub trait Decoder {
     }
 }
 
+/// A trait object using dynamic dispatch,
+/// for code where the encoding is not known at compile-time.
+pub type EncodingObj = &'static Encoding: Send;
+
 /// Character encoding.
 pub trait Encoding {
     /// Returns the canonical name of given encoding.
