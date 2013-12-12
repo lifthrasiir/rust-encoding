@@ -6,21 +6,21 @@
 
 use std::ascii::StrAsciiExt;
 use all;
-use types;
+use types::EncodingRef;
 
 /// Returns an encoding from given label, defined in the WHATWG Encoding standard, if any.
 /// Implements "get an encoding" algorithm: http://encoding.spec.whatwg.org/#decode
-pub fn encoding_from_whatwg_label(label: &str) -> Option<&'static types::Encoding> {
+pub fn encoding_from_whatwg_label(label: &str) -> Option<EncodingRef> {
     match label.trim_chars(& &[' ', '\n', '\r', '\t', '\x0C']).to_ascii_lower().as_slice() {
         "unicode-1-1-utf-8" |
         "utf-8" |
         "utf8" =>
-            Some(all::UTF_8 as &'static types::Encoding),
+            Some(all::UTF_8 as EncodingRef),
         "866" |
         "cp866" |
         "csibm866" |
         "ibm866" =>
-            Some(all::IBM866 as &'static types::Encoding),
+            Some(all::IBM866 as EncodingRef),
         "csisolatin2" |
         "iso-8859-2" |
         "iso-ir-101" |
@@ -30,7 +30,7 @@ pub fn encoding_from_whatwg_label(label: &str) -> Option<&'static types::Encodin
         "iso_8859-2:1987" |
         "l2" |
         "latin2" =>
-            Some(all::ISO_8859_2 as &'static types::Encoding),
+            Some(all::ISO_8859_2 as EncodingRef),
         "csisolatin3" |
         "iso-8859-3" |
         "iso-ir-109" |
@@ -40,7 +40,7 @@ pub fn encoding_from_whatwg_label(label: &str) -> Option<&'static types::Encodin
         "iso_8859-3:1988" |
         "l3" |
         "latin3" =>
-            Some(all::ISO_8859_3 as &'static types::Encoding),
+            Some(all::ISO_8859_3 as EncodingRef),
         "csisolatin4" |
         "iso-8859-4" |
         "iso-ir-110" |
@@ -50,7 +50,7 @@ pub fn encoding_from_whatwg_label(label: &str) -> Option<&'static types::Encodin
         "iso_8859-4:1988" |
         "l4" |
         "latin4" =>
-            Some(all::ISO_8859_4 as &'static types::Encoding),
+            Some(all::ISO_8859_4 as EncodingRef),
         "csisolatincyrillic" |
         "cyrillic" |
         "iso-8859-5" |
@@ -59,7 +59,7 @@ pub fn encoding_from_whatwg_label(label: &str) -> Option<&'static types::Encodin
         "iso88595" |
         "iso_8859-5" |
         "iso_8859-5:1988" =>
-            Some(all::ISO_8859_5 as &'static types::Encoding),
+            Some(all::ISO_8859_5 as EncodingRef),
         "arabic" |
         "asmo-708" |
         "csiso88596e" |
@@ -74,7 +74,7 @@ pub fn encoding_from_whatwg_label(label: &str) -> Option<&'static types::Encodin
         "iso88596" |
         "iso_8859-6" |
         "iso_8859-6:1987" =>
-            Some(all::ISO_8859_6 as &'static types::Encoding),
+            Some(all::ISO_8859_6 as EncodingRef),
         "csisolatingreek" |
         "ecma-118" |
         "elot_928" |
@@ -87,7 +87,7 @@ pub fn encoding_from_whatwg_label(label: &str) -> Option<&'static types::Encodin
         "iso_8859-7" |
         "iso_8859-7:1987" |
         "sun_eu_greek" =>
-            Some(all::ISO_8859_7 as &'static types::Encoding),
+            Some(all::ISO_8859_7 as EncodingRef),
         "csiso88598e" |
         "csisolatinhebrew" |
         "hebrew" |
@@ -99,11 +99,11 @@ pub fn encoding_from_whatwg_label(label: &str) -> Option<&'static types::Encodin
         "iso_8859-8" |
         "iso_8859-8:1988" |
         "visual" =>
-            Some(all::ISO_8859_8 as &'static types::Encoding),
+            Some(all::ISO_8859_8 as EncodingRef),
         "csiso88598i" |
         "iso-8859-8-i" |
         "logical" =>
-            Some(all::whatwg::ISO_8859_8_I as &'static types::Encoding),
+            Some(all::whatwg::ISO_8859_8_I as EncodingRef),
         "csisolatin6" |
         "iso-8859-10" |
         "iso-ir-157" |
@@ -111,52 +111,52 @@ pub fn encoding_from_whatwg_label(label: &str) -> Option<&'static types::Encodin
         "iso885910" |
         "l6" |
         "latin6" =>
-            Some(all::ISO_8859_10 as &'static types::Encoding),
+            Some(all::ISO_8859_10 as EncodingRef),
         "iso-8859-13" |
         "iso8859-13" |
         "iso885913" =>
-            Some(all::ISO_8859_13 as &'static types::Encoding),
+            Some(all::ISO_8859_13 as EncodingRef),
         "iso-8859-14" |
         "iso8859-14" |
         "iso885914" =>
-            Some(all::ISO_8859_14 as &'static types::Encoding),
+            Some(all::ISO_8859_14 as EncodingRef),
         "csisolatin9" |
         "iso-8859-15" |
         "iso8859-15" |
         "iso885915" |
         "iso_8859-15" |
         "l9" =>
-            Some(all::ISO_8859_15 as &'static types::Encoding),
+            Some(all::ISO_8859_15 as EncodingRef),
         "iso-8859-16" =>
-            Some(all::ISO_8859_16 as &'static types::Encoding),
+            Some(all::ISO_8859_16 as EncodingRef),
         "cskoi8r" |
         "koi" |
         "koi8" |
         "koi8-r" |
         "koi8_r" =>
-            Some(all::KOI8_R as &'static types::Encoding),
+            Some(all::KOI8_R as EncodingRef),
         "koi8-u" =>
-            Some(all::KOI8_U as &'static types::Encoding),
+            Some(all::KOI8_U as EncodingRef),
         "csmacintosh" |
         "mac" |
         "macintosh" |
         "x-mac-roman" =>
-            Some(all::MACINTOSH as &'static types::Encoding),
+            Some(all::MACINTOSH as EncodingRef),
         "dos-874" |
         "iso-8859-11" |
         "iso8859-11" |
         "iso885911" |
         "tis-620" |
         "windows-874" =>
-            Some(all::WINDOWS_874 as &'static types::Encoding),
+            Some(all::WINDOWS_874 as EncodingRef),
         "cp1250" |
         "windows-1250" |
         "x-cp1250" =>
-            Some(all::WINDOWS_1250 as &'static types::Encoding),
+            Some(all::WINDOWS_1250 as EncodingRef),
         "cp1251" |
         "windows-1251" |
         "x-cp1251" =>
-            Some(all::WINDOWS_1251 as &'static types::Encoding),
+            Some(all::WINDOWS_1251 as EncodingRef),
         "ansi_x3.4-1968" |
         "ascii" |
         "cp1252" |
@@ -174,11 +174,11 @@ pub fn encoding_from_whatwg_label(label: &str) -> Option<&'static types::Encodin
         "us-ascii" |
         "windows-1252" |
         "x-cp1252" =>
-            Some(all::WINDOWS_1252 as &'static types::Encoding),
+            Some(all::WINDOWS_1252 as EncodingRef),
         "cp1253" |
         "windows-1253" |
         "x-cp1253" =>
-            Some(all::WINDOWS_1253 as &'static types::Encoding),
+            Some(all::WINDOWS_1253 as EncodingRef),
         "cp1254" |
         "csisolatin5" |
         "iso-8859-9" |
@@ -191,26 +191,26 @@ pub fn encoding_from_whatwg_label(label: &str) -> Option<&'static types::Encodin
         "latin5" |
         "windows-1254" |
         "x-cp1254" =>
-            Some(all::WINDOWS_1254 as &'static types::Encoding),
+            Some(all::WINDOWS_1254 as EncodingRef),
         "cp1255" |
         "windows-1255" |
         "x-cp1255" =>
-            Some(all::WINDOWS_1255 as &'static types::Encoding),
+            Some(all::WINDOWS_1255 as EncodingRef),
         "cp1256" |
         "windows-1256" |
         "x-cp1256" =>
-            Some(all::WINDOWS_1256 as &'static types::Encoding),
+            Some(all::WINDOWS_1256 as EncodingRef),
         "cp1257" |
         "windows-1257" |
         "x-cp1257" =>
-            Some(all::WINDOWS_1257 as &'static types::Encoding),
+            Some(all::WINDOWS_1257 as EncodingRef),
         "cp1258" |
         "windows-1258" |
         "x-cp1258" =>
-            Some(all::WINDOWS_1258 as &'static types::Encoding),
+            Some(all::WINDOWS_1258 as EncodingRef),
         "x-mac-cyrillic" |
         "x-mac-ukrainian" =>
-            Some(all::X_MAC_CYRILLIC as &'static types::Encoding),
+            Some(all::X_MAC_CYRILLIC as EncodingRef),
         "chinese" |
         "csgb2312" |
         "csiso58gb231280" |
@@ -220,27 +220,27 @@ pub fn encoding_from_whatwg_label(label: &str) -> Option<&'static types::Encodin
         "gbk" |
         "iso-ir-58" |
         "x-gbk" =>
-            Some(all::GBK18030 as &'static types::Encoding),
+            Some(all::GBK18030 as EncodingRef),
         "gb18030" =>
-            Some(all::GB18030 as &'static types::Encoding),
+            Some(all::GB18030 as EncodingRef),
         /*
         "hz-gb-2312" =>
-            Some(all::HZ_GB_2312 as &'static types::Encoding),
+            Some(all::HZ_GB_2312 as EncodingRef),
         */
         "big5" |
         "big5-hkscs" |
         "cn-big5" |
         "csbig5" |
         "x-x-big5" =>
-            Some(all::BIG5_2003 as &'static types::Encoding),
+            Some(all::BIG5_2003 as EncodingRef),
         "cseucpkdfmtjapanese" |
         "euc-jp" |
         "x-euc-jp" =>
-            Some(all::EUC_JP as &'static types::Encoding),
+            Some(all::EUC_JP as EncodingRef),
         /*
         "csiso2022jp" |
         "iso-2022-jp" =>
-            Some(all::ISO_2022_JP as &'static types::Encoding),
+            Some(all::ISO_2022_JP as EncodingRef),
         */
         "csshiftjis" |
         "ms_kanji" |
@@ -249,7 +249,7 @@ pub fn encoding_from_whatwg_label(label: &str) -> Option<&'static types::Encodin
         "sjis" |
         "windows-31j" |
         "x-sjis" =>
-            Some(all::WINDOWS_31J as &'static types::Encoding),
+            Some(all::WINDOWS_31J as EncodingRef),
         "cseuckr" |
         "csksc56011987" |
         "euc-kr" |
@@ -260,19 +260,19 @@ pub fn encoding_from_whatwg_label(label: &str) -> Option<&'static types::Encodin
         "ksc5601" |
         "ksc_5601" |
         "windows-949" =>
-            Some(all::WINDOWS_949 as &'static types::Encoding),
+            Some(all::WINDOWS_949 as EncodingRef),
         "csiso2022kr" |
         "iso-2022-kr" |
         "iso-2022-cn" |
         "iso-2022-cn-ext" =>
-            Some(all::whatwg::REPLACEMENT as &'static types::Encoding),
+            Some(all::whatwg::REPLACEMENT as EncodingRef),
         "utf-16be" =>
-            Some(all::UTF_16BE as &'static types::Encoding),
+            Some(all::UTF_16BE as EncodingRef),
         "utf-16" |
         "utf-16le" =>
-            Some(all::UTF_16LE as &'static types::Encoding),
+            Some(all::UTF_16LE as EncodingRef),
         "x-user-defined" =>
-            Some(all::whatwg::X_USER_DEFINED as &'static types::Encoding),
+            Some(all::whatwg::X_USER_DEFINED as EncodingRef),
         _ => None
     }
 }
@@ -280,49 +280,49 @@ pub fn encoding_from_whatwg_label(label: &str) -> Option<&'static types::Encodin
 /// Returns an encoding from Windows code page number.
 /// http://msdn.microsoft.com/en-us/library/windows/desktop/dd317756%28v=vs.85%29.aspx
 /// Sometimes it can return a *superset* of the requested encoding, e.g. for several CJK encodings.
-pub fn encoding_from_windows_code_page(cp: uint) -> Option<&'static types::Encoding> {
+pub fn encoding_from_windows_code_page(cp: uint) -> Option<EncodingRef> {
     match cp {
-        65001 => Some(all::UTF_8 as &'static types::Encoding),
-        866 => Some(all::IBM866 as &'static types::Encoding),
-        28591 => Some(all::ISO_8859_1 as &'static types::Encoding),
-        28592 => Some(all::ISO_8859_2 as &'static types::Encoding),
-        28593 => Some(all::ISO_8859_3 as &'static types::Encoding),
-        28594 => Some(all::ISO_8859_4 as &'static types::Encoding),
-        28595 => Some(all::ISO_8859_5 as &'static types::Encoding),
-        28596 => Some(all::ISO_8859_6 as &'static types::Encoding),
-        28597 => Some(all::ISO_8859_7 as &'static types::Encoding),
-        28598 => Some(all::ISO_8859_8 as &'static types::Encoding),
-        38598 => Some(all::whatwg::ISO_8859_8_I as &'static types::Encoding),
-        28603 => Some(all::ISO_8859_13 as &'static types::Encoding),
-        28605 => Some(all::ISO_8859_15 as &'static types::Encoding),
-        20866 => Some(all::KOI8_R as &'static types::Encoding),
-        21866 => Some(all::KOI8_U as &'static types::Encoding),
-        10000 => Some(all::MACINTOSH as &'static types::Encoding),
-        874 => Some(all::WINDOWS_874 as &'static types::Encoding),
-        1250 => Some(all::WINDOWS_1250 as &'static types::Encoding),
-        1251 => Some(all::WINDOWS_1251 as &'static types::Encoding),
-        1252 => Some(all::WINDOWS_1252 as &'static types::Encoding),
-        1253 => Some(all::WINDOWS_1253 as &'static types::Encoding),
-        1254 => Some(all::WINDOWS_1254 as &'static types::Encoding),
-        1255 => Some(all::WINDOWS_1255 as &'static types::Encoding),
-        1256 => Some(all::WINDOWS_1256 as &'static types::Encoding),
-        1257 => Some(all::WINDOWS_1257 as &'static types::Encoding),
-        1258 => Some(all::WINDOWS_1258 as &'static types::Encoding),
-        1259 => Some(all::X_MAC_CYRILLIC as &'static types::Encoding),
-        936 => Some(all::GBK18030 as &'static types::Encoding),
-        54936 => Some(all::GB18030 as &'static types::Encoding),
+        65001 => Some(all::UTF_8 as EncodingRef),
+        866 => Some(all::IBM866 as EncodingRef),
+        28591 => Some(all::ISO_8859_1 as EncodingRef),
+        28592 => Some(all::ISO_8859_2 as EncodingRef),
+        28593 => Some(all::ISO_8859_3 as EncodingRef),
+        28594 => Some(all::ISO_8859_4 as EncodingRef),
+        28595 => Some(all::ISO_8859_5 as EncodingRef),
+        28596 => Some(all::ISO_8859_6 as EncodingRef),
+        28597 => Some(all::ISO_8859_7 as EncodingRef),
+        28598 => Some(all::ISO_8859_8 as EncodingRef),
+        38598 => Some(all::whatwg::ISO_8859_8_I as EncodingRef),
+        28603 => Some(all::ISO_8859_13 as EncodingRef),
+        28605 => Some(all::ISO_8859_15 as EncodingRef),
+        20866 => Some(all::KOI8_R as EncodingRef),
+        21866 => Some(all::KOI8_U as EncodingRef),
+        10000 => Some(all::MACINTOSH as EncodingRef),
+        874 => Some(all::WINDOWS_874 as EncodingRef),
+        1250 => Some(all::WINDOWS_1250 as EncodingRef),
+        1251 => Some(all::WINDOWS_1251 as EncodingRef),
+        1252 => Some(all::WINDOWS_1252 as EncodingRef),
+        1253 => Some(all::WINDOWS_1253 as EncodingRef),
+        1254 => Some(all::WINDOWS_1254 as EncodingRef),
+        1255 => Some(all::WINDOWS_1255 as EncodingRef),
+        1256 => Some(all::WINDOWS_1256 as EncodingRef),
+        1257 => Some(all::WINDOWS_1257 as EncodingRef),
+        1258 => Some(all::WINDOWS_1258 as EncodingRef),
+        1259 => Some(all::X_MAC_CYRILLIC as EncodingRef),
+        936 => Some(all::GBK18030 as EncodingRef),
+        54936 => Some(all::GB18030 as EncodingRef),
         /*
-        52936 => Some(all::HZ_GB_2312 as &'static types::Encoding),
+        52936 => Some(all::HZ_GB_2312 as EncodingRef),
         */
-        950 => Some(all::BIG5_2003 as &'static types::Encoding),
-        20932 => Some(all::EUC_JP as &'static types::Encoding),
+        950 => Some(all::BIG5_2003 as EncodingRef),
+        20932 => Some(all::EUC_JP as EncodingRef),
         /*
-        50220 => Some(all::ISO_2022_JP as &'static types::Encoding),
+        50220 => Some(all::ISO_2022_JP as EncodingRef),
         */
-        932 => Some(all::WINDOWS_31J as &'static types::Encoding),
-        949 => Some(all::WINDOWS_949 as &'static types::Encoding),
-        1201 => Some(all::UTF_16BE as &'static types::Encoding),
-        1200 => Some(all::UTF_16LE as &'static types::Encoding),
+        932 => Some(all::WINDOWS_31J as EncodingRef),
+        949 => Some(all::WINDOWS_949 as EncodingRef),
+        1201 => Some(all::UTF_16BE as EncodingRef),
+        1200 => Some(all::UTF_16LE as EncodingRef),
         _ => None
     }
 }

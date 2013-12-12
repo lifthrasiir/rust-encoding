@@ -113,8 +113,9 @@ impl Decoder for BigFive2003HKSCS2008Decoder {
             match map_two_bytes(self.lead, input[i]) {
                 0xffff => {
                     self.lead = 0;
+                    let upto = if input[i] < 0x80 {i} else {i+1};
                     return (processed, Some(CodecError {
-                        upto: i, cause: "invalid sequence".into_send_str()
+                        upto: upto, cause: "invalid sequence".into_send_str()
                     }));
                 }
                 0 /*index=1133*/ => { output.write_str("\u00ca\u0304"); }
@@ -139,8 +140,9 @@ impl Decoder for BigFive2003HKSCS2008Decoder {
                     }
                     match map_two_bytes(input[i-1], input[i]) {
                         0xffff => {
+                            let upto = if input[i] < 0x80 {i} else {i+1};
                             return (processed, Some(CodecError {
-                                upto: i, cause: "invalid sequence".into_send_str()
+                                upto: upto, cause: "invalid sequence".into_send_str()
                             }));
                         }
                         0 /*index=1133*/ => { output.write_str("\u00ca\u0304"); }
@@ -211,6 +213,16 @@ mod bigfive2003_tests {
         assert_feed_ok!(d, [0x31, 0xa3, 0xe1, 0x2f, 0x6d], [], "1\u20ac/m");
         assert_feed_ok!(d, [0xf9, 0xfe], [], "\uffed");
         assert_feed_ok!(d, [0x87, 0x7e], [], "\u3eec"); // HKSCS-2008 addition
+        assert_finish_ok!(d, "");
+    }
+
+    #[test]
+    fn test_decoder_invalid_trail() {
+        // unlike most other cases, valid lead + invalid MSB-set trail are entirely consumed.
+        // https://www.w3.org/Bugs/Public/show_bug.cgi?id=16771
+        let mut d = BigFive2003Encoding.decoder();
+        assert_feed_err!(d, [], [0xf0], [0x30, 0x30], "");
+        assert_feed_err!(d, [], [0xf0, 0x80], [0x30], "");
         assert_finish_ok!(d, "");
     }
 
