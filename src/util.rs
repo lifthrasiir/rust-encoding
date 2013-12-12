@@ -13,12 +13,12 @@ pub fn as_char<T:Integer+NumCast>(ch: T) -> char {
 }
 
 /// External iterator for a string's characters with its corresponding byte offset range.
-pub struct StrCharIndexIterator<'self> {
+pub struct StrCharIndexIterator<'r> {
     priv index: uint,
-    priv string: &'self str,
+    priv string: &'r str,
 }
 
-impl<'self> Iterator<((uint,uint), char)> for StrCharIndexIterator<'self> {
+impl<'r> Iterator<((uint,uint), char)> for StrCharIndexIterator<'r> {
     #[inline]
     fn next(&mut self) -> Option<((uint,uint), char)> {
         if self.index < self.string.len() {
@@ -33,13 +33,13 @@ impl<'self> Iterator<((uint,uint), char)> for StrCharIndexIterator<'self> {
 }
 
 /// A trait providing an `index_iter` method.
-pub trait StrCharIndex<'self> {
-    fn index_iter(&self) -> StrCharIndexIterator<'self>;
+pub trait StrCharIndex<'r> {
+    fn index_iter(&self) -> StrCharIndexIterator<'r>;
 }
 
-impl<'self> StrCharIndex<'self> for &'self str {
+impl<'r> StrCharIndex<'r> for &'r str {
     /// Iterates over each character with corresponding byte offset range.
-    fn index_iter(&self) -> StrCharIndexIterator<'self> {
+    fn index_iter(&self) -> StrCharIndexIterator<'r> {
         StrCharIndexIterator { index: 0, string: *self }
     }
 }
