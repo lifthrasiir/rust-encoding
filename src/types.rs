@@ -432,19 +432,3 @@ pub fn decode(input: &[u8], trap: DecoderTrap, fallback_encoding: EncodingRef)
         (fallback_encoding.decode(input, trap), fallback_encoding)
     }
 }
-
-
-// XXX backported from Rust 0.9-pre:
-
-trait VecStartsWith<T:Eq> {
-    /// Returns true if `needle` is a prefix of the vector.
-    fn starts_with(&self, needle: &[T]) -> bool;
-}
-
-impl<'self,T:Eq> VecStartsWith<T> for &'self [T] {
-    #[inline]
-    fn starts_with(&self, needle: &[T]) -> bool {
-        let n = needle.len();
-        self.len() >= n && needle == self.slice_to(n)
-    }
-}
