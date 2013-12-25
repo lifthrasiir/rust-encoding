@@ -8,14 +8,10 @@
  * error detection and recovery.
  */
 
-#[link(name = "encoding",
-       vers = "0.1.0",
-       uuid = "05AC43C2-6959-409F-B95A-C58EBF217527",
-       url = "https://github.com/lifthrasiir/rust-encoding/")];
-
+#[crate_id = "encoding#0.1.0"];
+#[crate_type = "lib"];
 #[comment = "Character encoding support for Rust"];
 #[license = "MIT"];
-#[crate_type = "lib"];
 
 #[feature(globs, macro_rules)];
 
