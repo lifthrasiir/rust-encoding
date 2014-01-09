@@ -11,7 +11,9 @@ use types::EncodingRef;
 /// Returns an encoding from given label, defined in the WHATWG Encoding standard, if any.
 /// Implements "get an encoding" algorithm: http://encoding.spec.whatwg.org/#decode
 pub fn encoding_from_whatwg_label(label: &str) -> Option<EncodingRef> {
-    match label.trim_chars(& &[' ', '\n', '\r', '\t', '\x0C']).to_ascii_lower().as_slice() {
+    // FIXME(rust#10683): temp needed as workaround
+    let trimmed = label.trim_chars(& &[' ', '\n', '\r', '\t', '\x0C']).to_ascii_lower();
+    match trimmed.as_slice() {
         "unicode-1-1-utf-8" |
         "utf-8" |
         "utf8" =>
