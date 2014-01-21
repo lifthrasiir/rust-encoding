@@ -2,9 +2,8 @@ Rust-encoding
 =============
 
 [![Rust-encoding on Travis CI][travis-image]][travis]
-(for the `rust-0.10-pre` branch, which tracks the rustc master)
 
-[travis-image]: https://travis-ci.org/lifthrasiir/rust-encoding.png?branch=rust-0.10-pre
+[travis-image]: https://travis-ci.org/lifthrasiir/rust-encoding.png
 [travis]: https://travis-ci.org/lifthrasiir/rust-encoding
 
 Character encoding support for Rust.

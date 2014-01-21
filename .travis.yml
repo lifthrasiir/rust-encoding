@@ -8,4 +8,4 @@ script:
   - make check RUSTFLAGS=
 branches:
   only:
-    - rust-0.10-pre
+    - master
