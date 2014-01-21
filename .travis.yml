@@ -9,6 +9,7 @@ install:
 script:
   - ./configure
   - make check RUSTFLAGS=
+  - make doc
 branches:
   only:
     - master

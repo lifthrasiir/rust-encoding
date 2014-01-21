@@ -5,22 +5,27 @@ CXX ?= g++
 CXXFLAGS ?=
 AR ?= ar
 RUSTC ?= rustc
+RUSTDOC ?= rustdoc
 RUSTFLAGS ?= -O
 
-RUST_SRC=$(shell find $(VPATH)/src/. -type f -name '*.rs')
+LIB_RS = src/lib.rs
+RUST_SRC = $(shell find $(VPATH)/src/. -type f -name '*.rs')
 
 .PHONY: all
 all:	libencoding.dummy
 
-libencoding.dummy: src/encoding.rs $(RUST_SRC)
+libencoding.dummy: $(LIB_RS) $(RUST_SRC)
 	$(RUSTC) $(RUSTFLAGS) $< -o $@
 	touch $@
 
-rustencoding-test: src/encoding.rs $(RUST_SRC)
+rustencoding-test: $(LIB_RS) $(RUST_SRC)
 	$(RUSTC) $(RUSTFLAGS) $< -o $@ --test
 
 check: rustencoding-test
 	./rustencoding-test
+
+doc: $(LIB_RS) $(RUST_SRC)
+	$(RUSTDOC) $(LIB_RS)
 
 .PHONY: clean
 clean:
