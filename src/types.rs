@@ -82,7 +82,7 @@ pub trait ByteWriter {
     fn write_bytes(&mut self, v: &[u8]);
 }
 
-impl<T:OwnedVector<u8>+OwnedCopyableVector<u8>> ByteWriter for T {
+impl<T:OwnedVector<u8>+OwnedCloneableVector<u8>> ByteWriter for T {
     fn writer_hint(&mut self, expectedlen: uint) {
         self.reserve_additional(expectedlen);
     }

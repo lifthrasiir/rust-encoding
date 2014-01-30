@@ -5,6 +5,7 @@
 *.dylib
 *.dSYM
 *.dll
+*.rlib
 *.dummy
 *.exe
 build
