@@ -116,7 +116,7 @@ pub trait StringWriter {
 impl<T:OwnedStr+Container> StringWriter for T {
     fn writer_hint(&mut self, expectedlen: uint) {
         let newlen = self.len() + expectedlen;
-        self.reserve_at_least(newlen);
+        self.reserve(newlen);
     }
 
     fn write_char(&mut self, c: char) {
