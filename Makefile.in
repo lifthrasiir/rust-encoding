@@ -15,7 +15,7 @@ RUST_SRC = $(shell find $(VPATH)/src/. -type f -name '*.rs')
 all:	libencoding.dummy
 
 libencoding.dummy: $(LIB_RS) $(RUST_SRC)
-	$(RUSTC) $(RUSTFLAGS) $< -o $@
+	$(RUSTC) $(RUSTFLAGS) $< --out-dir .
 	touch $@
 
 rustencoding-test: $(LIB_RS) $(RUST_SRC)
@@ -29,5 +29,5 @@ doc: $(LIB_RS) $(RUST_SRC)
 
 .PHONY: clean
 clean:
-	rm -f *.o *.a *.so *.dylib *.dll *.dummy *.exe *-test
+	rm -f *.o *.a *.so *.dylib *.rlib *.dll *.dummy *.exe *-test
 
