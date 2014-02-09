@@ -62,7 +62,7 @@ impl Encoder for EUCJPEncoder {
                     let ptr = index0208::backward(ch as u32);
                     if ptr == 0xffff {
                         return (i, Some(CodecError {
-                            upto: j, cause: "unrepresentable character".into_send_str()
+                            upto: j, cause: "unrepresentable character".into_maybe_owned()
                         }));
                     } else {
                         let lead = ptr / 94 + 0xa1;
@@ -141,7 +141,7 @@ impl Decoder for EUCJP0212Decoder {
                     if ch == 0xffff {
                         self.first = 0;
                         return (processed, Some(CodecError {
-                            upto: i, cause: "invalid sequence".into_send_str()
+                            upto: i, cause: "invalid sequence".into_maybe_owned()
                         }));
                     }
                     output.write_char(as_char(ch));
@@ -159,7 +159,7 @@ impl Decoder for EUCJP0212Decoder {
             if ch == 0xffff {
                 self.second = 0;
                 return (processed, Some(CodecError {
-                    upto: i, cause: "invalid sequence".into_send_str()
+                    upto: i, cause: "invalid sequence".into_maybe_owned()
                 }));
             }
             output.write_char(as_char(ch));
@@ -193,7 +193,7 @@ impl Decoder for EUCJP0212Decoder {
                             let ch = map_two_0212_bytes(input[i-1], input[i]);
                             if ch == 0xffff {
                                 return (processed, Some(CodecError {
-                                    upto: i, cause: "invalid sequence".into_send_str()
+                                    upto: i, cause: "invalid sequence".into_maybe_owned()
                                 }));
                             }
                             output.write_char(as_char(ch));
@@ -202,7 +202,7 @@ impl Decoder for EUCJP0212Decoder {
                             let ch = map_two_0208_bytes(input[i-1], input[i]);
                             if ch == 0xffff {
                                 return (processed, Some(CodecError {
-                                    upto: i, cause: "invalid sequence".into_send_str()
+                                    upto: i, cause: "invalid sequence".into_maybe_owned()
                                 }));
                             }
                             output.write_char(as_char(ch));
@@ -212,14 +212,14 @@ impl Decoder for EUCJP0212Decoder {
                             // (Encoding standard, Chapter 12.1, decoder step 7-4)
                             let upto = if trail < 0xa1 || trail > 0xfe {i} else {i+1};
                             return (processed, Some(CodecError {
-                                upto: upto, cause: "invalid sequence".into_send_str()
+                                upto: upto, cause: "invalid sequence".into_maybe_owned()
                             }));
                         }
                     }
                 }
                 _ => {
                     return (processed, Some(CodecError {
-                        upto: i+1, cause: "invalid sequence".into_send_str()
+                        upto: i+1, cause: "invalid sequence".into_maybe_owned()
                     }));
                 }
             }
@@ -235,7 +235,7 @@ impl Decoder for EUCJP0212Decoder {
         self.first = 0;
         self.second = 0;
         if second != 0 || first != 0 {
-            Some(CodecError { upto: 0, cause: "incomplete sequence".into_send_str() })
+            Some(CodecError { upto: 0, cause: "incomplete sequence".into_maybe_owned() })
         } else {
             None
         }
@@ -348,7 +348,7 @@ impl Encoder for Windows31JEncoder {
                     let ptr = index0208::backward(ch as u32);
                     if ptr == 0xffff {
                         return (i, Some(CodecError {
-                            upto: j, cause: "unrepresentable character".into_send_str(),
+                            upto: j, cause: "unrepresentable character".into_maybe_owned(),
                         }));
                     } else {
                         let lead = ptr / 188;
@@ -412,7 +412,7 @@ impl Decoder for Windows31JDecoder {
             if ch == 0xffff {
                 self.lead = 0;
                 return (processed, Some(CodecError {
-                    upto: i, cause: "invalid sequence".into_send_str()
+                    upto: i, cause: "invalid sequence".into_maybe_owned()
                 }));
             }
             output.write_char(as_char(ch));
@@ -438,14 +438,14 @@ impl Decoder for Windows31JDecoder {
                     let ch = map_two_0208_bytes(input[i-1], input[i]);
                     if ch == 0xffff {
                         return (processed, Some(CodecError {
-                            upto: i, cause: "invalid sequence".into_send_str()
+                            upto: i, cause: "invalid sequence".into_maybe_owned()
                         }));
                     }
                     output.write_char(as_char(ch));
                 }
                 _ => {
                     return (processed, Some(CodecError {
-                        upto: i+1, cause: "invalid sequence".into_send_str()
+                        upto: i+1, cause: "invalid sequence".into_maybe_owned()
                     }));
                 }
             }
@@ -459,7 +459,7 @@ impl Decoder for Windows31JDecoder {
         let lead = self.lead;
         self.lead = 0;
         if lead != 0 {
-            Some(CodecError { upto: 0, cause: "incomplete sequence".into_send_str() })
+            Some(CodecError { upto: 0, cause: "incomplete sequence".into_maybe_owned() })
         } else {
             None
         }

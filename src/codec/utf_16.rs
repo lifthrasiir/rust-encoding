@@ -82,7 +82,7 @@ macro_rules! impl_UTF16Encoder(
                     }
                     _ => {
                         return (i, Some(CodecError {
-                            upto: j, cause: "unrepresentable character".into_send_str()
+                            upto: j, cause: "unrepresentable character".into_maybe_owned()
                         }));
                     }
                 }
@@ -168,7 +168,7 @@ macro_rules! impl_UTF16Decoder(
                             return (processed, Some(CodecError {
                                 // XXX upto should point to the negative offset???
                                 upto: if i<2 {0} else {i-2},
-                                cause: "invalid sequence".into_send_str()
+                                cause: "invalid sequence".into_maybe_owned()
                             }));
                         }
                     }
@@ -180,7 +180,7 @@ macro_rules! impl_UTF16Decoder(
                         }
                         0xdc00..0xdfff => {
                             return (processed, Some(CodecError {
-                                upto: i, cause: "invalid sequence".into_send_str()
+                                upto: i, cause: "invalid sequence".into_maybe_owned()
                             }));
                         }
                         _ => {
@@ -212,7 +212,7 @@ macro_rules! impl_UTF16Decoder(
                         return (processed, Some(CodecError {
                             // XXX upto should point to the negative offset???
                             upto: if i<2 {0} else {i-2},
-                            cause: "invalid sequence".into_send_str()
+                            cause: "invalid sequence".into_maybe_owned()
                         }));
                     }
                 }
@@ -244,14 +244,14 @@ macro_rules! impl_UTF16Decoder(
                             }
                             _ => {
                                 return (processed, Some(CodecError {
-                                    upto: i-1, cause: "invalid sequence".into_send_str()
+                                    upto: i-1, cause: "invalid sequence".into_maybe_owned()
                                 }));
                             }
                         }
                     }
                     0xdc00..0xdfff => {
                         return (processed, Some(CodecError {
-                            upto: i+1, cause: "invalid sequence".into_send_str()
+                            upto: i+1, cause: "invalid sequence".into_maybe_owned()
                         }));
                     }
                     _ => {
@@ -270,7 +270,7 @@ macro_rules! impl_UTF16Decoder(
             self.leadbyte = 0xffff;
             self.leadsurrogate = 0xffff;
             if leadbyte != 0xffff || leadsurrogate != 0xffff {
-                Some(CodecError { upto: 0, cause: "incomplete sequence".into_send_str() })
+                Some(CodecError { upto: 0, cause: "incomplete sequence".into_maybe_owned() })
             } else {
                 None
             }

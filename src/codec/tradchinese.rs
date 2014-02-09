@@ -55,7 +55,7 @@ impl Encoder for BigFive2003Encoder {
                 if ptr == 0xffff || ptr < (0xa1 - 0x81) * 157 {
                     // no HKSCS extension (XXX doesn't HKSCS include 0xFA40..0xFEFE?)
                     return (i, Some(CodecError {
-                        upto: j, cause: "unrepresentable character".into_send_str()
+                        upto: j, cause: "unrepresentable character".into_maybe_owned()
                     }));
                 }
                 let lead = ptr / 157 + 0x81;
@@ -115,7 +115,7 @@ impl Decoder for BigFive2003HKSCS2008Decoder {
                     self.lead = 0;
                     let upto = if input[i] < 0x80 {i} else {i+1};
                     return (processed, Some(CodecError {
-                        upto: upto, cause: "invalid sequence".into_send_str()
+                        upto: upto, cause: "invalid sequence".into_maybe_owned()
                     }));
                 }
                 0 /*index=1133*/ => { output.write_str("\u00ca\u0304"); }
@@ -142,7 +142,7 @@ impl Decoder for BigFive2003HKSCS2008Decoder {
                         0xffff => {
                             let upto = if input[i] < 0x80 {i} else {i+1};
                             return (processed, Some(CodecError {
-                                upto: upto, cause: "invalid sequence".into_send_str()
+                                upto: upto, cause: "invalid sequence".into_maybe_owned()
                             }));
                         }
                         0 /*index=1133*/ => { output.write_str("\u00ca\u0304"); }
@@ -154,7 +154,7 @@ impl Decoder for BigFive2003HKSCS2008Decoder {
                 }
                 _ => {
                     return (processed, Some(CodecError {
-                        upto: i+1, cause: "invalid sequence".into_send_str()
+                        upto: i+1, cause: "invalid sequence".into_maybe_owned()
                     }));
                 }
             }
@@ -168,7 +168,7 @@ impl Decoder for BigFive2003HKSCS2008Decoder {
         let lead = self.lead;
         self.lead = 0;
         if lead != 0 {
-            Some(CodecError { upto: 0, cause: "incomplete sequence".into_send_str() })
+            Some(CodecError { upto: 0, cause: "incomplete sequence".into_maybe_owned() })
         } else {
             None
         }

@@ -168,7 +168,7 @@ impl Decoder for UTF8Decoder {
                     self.queuelen = 0;
                     write_bytes(output, input.slice(0, processed));
                     return (processed, Some(CodecError {
-                        upto: upto, cause: "invalid sequence".into_send_str()
+                        upto: upto, cause: "invalid sequence".into_maybe_owned()
                     }));
                 }
                 _ => {}
@@ -197,7 +197,7 @@ impl Decoder for UTF8Decoder {
         self.state = INITIAL_STATE;
         self.queuelen = 0;
         if state != ACCEPT_STATE {
-            Some(CodecError { upto: 0, cause: "incomplete sequence".into_send_str() })
+            Some(CodecError { upto: 0, cause: "incomplete sequence".into_maybe_owned() })
         } else {
             assert!(queuelen == 0);
             None

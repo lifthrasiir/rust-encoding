@@ -52,7 +52,7 @@
  * It still has to feed the input bytes starting at the second offset again.
  */
 
-use std::send_str::SendStr;
+use std::str::SendStr;
 
 /// Error information from either encoder or decoder.
 pub struct CodecError {

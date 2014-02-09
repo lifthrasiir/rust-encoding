@@ -54,7 +54,7 @@ impl Encoder for SingleByteEncoder {
                 }
             }
             return (i, Some(CodecError {
-                upto: j, cause: "unrepresentable character".into_send_str()
+                upto: j, cause: "unrepresentable character".into_maybe_owned()
             }));
         }
         (input.len(), None)
@@ -95,7 +95,7 @@ impl Decoder for SingleByteDecoder {
                     output.write_char(as_char(ch));
                 } else {
                     return (i, Some(CodecError {
-                        upto: i+1, cause: "invalid sequence".into_send_str()
+                        upto: i+1, cause: "invalid sequence".into_maybe_owned()
                     }));
                 }
             }

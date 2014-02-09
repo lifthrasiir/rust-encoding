@@ -42,7 +42,7 @@ impl Encoder for ASCIIEncoder {
                 output.write_byte(ch as u8);
             } else {
                 return (i, Some(CodecError {
-                    upto: j, cause: "unrepresentable character".into_send_str()
+                    upto: j, cause: "unrepresentable character".into_maybe_owned()
                 }));
             }
         }
@@ -76,7 +76,7 @@ impl Decoder for ASCIIDecoder {
                 output.write_char(input[i] as char);
             } else {
                 return (i, Some(CodecError {
-                    upto: i+1, cause: "invalid sequence".into_send_str()
+                    upto: i+1, cause: "invalid sequence".into_maybe_owned()
                 }));
             }
             i += 1;

@@ -51,7 +51,7 @@ impl Encoder for Windows949Encoder {
                 let ptr = index::backward(ch as u32);
                 if ptr == 0xffff {
                     return (i, Some(CodecError {
-                        upto: j, cause: "unrepresentable character".into_send_str()
+                        upto: j, cause: "unrepresentable character".into_maybe_owned()
                     }));
                 } else if ptr < (26 + 26 + 126) * (0xc7 - 0x81) {
                     let lead = ptr / (26 + 26 + 126) + 0x81;
@@ -121,7 +121,7 @@ impl Decoder for Windows949Decoder {
             if ch == 0xffff {
                 self.lead = 0;
                 return (processed, Some(CodecError {
-                    upto: i, cause: "invalid sequence".into_send_str()
+                    upto: i, cause: "invalid sequence".into_maybe_owned()
                 }));
             }
             output.write_char(as_char(ch));
@@ -142,14 +142,14 @@ impl Decoder for Windows949Decoder {
                     let ch = map_two_bytes(input[i-1], input[i]);
                     if ch == 0xffff {
                         return (processed, Some(CodecError {
-                            upto: i, cause: "invalid sequence".into_send_str()
+                            upto: i, cause: "invalid sequence".into_maybe_owned()
                         }));
                     }
                     output.write_char(as_char(ch));
                 }
                 _ => {
                     return (processed, Some(CodecError {
-                        upto: i+1, cause: "invalid sequence".into_send_str()
+                        upto: i+1, cause: "invalid sequence".into_maybe_owned()
                     }));
                 }
             }
@@ -163,7 +163,7 @@ impl Decoder for Windows949Decoder {
         let lead = self.lead;
         self.lead = 0;
         if lead != 0 {
-            Some(CodecError { upto: 0, cause: "incomplete sequence".into_send_str() })
+            Some(CodecError { upto: 0, cause: "incomplete sequence".into_maybe_owned() })
         } else {
             None
         }

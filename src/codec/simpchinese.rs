@@ -61,7 +61,7 @@ impl Encoder for GBK18030Encoder {
                 let ptr = index2312::backward(ch as u32);
                 if ptr == 0xffff {
                     return (i, Some(CodecError {
-                        upto: j, cause: "unrepresentable character".into_send_str()
+                        upto: j, cause: "unrepresentable character".into_maybe_owned()
                     }));
                 }
                 let lead = ptr / 190 + 0x81;
@@ -120,7 +120,7 @@ impl Decoder for GBK18030Decoder {
             if ch == 0xffff {
                 self.first = 0;
                 return (processed, Some(CodecError {
-                    upto: i, cause: "invalid sequence".into_send_str()
+                    upto: i, cause: "invalid sequence".into_maybe_owned()
                 }));
             }
             output.write_char(as_char(ch));
@@ -142,14 +142,14 @@ impl Decoder for GBK18030Decoder {
                     let ch = map_two_2312_bytes(input[i-1], input[i]);
                     if ch == 0xffff {
                         return (processed, Some(CodecError {
-                            upto: i, cause: "invalid sequence".into_send_str()
+                            upto: i, cause: "invalid sequence".into_maybe_owned()
                         }));
                     }
                     output.write_char(as_char(ch));
                 }
                 _ => {
                     return (processed, Some(CodecError {
-                        upto: i+1, cause: "invalid sequence".into_send_str()
+                        upto: i+1, cause: "invalid sequence".into_maybe_owned()
                     }));
                 }
             }
@@ -163,7 +163,7 @@ impl Decoder for GBK18030Decoder {
         let first = self.first;
         self.first = 0;
         if first != 0 {
-            Some(CodecError { upto: 0, cause: "incomplete sequence".into_send_str() })
+            Some(CodecError { upto: 0, cause: "incomplete sequence".into_maybe_owned() })
         } else {
             None
         }
@@ -347,7 +347,7 @@ impl Decoder for GB18030Decoder {
                     if ch == 0xffff {
                         self.first = 0;
                         return (processed, Some(CodecError {
-                            upto: i, cause: "invalid sequence".into_send_str()
+                            upto: i, cause: "invalid sequence".into_maybe_owned()
                         }));
                     }
                     output.write_char(as_char(ch));
@@ -367,7 +367,7 @@ impl Decoder for GB18030Decoder {
                     self.first = 0;
                     self.second = 0;
                     return (processed, Some(CodecError {
-                        upto: i, cause: "invalid sequence".into_send_str()
+                        upto: i, cause: "invalid sequence".into_maybe_owned()
                     }));
                 }
             }
@@ -386,7 +386,7 @@ impl Decoder for GB18030Decoder {
                 self.third = 0;
                 return (processed, Some(CodecError {
                     // XXX upto should point to the negative offset???
-                    upto: if i<2 {0} else {i-2}, cause: "invalid sequence".into_send_str()
+                    upto: if i<2 {0} else {i-2}, cause: "invalid sequence".into_maybe_owned()
                 }));
             }
             output.write_char(as_char(ch));
@@ -427,7 +427,7 @@ impl Decoder for GB18030Decoder {
                             };
                             if ch == 0xffffffff {
                                 return (processed, Some(CodecError {
-                                    upto: i-2, cause: "invalid sequence".into_send_str()
+                                    upto: i-2, cause: "invalid sequence".into_maybe_owned()
                                 }));
                             }
                         }
@@ -435,7 +435,7 @@ impl Decoder for GB18030Decoder {
                             ch = map_two_2312_bytes(input[i-1], input[i]) as uint;
                             if ch == 0xffff {
                                 return (processed, Some(CodecError {
-                                    upto: i, cause: "invalid sequence".into_send_str()
+                                    upto: i, cause: "invalid sequence".into_maybe_owned()
                                 }));
                             }
                         }
@@ -444,7 +444,7 @@ impl Decoder for GB18030Decoder {
                 }
                 _ => {
                     return (processed, Some(CodecError {
-                        upto: i+1, cause: "invalid sequence".into_send_str()
+                        upto: i+1, cause: "invalid sequence".into_maybe_owned()
                     }));
                 }
             }
@@ -462,7 +462,7 @@ impl Decoder for GB18030Decoder {
         self.second = 0;
         self.third = 0;
         if first != 0 || second != 0 || third != 0 {
-            Some(CodecError { upto: 0, cause: "incomplete sequence".into_send_str() })
+            Some(CodecError { upto: 0, cause: "incomplete sequence".into_maybe_owned() })
         } else {
             None
         }
