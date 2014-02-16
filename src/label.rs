@@ -331,7 +331,7 @@ pub fn encoding_from_windows_code_page(cp: uint) -> Option<EncodingRef> {
 
 #[cfg(test)]
 mod tests {
-    extern mod extra;
+    extern crate extra;
     use super::encoding_from_whatwg_label;
 
     #[test]
