@@ -331,7 +331,7 @@ pub fn encoding_from_windows_code_page(cp: uint) -> Option<EncodingRef> {
 
 #[cfg(test)]
 mod tests {
-    extern crate extra;
+    extern crate test;
     use super::encoding_from_whatwg_label;
 
     #[test]
@@ -347,7 +347,7 @@ mod tests {
     }
 
     #[bench]
-    fn bench_encoding_from_whatwg_label(harness: &mut extra::test::BenchHarness) {
+    fn bench_encoding_from_whatwg_label(harness: &mut test::BenchHarness) {
         harness.iter(|| {
             encoding_from_whatwg_label("iso-8859-bazinga");
         })
