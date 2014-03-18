@@ -82,13 +82,13 @@ mod tests {
 
     #[test]
     fn test_readme() {
-        assert_eq!(all::ISO_8859_1.encode("caf\xe9", EncodeStrict), Ok(~[99,97,102,233]));
+        assert_eq!(all::ISO_8859_1.encode("caf\xe9", EncodeStrict), Ok(vec!(99,97,102,233)));
 
         assert!(all::ISO_8859_2.encode("Acme\xa9", EncodeStrict).is_err());
-        assert_eq!(all::ISO_8859_2.encode("Acme\xa9", EncodeReplace), Ok(~[65,99,109,101,63]));
-        assert_eq!(all::ISO_8859_2.encode("Acme\xa9", EncodeIgnore), Ok(~[65,99,109,101]));
+        assert_eq!(all::ISO_8859_2.encode("Acme\xa9", EncodeReplace), Ok(vec!(65,99,109,101,63)));
+        assert_eq!(all::ISO_8859_2.encode("Acme\xa9", EncodeIgnore), Ok(vec!(65,99,109,101)));
         assert_eq!(all::ISO_8859_2.encode("Acme\xa9", EncodeNcrEscape),
-                   Ok(~[65,99,109,101,38,35,49,54,57,59])); // Acme&#169;
+                   Ok(vec!(65,99,109,101,38,35,49,54,57,59))); // Acme&#169;
 
         assert_eq!(all::ISO_8859_1.decode([99,97,102,233], DecodeStrict), Ok(~"caf\xe9"));
 
@@ -100,17 +100,18 @@ mod tests {
     #[test]
     fn test_readme_hex_ncr_escape() {
         // hexadecimal numeric character reference replacement
+        use std::vec_ng::Vec;
         fn hex_ncr_escape(_encoder: &Encoder, input: &str, output: &mut ByteWriter) -> bool {
-            let escapes: ~[~str] =
+            let escapes: Vec<~str> =
                 input.chars().map(|ch| format!("&\\#x{:x};", ch as int)).collect();
             let escapes = escapes.concat();
             output.write_bytes(escapes.as_bytes());
             true
         }
-        let HexNcrEscape = EncoderTrap(hex_ncr_escape);
+        static HexNcrEscape: EncoderTrap = EncoderTrap(hex_ncr_escape);
         let orig = ~"Hello, 世界!";
         let encoded = all::ASCII.encode(orig, HexNcrEscape).unwrap();
-        let decoded = all::ASCII.decode(encoded, DecodeStrict).unwrap();
+        let decoded = all::ASCII.decode(encoded.as_slice(), DecodeStrict).unwrap();
         assert_eq!(decoded, ~"Hello, &#x4e16;&#x754c;!");
     }
 

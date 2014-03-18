@@ -14,8 +14,8 @@ macro_rules! assert_feed_ok(
         let unprocessed = $this.test_norm_input(unprocessed);
         let output = $output;
         let output = $this.test_norm_output(output);
-        let input = processed + unprocessed;
-        let (nprocessed, err, buf) = $this.test_feed(input);
+        let input = $this.test_concat(processed, unprocessed);
+        let (nprocessed, err, buf) = $this.test_feed(input.as_slice());
         let upto = err.map(|e| e.upto);
         assert!(processed.len() == nprocessed && None == upto,
                 "raw_feed should return {:?}, but instead returned {:?}",
@@ -35,8 +35,8 @@ macro_rules! assert_feed_err(
         let remaining = $this.test_norm_input(remaining);
         let output = $output;
         let output = $this.test_norm_output(output);
-        let input = processed + problem + remaining;
-        let (nprocessed, err, buf) = $this.test_feed(input);
+        let input = $this.test_concat($this.test_concat(processed, problem).as_slice(), remaining);
+        let (nprocessed, err, buf) = $this.test_feed(input.as_slice());
         let upto = err.map(|e| e.upto);
         assert!(processed.len() == nprocessed && Some(processed.len() + problem.len()) == upto,
                 "raw_feed should return {:?}, but instead returned {:?}",

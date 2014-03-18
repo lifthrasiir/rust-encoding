@@ -53,6 +53,7 @@
  */
 
 use std::str::SendStr;
+use std::vec_ng::Vec;
 
 /// Error information from either encoder or decoder.
 pub struct CodecError {
@@ -82,7 +83,21 @@ pub trait ByteWriter {
     fn write_bytes(&mut self, v: &[u8]);
 }
 
-impl<T:OwnedVector<u8>+OwnedCloneableVector<u8>> ByteWriter for T {
+impl ByteWriter for ~[u8] {
+    fn writer_hint(&mut self, expectedlen: uint) {
+        self.reserve_additional(expectedlen);
+    }
+
+    fn write_byte(&mut self, b: u8) {
+        self.push(b);
+    }
+
+    fn write_bytes(&mut self, v: &[u8]) {
+        self.push_all(v);
+    }
+}
+
+impl ByteWriter for Vec<u8> {
     fn writer_hint(&mut self, expectedlen: uint) {
         self.reserve_additional(expectedlen);
     }
@@ -161,19 +176,23 @@ pub trait Encoder {
 
     /// A test-friendly interface to `raw_feed`. Internal use only.
     #[cfg(test)]
-    fn test_feed(&mut self, input: &str) -> (uint, Option<CodecError>, ~[u8]) {
-        let mut buf = ~[];
-        let (nprocessed, err) = self.raw_feed(input, &mut buf as &mut super::ByteWriter);
+    fn test_feed(&mut self, input: &str) -> (uint, Option<CodecError>, Vec<u8>) {
+        let mut buf = Vec::new();
+        let (nprocessed, err) = self.raw_feed(input, &mut buf);
         (nprocessed, err, buf)
     }
 
     /// A test-friendly interface to `raw_finish`. Internal use only.
     #[cfg(test)]
-    fn test_finish(&mut self) -> (Option<CodecError>, ~[u8]) {
-        let mut buf = ~[];
-        let err = self.raw_finish(&mut buf as &mut super::ByteWriter);
+    fn test_finish(&mut self) -> (Option<CodecError>, Vec<u8>) {
+        let mut buf = Vec::new();
+        let err = self.raw_finish(&mut buf);
         (err, buf)
     }
+
+    /// Concatenates two input sequences into one. Internal use only.
+    #[cfg(test)]
+    fn test_concat(&self, a: &str, b: &str) -> ~str { a + b }
 }
 
 /// Encoder converting a byte sequence into a Unicode string.
@@ -211,7 +230,7 @@ pub trait Decoder {
     #[cfg(test)]
     fn test_feed(&mut self, input: &[u8]) -> (uint, Option<CodecError>, ~str) {
         let mut buf = ~"";
-        let (nprocessed, err) = self.raw_feed(input, &mut buf as &mut super::StringWriter);
+        let (nprocessed, err) = self.raw_feed(input, &mut buf);
         (nprocessed, err, buf)
     }
 
@@ -219,8 +238,17 @@ pub trait Decoder {
     #[cfg(test)]
     fn test_finish(&mut self) -> (Option<CodecError>, ~str) {
         let mut buf = ~"";
-        let err = self.raw_finish(&mut buf as &mut super::StringWriter);
+        let err = self.raw_finish(&mut buf);
         (err, buf)
+    }
+
+    /// Concatenates two input sequences into one. Internal use only.
+    #[cfg(test)]
+    fn test_concat(&self, a: &[u8], b: &[u8]) -> Vec<u8> {
+        let mut v = Vec::with_capacity(a.len() + b.len());
+        v.push_all(a);
+        v.push_all(b);
+        v
     }
 }
 
@@ -249,19 +277,19 @@ pub trait Encoding {
     /// On the encoder error `trap` is called,
     /// which may return a replacement sequence to continue processing,
     /// or a failure to return the error.
-    fn encode(&'static self, input: &str, trap: EncoderTrap) -> Result<~[u8],SendStr> {
+    fn encode(&'static self, input: &str, trap: EncoderTrap) -> Result<Vec<u8>,SendStr> {
         let mut encoder = self.encoder();
         let mut remaining = input;
         let mut unprocessed = ~"";
-        let mut ret = ~[];
+        let mut ret = Vec::new();
 
         loop {
-            let (offset, err) = encoder.raw_feed(remaining, &mut ret as &mut ByteWriter);
+            let (offset, err) = encoder.raw_feed(remaining, &mut ret);
             if offset > 0 { unprocessed.clear(); }
             match err {
                 Some(err) => {
                     unprocessed.push_str(remaining.slice(offset, err.upto));
-                    if !trap.trap(encoder, unprocessed, &mut ret as &mut ByteWriter) {
+                    if !trap.trap(encoder, unprocessed, &mut ret) {
                         return Err(err.cause);
                     }
                     unprocessed.clear();
@@ -274,9 +302,9 @@ pub trait Encoding {
             }
         }
 
-        match encoder.raw_finish(&mut ret as &mut ByteWriter) {
+        match encoder.raw_finish(&mut ret) {
             Some(err) => {
-                if !trap.trap(encoder, unprocessed, &mut ret as &mut ByteWriter) {
+                if !trap.trap(encoder, unprocessed, &mut ret) {
                     return Err(err.cause);
                 }
             }
@@ -292,16 +320,16 @@ pub trait Encoding {
     fn decode(&'static self, input: &[u8], trap: DecoderTrap) -> Result<~str,SendStr> {
         let mut decoder = self.decoder();
         let mut remaining = input;
-        let mut unprocessed = ~[];
+        let mut unprocessed = Vec::new();
         let mut ret = ~"";
 
         loop {
-            let (offset, err) = decoder.raw_feed(remaining, &mut ret as &mut StringWriter);
+            let (offset, err) = decoder.raw_feed(remaining, &mut ret);
             if offset > 0 { unprocessed.clear(); }
             match err {
                 Some(err) => {
                     unprocessed.push_all(remaining.slice(offset, err.upto));
-                    if !trap.trap(decoder, unprocessed, &mut ret as &mut StringWriter) {
+                    if !trap.trap(decoder, unprocessed.as_slice(), &mut ret) {
                         return Err(err.cause);
                     }
                     unprocessed.clear();
@@ -314,9 +342,9 @@ pub trait Encoding {
             }
         }
 
-        match decoder.raw_finish(&mut ret as &mut StringWriter) {
+        match decoder.raw_finish(&mut ret) {
             Some(err) => {
-                if !trap.trap(decoder, unprocessed, &mut ret as &mut StringWriter) {
+                if !trap.trap(decoder, unprocessed.as_slice(), &mut ret) {
                     return Err(err.cause);
                 }
             }
