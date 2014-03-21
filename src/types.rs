@@ -53,7 +53,6 @@
  */
 
 use std::str::SendStr;
-use std::vec_ng::Vec;
 
 /// Error information from either encoder or decoder.
 pub struct CodecError {
