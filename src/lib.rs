@@ -100,7 +100,6 @@ mod tests {
     #[test]
     fn test_readme_hex_ncr_escape() {
         // hexadecimal numeric character reference replacement
-        use std::vec_ng::Vec;
         fn hex_ncr_escape(_encoder: &Encoder, input: &str, output: &mut ByteWriter) -> bool {
             let escapes: Vec<~str> =
                 input.chars().map(|ch| format!("&\\#x{:x};", ch as int)).collect();
