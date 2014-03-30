@@ -4,7 +4,7 @@
 
 //! Macros for testing.
 
-#[macro_escape];
+#![macro_escape]
 
 macro_rules! assert_feed_ok(
     ($this:expr, $processed:expr, $unprocessed:expr, $output:expr) => ({
