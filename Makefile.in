@@ -8,8 +8,8 @@ RUSTC ?= rustc
 RUSTDOC ?= rustdoc
 RUSTFLAGS ?= -O
 
-LIB_RS = src/lib.rs
-RUST_SRC = $(shell find $(VPATH)/src/. -type f -name '*.rs')
+LIB_RS = src/encoding/lib.rs
+RUST_SRC = $(shell find $(VPATH)/src/encoding/. -type f -name '*.rs')
 
 .PHONY: all
 all:	libencoding.dummy
