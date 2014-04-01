@@ -9,10 +9,10 @@ use types::*;
 
 /// A common framework for single-byte encodings based on ASCII.
 pub struct SingleByteEncoding {
-    name: &'static str,
-    whatwg_name: Option<&'static str>,
-    index_forward: extern "Rust" fn(u8) -> u16,
-    index_backward: extern "Rust" fn(u16) -> u8,
+    pub name: &'static str,
+    pub whatwg_name: Option<&'static str>,
+    pub index_forward: extern "Rust" fn(u8) -> u16,
+    pub index_backward: extern "Rust" fn(u16) -> u8,
 }
 
 impl Encoding for SingleByteEncoding {

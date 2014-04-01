@@ -60,9 +60,9 @@ pub struct CodecError {
     /// The caller should feed the bytes starting from this point again
     /// in order to continue encoding or decoding after an error.
     /// This value is always set to 0 for `finish`.
-    upto: uint,
+    pub upto: uint,
     /// A human-readable cause of the error.
-    cause: SendStr,
+    pub cause: SendStr,
 }
 
 /// Byte writer used by `Encoder`s. In most cases this will be an owned vector of `u8`.

@@ -14,8 +14,8 @@ pub fn as_char<T:Int+NumCast>(ch: T) -> char {
 
 /// External iterator for a string's characters with its corresponding byte offset range.
 pub struct StrCharIndexIterator<'r> {
-    priv index: uint,
-    priv string: &'r str,
+    index: uint,
+    string: &'r str,
 }
 
 impl<'r> Iterator<((uint,uint), char)> for StrCharIndexIterator<'r> {
