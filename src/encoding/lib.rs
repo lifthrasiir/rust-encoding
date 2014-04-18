@@ -15,7 +15,10 @@
 
 #![feature(globs, macro_rules)]
 
-pub use self::types::*; // reexport
+pub use self::types::{CodecError, ByteWriter, StringWriter,
+                      Encoder, Decoder, EncodingRef, Encoding,
+                      EncoderTrapFunc, DecoderTrapFunc, DecoderTrap,
+                      EncoderTrap, decode}; // reexport
 
 mod util;
 #[cfg(test)] mod testutils;
