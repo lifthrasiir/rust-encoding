@@ -39,8 +39,8 @@ To decode a byte sequence with invalid sequences:
 
 ~~~~ {.rust}
 all::ISO_8859_6.decode([65,99,109,101,169], DecodeStrict); // => Err(...)
-all::ISO_8859_6.decode([65,99,109,101,169], DecodeReplace); // => Ok(~"Acme\ufffd")
-all::ISO_8859_6.decode([65,99,109,101,169], DecodeIgnore); // => Ok(~"Acme")
+all::ISO_8859_6.decode([65,99,109,101,169], DecodeReplace); // => Ok(StrBuf::from_str("Acme\ufffd"))
+all::ISO_8859_6.decode([65,99,109,101,169], DecodeIgnore); // => Ok(StrBuf::from_str("Acme"))
 ~~~~
 
 A practical example of custom encoder traps:
@@ -58,7 +58,7 @@ static HexNcrEscape: EncoderTrap = EncoderTrap(hex_ncr_escape);
 
 let orig = ~"Hello, 世界!";
 let encoded = all::ASCII.encode(orig, HexNcrEscape).unwrap();
-all::ASCII.decode(encoded.as_slice(), DecodeStrict); // => Ok(~"Hello, &#x4e16;&#x754c;!")
+all::ASCII.decode(encoded.as_slice(), DecodeStrict); // => Ok(StrBuf::from_str("Hello, &#x4e16;&#x754c;!"))
 ~~~~
 
 Getting the encoding from the string label,
@@ -69,10 +69,10 @@ let euckr = label::encoding_from_whatwg_label("euc-kr").unwrap();
 euckr.name(); // => "windows-949"
 euckr.whatwg_name(); // => Some("euc-kr"), for the sake of compatibility
 let broken = &[0xbf, 0xec, 0xbf, 0xcd, 0xff, 0xbe, 0xd3];
-euckr.decode(broken, DecodeReplace); // => Ok(~"\uc6b0\uc640\ufffd\uc559")
+euckr.decode(broken, DecodeReplace); // => Ok(Strbuf::from_str("\uc6b0\uc640\ufffd\uc559"))
 
 // corresponding rust-encoding native API:
-all::WINDOWS_949.decode(broken, DecodeReplace); // => Ok(~"\uc6b0\uc640\ufffd\uc559")
+all::WINDOWS_949.decode(broken, DecodeReplace); // => Ok(StrBuf::from_str("\uc6b0\uc640\ufffd\uc559"))
 ~~~~
 
 Supported Encodings
