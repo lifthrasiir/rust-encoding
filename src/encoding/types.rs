@@ -82,20 +82,6 @@ pub trait ByteWriter {
     fn write_bytes(&mut self, v: &[u8]);
 }
 
-impl ByteWriter for ~[u8] {
-    fn writer_hint(&mut self, expectedlen: uint) {
-        self.reserve_additional(expectedlen);
-    }
-
-    fn write_byte(&mut self, b: u8) {
-        self.push(b);
-    }
-
-    fn write_bytes(&mut self, v: &[u8]) {
-        self.push_all(v);
-    }
-}
-
 impl ByteWriter for Vec<u8> {
     fn writer_hint(&mut self, expectedlen: uint) {
         self.reserve_additional(expectedlen);

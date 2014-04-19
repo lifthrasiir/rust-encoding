@@ -18,7 +18,9 @@
 pub use self::types::{CodecError, ByteWriter, StringWriter,
                       Encoder, Decoder, EncodingRef, Encoding,
                       EncoderTrapFunc, DecoderTrapFunc, DecoderTrap,
-                      EncoderTrap, decode}; // reexport
+                      DecodeStrict, DecodeReplace, DecodeIgnore,
+                      EncoderTrap, EncodeStrict, EncodeReplace,
+                      EncodeIgnore, EncodeNcrEscape, decode}; // reexport
 
 mod util;
 #[cfg(test)] mod testutils;
