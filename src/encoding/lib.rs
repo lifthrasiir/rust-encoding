@@ -116,7 +116,7 @@ mod tests {
             true
         }
         static HexNcrEscape: EncoderTrap = EncoderTrap(hex_ncr_escape);
-        let orig = ~"Hello, 世界!";
+        let orig = "Hello, 世界!".to_owned();
         let encoded = all::ASCII.encode(orig, HexNcrEscape).unwrap();
         let decoded = all::ASCII.decode(encoded.as_slice(), DecodeStrict).unwrap();
         assert_eq!(decoded, StrBuf::from_str("Hello, &#x4e16;&#x754c;!"));
