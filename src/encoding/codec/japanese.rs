@@ -30,8 +30,8 @@ pub struct EUCJPEncoding;
 impl Encoding for EUCJPEncoding {
     fn name(&self) -> &'static str { "euc-jp" }
     fn whatwg_name(&self) -> Option<&'static str> { Some("euc-jp") }
-    fn encoder(&self) -> ~Encoder { EUCJPEncoder::new() }
-    fn decoder(&self) -> ~Decoder { EUCJP0212Decoder::new() }
+    fn encoder(&self) -> Box<Encoder> { EUCJPEncoder::new() }
+    fn decoder(&self) -> Box<Decoder> { EUCJP0212Decoder::new() }
 }
 
 /// An encoder for EUC-JP with unused G3 character set.
@@ -39,11 +39,11 @@ impl Encoding for EUCJPEncoding {
 pub struct EUCJPEncoder;
 
 impl EUCJPEncoder {
-    pub fn new() -> ~Encoder { ~EUCJPEncoder as ~Encoder }
+    pub fn new() -> Box<Encoder> { box EUCJPEncoder as Box<Encoder> }
 }
 
 impl Encoder for EUCJPEncoder {
-    fn from_self(&self) -> ~Encoder { EUCJPEncoder::new() }
+    fn from_self(&self) -> Box<Encoder> { EUCJPEncoder::new() }
     fn is_ascii_compatible(&self) -> bool { true }
 
     fn raw_feed(&mut self, input: &str, output: &mut ByteWriter) -> (uint, Option<CodecError>) {
@@ -89,11 +89,11 @@ pub struct EUCJP0212Decoder {
 }
 
 impl EUCJP0212Decoder {
-    pub fn new() -> ~Decoder { ~EUCJP0212Decoder { first: 0, second: 0 } as ~Decoder }
+    pub fn new() -> Box<Decoder> { box EUCJP0212Decoder { first: 0, second: 0 } as Box<Decoder> }
 }
 
 impl Decoder for EUCJP0212Decoder {
-    fn from_self(&self) -> ~Decoder { EUCJP0212Decoder::new() }
+    fn from_self(&self) -> Box<Decoder> { EUCJP0212Decoder::new() }
     fn is_ascii_compatible(&self) -> bool { true }
 
     fn raw_feed(&mut self, input: &[u8], output: &mut StringWriter) -> (uint, Option<CodecError>) {
@@ -319,8 +319,8 @@ pub struct Windows31JEncoding;
 impl Encoding for Windows31JEncoding {
     fn name(&self) -> &'static str { "windows-31j" }
     fn whatwg_name(&self) -> Option<&'static str> { Some("shift_jis") } // WHATWG compatibility
-    fn encoder(&self) -> ~Encoder { Windows31JEncoder::new() }
-    fn decoder(&self) -> ~Decoder { Windows31JDecoder::new() }
+    fn encoder(&self) -> Box<Encoder> { Windows31JEncoder::new() }
+    fn decoder(&self) -> Box<Decoder> { Windows31JDecoder::new() }
 }
 
 /// An encoder for Shift_JIS with IBM/NEC extensions.
@@ -328,11 +328,11 @@ impl Encoding for Windows31JEncoding {
 pub struct Windows31JEncoder;
 
 impl Windows31JEncoder {
-    pub fn new() -> ~Encoder { ~Windows31JEncoder as ~Encoder }
+    pub fn new() -> Box<Encoder> { box Windows31JEncoder as Box<Encoder> }
 }
 
 impl Encoder for Windows31JEncoder {
-    fn from_self(&self) -> ~Encoder { Windows31JEncoder::new() }
+    fn from_self(&self) -> Box<Encoder> { Windows31JEncoder::new() }
     fn is_ascii_compatible(&self) -> bool { true }
 
     fn raw_feed(&mut self, input: &str, output: &mut ByteWriter) -> (uint, Option<CodecError>) {
@@ -376,11 +376,11 @@ pub struct Windows31JDecoder {
 }
 
 impl Windows31JDecoder {
-    pub fn new() -> ~Decoder { ~Windows31JDecoder { lead: 0 } as ~Decoder }
+    pub fn new() -> Box<Decoder> { box Windows31JDecoder { lead: 0 } as Box<Decoder> }
 }
 
 impl Decoder for Windows31JDecoder {
-    fn from_self(&self) -> ~Decoder { Windows31JDecoder::new() }
+    fn from_self(&self) -> Box<Decoder> { Windows31JDecoder::new() }
     fn is_ascii_compatible(&self) -> bool { true }
 
     fn raw_feed(&mut self, input: &[u8], output: &mut StringWriter) -> (uint, Option<CodecError>) {

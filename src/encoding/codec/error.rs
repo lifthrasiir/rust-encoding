@@ -13,8 +13,8 @@ pub struct ErrorEncoding;
 
 impl Encoding for ErrorEncoding {
     fn name(&self) -> &'static str { "error" }
-    fn encoder(&self) -> ~Encoder { ErrorEncoder::new() }
-    fn decoder(&self) -> ~Decoder { ErrorDecoder::new() }
+    fn encoder(&self) -> Box<Encoder> { ErrorEncoder::new() }
+    fn decoder(&self) -> Box<Decoder> { ErrorDecoder::new() }
 }
 
 /// An encoder that always returns error.
@@ -22,16 +22,17 @@ impl Encoding for ErrorEncoding {
 pub struct ErrorEncoder;
 
 impl ErrorEncoder {
-    pub fn new() -> ~Encoder { ~ErrorEncoder as ~Encoder }
+    pub fn new() -> Box<Encoder> { box ErrorEncoder as Box<Encoder> }
 }
 
 impl Encoder for ErrorEncoder {
-    fn from_self(&self) -> ~Encoder { ErrorEncoder::new() }
+    fn from_self(&self) -> Box<Encoder> { ErrorEncoder::new() }
 
     fn raw_feed(&mut self, input: &str, _output: &mut ByteWriter) -> (uint, Option<CodecError>) {
         if input.len() > 0 {
             let str::CharRange {ch: _, next} = input.char_range_at(0);
-            (0, Some(CodecError { upto: next, cause: "unrepresentable character".into_maybe_owned() }))
+            (0, Some(CodecError { upto: next,
+                                  cause: "unrepresentable character".into_maybe_owned() }))
         } else {
             (0, None)
         }
@@ -47,11 +48,11 @@ impl Encoder for ErrorEncoder {
 pub struct ErrorDecoder;
 
 impl ErrorDecoder {
-    pub fn new() -> ~Decoder { ~ErrorDecoder as ~Decoder }
+    pub fn new() -> Box<Decoder> { box ErrorDecoder as Box<Decoder> }
 }
 
 impl Decoder for ErrorDecoder {
-    fn from_self(&self) -> ~Decoder { ErrorDecoder::new() }
+    fn from_self(&self) -> Box<Decoder> { ErrorDecoder::new() }
 
     fn raw_feed(&mut self, input: &[u8], _output: &mut StringWriter) -> (uint, Option<CodecError>) {
         if input.len() > 0 {

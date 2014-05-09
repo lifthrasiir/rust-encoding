@@ -18,8 +18,8 @@ pub struct SingleByteEncoding {
 impl Encoding for SingleByteEncoding {
     fn name(&self) -> &'static str { self.name }
     fn whatwg_name(&self) -> Option<&'static str> { self.whatwg_name }
-    fn encoder(&'static self) -> ~Encoder { SingleByteEncoder::new(self.index_backward) }
-    fn decoder(&'static self) -> ~Decoder { SingleByteDecoder::new(self.index_forward) }
+    fn encoder(&'static self) -> Box<Encoder> { SingleByteEncoder::new(self.index_backward) }
+    fn decoder(&'static self) -> Box<Decoder> { SingleByteDecoder::new(self.index_forward) }
 }
 
 /// An encoder for single-byte encodings based on ASCII.
@@ -29,13 +29,13 @@ pub struct SingleByteEncoder {
 }
 
 impl SingleByteEncoder {
-    pub fn new(index_backward: extern "Rust" fn(u16) -> u8) -> ~Encoder {
-        ~SingleByteEncoder { index_backward: index_backward } as ~Encoder
+    pub fn new(index_backward: extern "Rust" fn(u16) -> u8) -> Box<Encoder> {
+        box SingleByteEncoder { index_backward: index_backward } as Box<Encoder>
     }
 }
 
 impl Encoder for SingleByteEncoder {
-    fn from_self(&self) -> ~Encoder { SingleByteEncoder::new(self.index_backward) }
+    fn from_self(&self) -> Box<Encoder> { SingleByteEncoder::new(self.index_backward) }
     fn is_ascii_compatible(&self) -> bool { true }
 
     fn raw_feed(&mut self, input: &str, output: &mut ByteWriter) -> (uint, Option<CodecError>) {
@@ -72,13 +72,13 @@ pub struct SingleByteDecoder {
 }
 
 impl SingleByteDecoder {
-    pub fn new(index_forward: extern "Rust" fn(u8) -> u16) -> ~Decoder {
-        ~SingleByteDecoder { index_forward: index_forward } as ~Decoder
+    pub fn new(index_forward: extern "Rust" fn(u8) -> u16) -> Box<Decoder> {
+        box SingleByteDecoder { index_forward: index_forward } as Box<Decoder>
     }
 }
 
 impl Decoder for SingleByteDecoder {
-    fn from_self(&self) -> ~Decoder { SingleByteDecoder::new(self.index_forward) }
+    fn from_self(&self) -> Box<Decoder> { SingleByteDecoder::new(self.index_forward) }
     fn is_ascii_compatible(&self) -> bool { true }
 
     fn raw_feed(&mut self, input: &[u8], output: &mut StringWriter) -> (uint, Option<CodecError>) {

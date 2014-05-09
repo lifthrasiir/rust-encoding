@@ -35,8 +35,8 @@ pub struct GBK18030Encoding;
 impl Encoding for GBK18030Encoding {
     fn name(&self) -> &'static str { "gbk18030" }
     fn whatwg_name(&self) -> Option<&'static str> { Some("gbk") } // WHATWG compatibility
-    fn encoder(&self) -> ~Encoder { GBK18030Encoder::new() }
-    fn decoder(&self) -> ~Decoder { GBK18030Decoder::new() }
+    fn encoder(&self) -> Box<Encoder> { GBK18030Encoder::new() }
+    fn decoder(&self) -> Box<Decoder> { GBK18030Decoder::new() }
 }
 
 /// An encoder for an one- and two-byte subset of GB 18030.
@@ -44,11 +44,11 @@ impl Encoding for GBK18030Encoding {
 pub struct GBK18030Encoder;
 
 impl GBK18030Encoder {
-    pub fn new() -> ~Encoder { ~GBK18030Encoder as ~Encoder }
+    pub fn new() -> Box<Encoder> { box GBK18030Encoder as Box<Encoder> }
 }
 
 impl Encoder for GBK18030Encoder {
-    fn from_self(&self) -> ~Encoder { GBK18030Encoder::new() }
+    fn from_self(&self) -> Box<Encoder> { GBK18030Encoder::new() }
     fn is_ascii_compatible(&self) -> bool { true }
 
     fn raw_feed(&mut self, input: &str, output: &mut ByteWriter) -> (uint, Option<CodecError>) {
@@ -86,11 +86,11 @@ pub struct GBK18030Decoder {
 }
 
 impl GBK18030Decoder {
-    pub fn new() -> ~Decoder { ~GBK18030Decoder { first: 0 } as ~Decoder }
+    pub fn new() -> Box<Decoder> { box GBK18030Decoder { first: 0 } as Box<Decoder> }
 }
 
 impl Decoder for GBK18030Decoder {
-    fn from_self(&self) -> ~Decoder { GBK18030Decoder::new() }
+    fn from_self(&self) -> Box<Decoder> { GBK18030Decoder::new() }
     fn is_ascii_compatible(&self) -> bool { true }
 
     fn raw_feed(&mut self, input: &[u8], output: &mut StringWriter) -> (uint, Option<CodecError>) {
@@ -240,8 +240,8 @@ pub struct GB18030Encoding;
 impl Encoding for GB18030Encoding {
     fn name(&self) -> &'static str { "gb18030" }
     fn whatwg_name(&self) -> Option<&'static str> { Some("gb18030") }
-    fn encoder(&self) -> ~Encoder { GB18030Encoder::new() }
-    fn decoder(&self) -> ~Decoder { GB18030Decoder::new() }
+    fn encoder(&self) -> Box<Encoder> { GB18030Encoder::new() }
+    fn decoder(&self) -> Box<Decoder> { GB18030Decoder::new() }
 }
 
 /// An encoder for GB 18030.
@@ -249,11 +249,11 @@ impl Encoding for GB18030Encoding {
 pub struct GB18030Encoder;
 
 impl GB18030Encoder {
-    pub fn new() -> ~Encoder { ~GB18030Encoder as ~Encoder }
+    pub fn new() -> Box<Encoder> { box GB18030Encoder as Box<Encoder> }
 }
 
 impl Encoder for GB18030Encoder {
-    fn from_self(&self) -> ~Encoder { GB18030Encoder::new() }
+    fn from_self(&self) -> Box<Encoder> { GB18030Encoder::new() }
     fn is_ascii_compatible(&self) -> bool { true }
 
     fn raw_feed(&mut self, input: &str, output: &mut ByteWriter) -> (uint, Option<CodecError>) {
@@ -300,11 +300,13 @@ pub struct GB18030Decoder {
 }
 
 impl GB18030Decoder {
-    pub fn new() -> ~Decoder { ~GB18030Decoder { first: 0, second: 0, third: 0 } as ~Decoder }
+    pub fn new() -> Box<Decoder> {
+        box GB18030Decoder { first: 0, second: 0, third: 0 } as Box<Decoder>
+    }
 }
 
 impl Decoder for GB18030Decoder {
-    fn from_self(&self) -> ~Decoder { GB18030Decoder::new() }
+    fn from_self(&self) -> Box<Decoder> { GB18030Decoder::new() }
     fn is_ascii_compatible(&self) -> bool { true }
 
     fn raw_feed(&mut self, input: &[u8], output: &mut StringWriter) -> (uint, Option<CodecError>) {

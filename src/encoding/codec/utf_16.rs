@@ -23,8 +23,8 @@ pub struct UTF16LEEncoding;
 impl Encoding for UTF16LEEncoding {
     fn name(&self) -> &'static str { "utf-16le" }
     fn whatwg_name(&self) -> Option<&'static str> { Some("utf-16") } // WHATWG compatibility
-    fn encoder(&self) -> ~Encoder { UTF16LEEncoder::new() }
-    fn decoder(&self) -> ~Decoder { UTF16LEDecoder::new() }
+    fn encoder(&self) -> Box<Encoder> { UTF16LEEncoder::new() }
+    fn decoder(&self) -> Box<Decoder> { UTF16LEDecoder::new() }
 }
 
 /**
@@ -36,8 +36,8 @@ pub struct UTF16BEEncoding;
 impl Encoding for UTF16BEEncoding {
     fn name(&self) -> &'static str { "utf-16be" }
     fn whatwg_name(&self) -> Option<&'static str> { Some("utf-16be") }
-    fn encoder(&self) -> ~Encoder { UTF16BEEncoder::new() }
-    fn decoder(&self) -> ~Decoder { UTF16BEDecoder::new() }
+    fn encoder(&self) -> Box<Encoder> { UTF16BEEncoder::new() }
+    fn decoder(&self) -> Box<Decoder> { UTF16BEDecoder::new() }
 }
 
 /// An encoder for UTF-16 in little endian.
@@ -49,18 +49,18 @@ pub struct UTF16LEEncoder;
 pub struct UTF16BEEncoder;
 
 impl UTF16LEEncoder {
-    pub fn new() -> ~Encoder { ~UTF16LEEncoder as ~Encoder }
+    pub fn new() -> Box<Encoder> { box UTF16LEEncoder as Box<Encoder> }
 }
 
 impl UTF16BEEncoder {
-    pub fn new() -> ~Encoder { ~UTF16BEEncoder as ~Encoder }
+    pub fn new() -> Box<Encoder> { box UTF16BEEncoder as Box<Encoder> }
 }
 
 macro_rules! impl_UTF16Encoder(
     ($encoder:ident: fn write_two_bytes($output:ident: &mut ByteWriter,
                                         $msb:ident: u8, $lsb:ident: u8) $body:block) =>
     (impl Encoder for $encoder {
-        fn from_self(&self) -> ~Encoder { $encoder::new() }
+        fn from_self(&self) -> Box<Encoder> { $encoder::new() }
 
         fn raw_feed(&mut self, input: &str, output: &mut ByteWriter) -> (uint, Option<CodecError>) {
             output.writer_hint(input.len() * 2);
@@ -123,21 +123,21 @@ pub struct UTF16BEDecoder {
 }
 
 impl UTF16LEDecoder {
-    pub fn new() -> ~Decoder {
-        ~UTF16LEDecoder { leadbyte: 0xffff, leadsurrogate: 0xffff } as ~Decoder
+    pub fn new() -> Box<Decoder> {
+        box UTF16LEDecoder { leadbyte: 0xffff, leadsurrogate: 0xffff } as Box<Decoder>
     }
 }
 
 impl UTF16BEDecoder {
-    pub fn new() -> ~Decoder {
-        ~UTF16BEDecoder { leadbyte: 0xffff, leadsurrogate: 0xffff } as ~Decoder
+    pub fn new() -> Box<Decoder> {
+        box UTF16BEDecoder { leadbyte: 0xffff, leadsurrogate: 0xffff } as Box<Decoder>
     }
 }
 
 macro_rules! impl_UTF16Decoder(
     ($decoder:ident: fn concat_two_bytes($lead:ident: u16, $trail:ident: u8) -> u16 $body:block) =>
     (impl Decoder for $decoder {
-        fn from_self(&self) -> ~Decoder { $decoder::new() }
+        fn from_self(&self) -> Box<Decoder> { $decoder::new() }
 
         fn raw_feed(&mut self, input: &[u8],
                     output: &mut StringWriter) -> (uint, Option<CodecError>) {

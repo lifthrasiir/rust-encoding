@@ -18,8 +18,8 @@ pub struct ASCIIEncoding;
 
 impl Encoding for ASCIIEncoding {
     fn name(&self) -> &'static str { "ascii" }
-    fn encoder(&self) -> ~Encoder { ASCIIEncoder::new() }
-    fn decoder(&self) -> ~Decoder { ASCIIDecoder::new() }
+    fn encoder(&self) -> Box<Encoder> { ASCIIEncoder::new() }
+    fn decoder(&self) -> Box<Decoder> { ASCIIDecoder::new() }
 }
 
 /// An encoder for ASCII.
@@ -27,11 +27,11 @@ impl Encoding for ASCIIEncoding {
 pub struct ASCIIEncoder;
 
 impl ASCIIEncoder {
-    pub fn new() -> ~Encoder { ~ASCIIEncoder as ~Encoder }
+    pub fn new() -> Box<Encoder> { box ASCIIEncoder as Box<Encoder> }
 }
 
 impl Encoder for ASCIIEncoder {
-    fn from_self(&self) -> ~Encoder { ASCIIEncoder::new() }
+    fn from_self(&self) -> Box<Encoder> { ASCIIEncoder::new() }
     fn is_ascii_compatible(&self) -> bool { true }
 
     fn raw_feed(&mut self, input: &str, output: &mut ByteWriter) -> (uint, Option<CodecError>) {
@@ -59,11 +59,11 @@ impl Encoder for ASCIIEncoder {
 pub struct ASCIIDecoder;
 
 impl ASCIIDecoder {
-    pub fn new() -> ~Decoder { ~ASCIIDecoder as ~Decoder }
+    pub fn new() -> Box<Decoder> { box ASCIIDecoder as Box<Decoder> }
 }
 
 impl Decoder for ASCIIDecoder {
-    fn from_self(&self) -> ~Decoder { ASCIIDecoder::new() }
+    fn from_self(&self) -> Box<Decoder> { ASCIIDecoder::new() }
     fn is_ascii_compatible(&self) -> bool { true }
 
     fn raw_feed(&mut self, input: &[u8], output: &mut StringWriter) -> (uint, Option<CodecError>) {

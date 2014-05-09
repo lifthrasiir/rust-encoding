@@ -132,7 +132,7 @@ impl StringWriter for StrBuf {
 /// This is a lower level interface, and normally `Encoding::encode` should be used instead.
 pub trait Encoder {
     /// Creates a fresh `Encoder` instance which parameters are same as `self`.
-    fn from_self(&self) -> ~Encoder;
+    fn from_self(&self) -> Box<Encoder>;
 
     /// Returns true if this encoding is compatible to ASCII,
     /// i.e. U+0000 through U+007F always map to bytes 00 through 7F and nothing else.
@@ -184,7 +184,7 @@ pub trait Encoder {
 /// This is a lower level interface, and normally `Encoding::decode` should be used instead.
 pub trait Decoder {
     /// Creates a fresh `Decoder` instance which parameters are same as `self`.
-    fn from_self(&self) -> ~Decoder;
+    fn from_self(&self) -> Box<Decoder>;
 
     /// Returns true if this encoding is compatible to ASCII,
     /// i.e. bytes 00 through 7F always map to U+0000 through U+007F and nothing else.
@@ -253,10 +253,10 @@ pub trait Encoding {
     fn whatwg_name(&self) -> Option<&'static str> { None }
 
     /// Creates a new encoder.
-    fn encoder(&'static self) -> ~Encoder;
+    fn encoder(&'static self) -> Box<Encoder>;
 
     /// Creates a new decoder.
-    fn decoder(&'static self) -> ~Decoder;
+    fn decoder(&'static self) -> Box<Decoder>;
 
     /// An easy-to-use interface to `Encoder`.
     /// On the encoder error `trap` is called,

@@ -48,8 +48,8 @@ pub struct UTF8Encoding;
 impl Encoding for UTF8Encoding {
     fn name(&self) -> &'static str { "utf-8" }
     fn whatwg_name(&self) -> Option<&'static str> { Some("utf-8") }
-    fn encoder(&self) -> ~Encoder { UTF8Encoder::new() }
-    fn decoder(&self) -> ~Decoder { UTF8Decoder::new() }
+    fn encoder(&self) -> Box<Encoder> { UTF8Encoder::new() }
+    fn decoder(&self) -> Box<Decoder> { UTF8Decoder::new() }
 }
 
 /// An encoder for UTF-8.
@@ -57,11 +57,11 @@ impl Encoding for UTF8Encoding {
 pub struct UTF8Encoder;
 
 impl UTF8Encoder {
-    pub fn new() -> ~Encoder { ~UTF8Encoder as ~Encoder }
+    pub fn new() -> Box<Encoder> { box UTF8Encoder as Box<Encoder> }
 }
 
 impl Encoder for UTF8Encoder {
-    fn from_self(&self) -> ~Encoder { UTF8Encoder::new() }
+    fn from_self(&self) -> Box<Encoder> { UTF8Encoder::new() }
     fn is_ascii_compatible(&self) -> bool { true }
 
     fn raw_feed(&mut self, input: &str, output: &mut ByteWriter) -> (uint, Option<CodecError>) {
@@ -86,8 +86,8 @@ pub struct UTF8Decoder {
 }
 
 impl UTF8Decoder {
-    pub fn new() -> ~Decoder {
-        ~UTF8Decoder { queuelen: 0, queue: [0, ..4], state: INITIAL_STATE } as ~Decoder
+    pub fn new() -> Box<Decoder> {
+        box UTF8Decoder { queuelen: 0, queue: [0, ..4], state: INITIAL_STATE } as Box<Decoder>
     }
 }
 
@@ -139,7 +139,7 @@ static REJECT_STATE: u8 = 12;
 static REJECT_STATE_WITH_BACKUP: u8 = REJECT_STATE | 1;
 
 impl Decoder for UTF8Decoder {
-    fn from_self(&self) -> ~Decoder { UTF8Decoder::new() }
+    fn from_self(&self) -> Box<Decoder> { UTF8Decoder::new() }
     fn is_ascii_compatible(&self) -> bool { true }
 
     fn raw_feed(&mut self, input: &[u8], output: &mut StringWriter) -> (uint, Option<CodecError>) {

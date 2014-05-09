@@ -28,8 +28,8 @@ pub struct BigFive2003Encoding;
 impl Encoding for BigFive2003Encoding {
     fn name(&self) -> &'static str { "big5-2003" }
     fn whatwg_name(&self) -> Option<&'static str> { Some("big5") } // WHATWG compatibility
-    fn encoder(&self) -> ~Encoder { BigFive2003Encoder::new() }
-    fn decoder(&self) -> ~Decoder { BigFive2003HKSCS2008Decoder::new() }
+    fn encoder(&self) -> Box<Encoder> { BigFive2003Encoder::new() }
+    fn decoder(&self) -> Box<Decoder> { BigFive2003HKSCS2008Decoder::new() }
 }
 
 /// An encoder for Big5-2003.
@@ -37,11 +37,11 @@ impl Encoding for BigFive2003Encoding {
 pub struct BigFive2003Encoder;
 
 impl BigFive2003Encoder {
-    pub fn new() -> ~Encoder { ~BigFive2003Encoder as ~Encoder }
+    pub fn new() -> Box<Encoder> { box BigFive2003Encoder as Box<Encoder> }
 }
 
 impl Encoder for BigFive2003Encoder {
-    fn from_self(&self) -> ~Encoder { BigFive2003Encoder::new() }
+    fn from_self(&self) -> Box<Encoder> { BigFive2003Encoder::new() }
     fn is_ascii_compatible(&self) -> bool { true }
 
     fn raw_feed(&mut self, input: &str, output: &mut ByteWriter) -> (uint, Option<CodecError>) {
@@ -80,11 +80,11 @@ pub struct BigFive2003HKSCS2008Decoder {
 }
 
 impl BigFive2003HKSCS2008Decoder {
-    pub fn new() -> ~Decoder { ~BigFive2003HKSCS2008Decoder { lead: 0 } as ~Decoder }
+    pub fn new() -> Box<Decoder> { box BigFive2003HKSCS2008Decoder { lead: 0 } as Box<Decoder> }
 }
 
 impl Decoder for BigFive2003HKSCS2008Decoder {
-    fn from_self(&self) -> ~Decoder { BigFive2003HKSCS2008Decoder::new() }
+    fn from_self(&self) -> Box<Decoder> { BigFive2003HKSCS2008Decoder::new() }
     fn is_ascii_compatible(&self) -> bool { true }
 
     fn raw_feed(&mut self, input: &[u8], output: &mut StringWriter) -> (uint, Option<CodecError>) {
