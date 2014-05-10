@@ -4,7 +4,7 @@
 
 //! Legacy Japanese encodings based on JIS X 0208 and JIS X 0212.
 
-use util::{as_char, StrCharIndex};
+use util::StrCharIndex;
 use index0208 = index::jis0208;
 use index0212 = index::jis0212;
 use types::*;
@@ -81,170 +81,92 @@ impl Encoder for EUCJPEncoder {
     }
 }
 
-/// A decoder for EUC-JP with JIS X 0212 in G3.
-#[deriving(Clone)]
-pub struct EUCJP0212Decoder {
-    first: u8,
-    second: u8,
-}
+ascii_compatible_stateful_decoder! {
+    #[doc="A decoder for EUC-JP with JIS X 0212 in G3."]
+    #[deriving(Clone)]
+    struct EUCJP0212Decoder;
 
-impl EUCJP0212Decoder {
-    pub fn new() -> Box<Decoder> { box EUCJP0212Decoder { first: 0, second: 0 } as Box<Decoder> }
-}
+    module eucjp;
 
-impl Decoder for EUCJP0212Decoder {
-    fn from_self(&self) -> Box<Decoder> { EUCJP0212Decoder::new() }
-    fn is_ascii_compatible(&self) -> bool { true }
-
-    fn raw_feed(&mut self, input: &[u8], output: &mut StringWriter) -> (uint, Option<CodecError>) {
-        output.writer_hint(input.len());
-
-        fn map_two_0208_bytes(lead: u8, trail: u8) -> u32 {
-            let lead = lead as uint;
-            let trail = trail as uint;
-            let index = match (lead, trail) {
-                (0xa1..0xfe, 0xa1..0xfe) => (lead - 0xa1) * 94 + trail - 0xa1,
-                _ => 0xffff,
-            };
-            index0208::forward(index as u16)
-        }
-
-        fn map_two_0212_bytes(lead: u8, trail: u8) -> u32 {
-            let lead = lead as uint;
-            let trail = trail as uint;
-            let index = match (lead, trail) {
-                (0xa1..0xfe, 0xa1..0xfe) => (lead - 0xa1) * 94 + trail - 0xa1,
-                _ => 0xffff,
-            };
-            index0212::forward(index as u16)
-        }
-
-        let mut i = 0;
-        let mut processed = 0;
-        let len = input.len();
-
-        if i >= len { return (processed, None); }
-
-        if self.first != 0 {
-            let first = self.first;
-            match (first, input[i]) {
-                (0x8e, 0xa1..0xdf) => {
-                    output.write_char(as_char(0xff61 + input[i] as uint - 0xa1));
-                }
-                (0x8f, trail) => {
-                    self.first = 0;
-                    self.second = trail as u8;
-                    // pass through
-                }
-                (lead, trail) => {
-                    let ch = map_two_0208_bytes(lead, trail);
-                    if ch == 0xffff {
-                        self.first = 0;
-                        return (processed, Some(CodecError {
-                            upto: i, cause: "invalid sequence".into_maybe_owned()
-                        }));
-                    }
-                    output.write_char(as_char(ch));
-                }
-            }
-            i += 1;
-            if i >= len {
-                self.first = 0;
-                return (processed, None);
-            }
-        }
-
-        if self.second != 0 {
-            let ch = map_two_0212_bytes(self.second, input[i]);
-            if ch == 0xffff {
-                self.second = 0;
-                return (processed, Some(CodecError {
-                    upto: i, cause: "invalid sequence".into_maybe_owned()
-                }));
-            }
-            output.write_char(as_char(ch));
-            i += 1;
-        }
-
-        self.first = 0;
-        self.second = 0;
-        processed = i;
-        while i < len {
-            match input[i] {
-                0x00..0x7f => {
-                    output.write_char(input[i] as char);
-                }
-                0x8e | 0x8f | 0xa1..0xfe => {
-                    i += 1;
-                    if i >= len {
-                        self.first = input[i-1];
-                        break;
-                    }
-                    match (input[i-1], input[i]) {
-                        (0x8e, 0xa1..0xdf) => { // JIS X 0201 half-width katakana
-                            output.write_char(as_char(0xff61 + input[i] as uint - 0xa1));
-                        }
-                        (0x8f, 0xa1..0xfe) => { // JIS X 0212 three-byte sequence
-                            i += 1;
-                            if i >= len {
-                                self.second = input[i];
-                                break;
-                            }
-                            let ch = map_two_0212_bytes(input[i-1], input[i]);
-                            if ch == 0xffff {
-                                return (processed, Some(CodecError {
-                                    upto: i, cause: "invalid sequence".into_maybe_owned()
-                                }));
-                            }
-                            output.write_char(as_char(ch));
-                        }
-                        (0xa1..0xfe, 0xa1..0xfe) => { // JIS X 0208 two-byte sequence
-                            let ch = map_two_0208_bytes(input[i-1], input[i]);
-                            if ch == 0xffff {
-                                return (processed, Some(CodecError {
-                                    upto: i, cause: "invalid sequence".into_maybe_owned()
-                                }));
-                            }
-                            output.write_char(as_char(ch));
-                        }
-                        (_, trail) => {
-                            // we should back up when the second byte doesn't look like EUC-JP
-                            // (Encoding standard, Chapter 12.1, decoder step 7-4)
-                            let upto = if trail < 0xa1 || trail > 0xfe {i} else {i+1};
-                            return (processed, Some(CodecError {
-                                upto: upto, cause: "invalid sequence".into_maybe_owned()
-                            }));
-                        }
-                    }
-                }
-                _ => {
-                    return (processed, Some(CodecError {
-                        upto: i+1, cause: "invalid sequence".into_maybe_owned()
-                    }));
-                }
-            }
-            i += 1;
-            processed = i;
-        }
-        (processed, None)
+    internal fn map_two_0208_bytes(lead: u8, trail: u8) -> u32 {
+        let lead = lead as uint;
+        let trail = trail as uint;
+        let index = match (lead, trail) {
+            (0xa1..0xfe, 0xa1..0xfe) => (lead - 0xa1) * 94 + trail - 0xa1,
+            _ => 0xffff,
+        };
+        index0208::forward(index as u16)
     }
 
-    fn raw_finish(&mut self, _output: &mut StringWriter) -> Option<CodecError> {
-        let first = self.first;
-        let second = self.second;
-        self.first = 0;
-        self.second = 0;
-        if second != 0 || first != 0 {
-            Some(CodecError { upto: 0, cause: "incomplete sequence".into_maybe_owned() })
-        } else {
-            None
-        }
+    internal fn map_two_0212_bytes(lead: u8, trail: u8) -> u32 {
+        let lead = lead as uint;
+        let trail = trail as uint;
+        let index = match (lead, trail) {
+            (0xa1..0xfe, 0xa1..0xfe) => (lead - 0xa1) * 94 + trail - 0xa1,
+            _ => 0xffff,
+        };
+        index0212::forward(index as u16)
+    }
+
+    // euc-jp lead = 0x00
+    initial state S0(ctx) {
+        case b @ 0x00..0x7f => ctx.emit(b as u32);
+        case 0x8e => S1(ctx);
+        case 0x8f => S2(ctx);
+        case b @ 0xa1..0xfe => S3(ctx, b);
+        case _ => ctx.err("invalid sequence");
+    }
+
+    // euc-jp lead = 0x8e
+    state S1(ctx) {
+        case b @ 0xa1..0xdf => ctx.emit(0xff61 + b as u32 - 0xa1);
+        case 0xa1..0xfe => ctx.err("invalid sequence");
+        case _ => ctx.backup_and_err(1, "invalid sequence");
+    }
+
+    // euc-jp lead = 0x8f
+    // JIS X 0201 half-width katakana
+    state S2(ctx) {
+        case b @ 0xa1..0xfe => S4(ctx, b);
+        case _ => ctx.backup_and_err(1, "invalid sequence");
+    }
+
+    // euc-jp lead != 0x00, euc-jp jis0212 flag = unset
+    // JIS X 0208 two-byte sequence
+    state S3(ctx, lead: u8) {
+        case b @ 0xa1..0xfe => {
+            let ch = map_two_0208_bytes(lead, b);
+            if ch == 0xffff {
+                // do NOT backup, we only backup for out-of-range trails.
+                ctx.err("invalid sequence")
+            } else {
+                ctx.emit(ch as u32)
+            }
+        };
+        case _ => ctx.backup_and_err(1, "invalid sequence");
+    }
+
+    // euc-jp lead != 0x00, euc-jp jis0212 flag = set
+    // JIS X 0212 three-byte sequence
+    state S4(ctx, lead: u8) {
+        case b @ 0xa1..0xfe => {
+            let ch = map_two_0212_bytes(lead, b);
+            if ch == 0xffff {
+                // do NOT backup, we only backup for out-of-range trails.
+                ctx.err("invalid sequence")
+            } else {
+                ctx.emit(ch as u32)
+            }
+        };
+        case _ => ctx.backup_and_err(1, "invalid sequence");
     }
 }
 
 #[cfg(test)]
 mod eucjp_tests {
+    extern crate test;
     use super::EUCJPEncoding;
+    use testutils;
     use types::*;
 
     #[test]
@@ -295,6 +217,16 @@ mod eucjp_tests {
         assert_finish_err!(d, "");
         assert_feed_ok!(d, [0xa4, 0xa2], [], "\u3042");
         assert_finish_ok!(d, "");
+    }
+
+    #[bench]
+    fn bench_decode_short_text(bencher: &mut test::Bencher) {
+        static Encoding: EUCJPEncoding = EUCJPEncoding;
+        let s = Encoding.encode(testutils::JAPANESE_TEXT, EncodeStrict).ok().unwrap();
+        bencher.bytes = s.len() as u64;
+        bencher.iter(|| {
+            Encoding.decode(s.as_slice(), DecodeStrict).ok().unwrap();
+        })
     }
 }
 
@@ -369,106 +301,57 @@ impl Encoder for Windows31JEncoder {
     }
 }
 
-/// A decoder for Shift_JIS with IBM/NEC extensions.
-#[deriving(Clone)]
-pub struct Windows31JDecoder {
-    lead: u8
-}
+ascii_compatible_stateful_decoder! {
+    #[doc="A decoder for Shift_JIS with IBM/NEC extensions."]
+    #[deriving(Clone)]
+    struct Windows31JDecoder;
 
-impl Windows31JDecoder {
-    pub fn new() -> Box<Decoder> { box Windows31JDecoder { lead: 0 } as Box<Decoder> }
-}
+    module windows31j;
 
-impl Decoder for Windows31JDecoder {
-    fn from_self(&self) -> Box<Decoder> { Windows31JDecoder::new() }
-    fn is_ascii_compatible(&self) -> bool { true }
-
-    fn raw_feed(&mut self, input: &[u8], output: &mut StringWriter) -> (uint, Option<CodecError>) {
-        output.writer_hint(input.len());
-
-        fn map_two_0208_bytes(lead: u8, trail: u8) -> u32 {
-            let lead = lead as uint;
-            let trail = trail as uint;
-            let index = match (lead, trail) {
-                (0x81..0x9f, 0x40..0x7e) | (0x81..0x9f, 0x80..0xfc) |
-                (0xe0..0xfc, 0x40..0x7e) | (0xe0..0xfc, 0x80..0xfc) => {
-                    let leadoffset = if lead < 0xa0 {0x81} else {0xc1};
-                    let trailoffset = if trail < 0x7f {0x40} else {0x41};
-                    (lead - leadoffset) * 188 + trail - trailoffset
-                }
-                _ => 0xffff,
-            };
-            index0208::forward(index as u16)
-        }
-
-        let mut i = 0;
-        let mut processed = 0;
-        let len = input.len();
-
-        if i >= len { return (processed, None); }
-
-        if self.lead != 0 {
-            let ch = map_two_0208_bytes(self.lead, input[i]);
-            if ch == 0xffff {
-                self.lead = 0;
-                return (processed, Some(CodecError {
-                    upto: i, cause: "invalid sequence".into_maybe_owned()
-                }));
-            }
-            output.write_char(as_char(ch));
-            i += 1;
-        }
-
-        self.lead = 0;
-        processed = i;
-        while i < len {
-            match input[i] {
-                0x00..0x7f => {
-                    output.write_char(input[i] as char);
-                }
-                0xa1..0xdf => {
-                    output.write_char(as_char(0xff61 + (input[i] as uint) - 0xa1));
-                }
-                0x81..0x9f | 0xe0..0xfc => {
-                    i += 1;
-                    if i >= len {
-                        self.lead = input[i-1];
-                        break;
-                    }
-                    let ch = map_two_0208_bytes(input[i-1], input[i]);
-                    if ch == 0xffff {
-                        return (processed, Some(CodecError {
-                            upto: i, cause: "invalid sequence".into_maybe_owned()
-                        }));
-                    }
-                    output.write_char(as_char(ch));
-                }
-                _ => {
-                    return (processed, Some(CodecError {
-                        upto: i+1, cause: "invalid sequence".into_maybe_owned()
-                    }));
-                }
-            }
-            i += 1;
-            processed = i;
-        }
-        (processed, None)
+    internal fn map_two_0208_bytes(lead: u8, trail: u8) -> u32 {
+        let lead = lead as uint;
+        let trail = trail as uint;
+        let leadoffset = if lead < 0xa0 {0x81} else {0xc1};
+        let trailoffset = if trail < 0x7f {0x40} else {0x41};
+        let index = match (lead, trail) {
+            // XXX the Encoding spec seems to be incorrect in this regard, see Bug 25649.
+            // INCORRECT: (0xf0..0xf9, _) =>
+            (0xf0..0xf9, 0x40..0x7e) | (0xf0..0xf9, 0x80..0xfc) =>
+                0xe000 + (lead - leadoffset) * 188 + trail - trailoffset,
+            (0x81..0x9f, 0x40..0x7e) | (0x81..0x9f, 0x80..0xfc) |
+            (0xe0..0xfc, 0x40..0x7e) | (0xe0..0xfc, 0x80..0xfc) =>
+                (lead - leadoffset) * 188 + trail - trailoffset,
+            _ => 0xffff,
+        };
+        index0208::forward(index as u16)
     }
 
-    fn raw_finish(&mut self, _output: &mut StringWriter) -> Option<CodecError> {
-        let lead = self.lead;
-        self.lead = 0;
-        if lead != 0 {
-            Some(CodecError { upto: 0, cause: "incomplete sequence".into_maybe_owned() })
-        } else {
-            None
-        }
+    // shift_jis lead = 0x00
+    initial state S0(ctx) {
+        case b @ 0x00..0x7f => ctx.emit(b as u32);
+        case b @ 0xa1..0xdf => ctx.emit(0xff61 + b as u32 - 0xa1);
+        case b @ 0x81..0x9f | b @ 0xe0..0xfc => S1(ctx, b);
+        case _ => ctx.err("invalid sequence");
+    }
+
+    // shift_jis lead != 0x00
+    state S1(ctx, lead: u8) {
+        case b => {
+            let ch = map_two_0208_bytes(lead, b);
+            if ch == 0xffff {
+                ctx.backup_and_err(1, "invalid sequence") // unconditional
+            } else {
+                ctx.emit(ch as u32)
+            }
+        };
     }
 }
 
 #[cfg(test)]
 mod windows31j_tests {
+    extern crate test;
     use super::Windows31JEncoding;
+    use testutils;
     use types::*;
 
     #[test]
@@ -517,6 +400,16 @@ mod windows31j_tests {
         assert_finish_err!(d, "");
         assert_feed_ok!(d, [0x82, 0xa0], [], "\u3042");
         assert_finish_ok!(d, "");
+    }
+
+    #[bench]
+    fn bench_decode_short_text(bencher: &mut test::Bencher) {
+        static Encoding: Windows31JEncoding = Windows31JEncoding;
+        let s = Encoding.encode(testutils::JAPANESE_TEXT, EncodeStrict).ok().unwrap();
+        bencher.bytes = s.len() as u64;
+        bencher.iter(|| {
+            Encoding.decode(s.as_slice(), DecodeStrict).ok().unwrap();
+        })
     }
 }
 

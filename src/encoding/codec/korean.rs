@@ -4,7 +4,7 @@
 
 //! Legacy Korean encodings based on KS X 1001.
 
-use util::{as_char, StrCharIndex};
+use util::StrCharIndex;
 use index = index::euc_kr;
 use types::*;
 
@@ -76,103 +76,55 @@ impl Encoder for Windows949Encoder {
     }
 }
 
-/// A decoder for Windows code page 949.
-#[deriving(Clone)]
-pub struct Windows949Decoder {
-    lead: u8
-}
+ascii_compatible_stateful_decoder! {
+    #[doc="A decoder for Windows code page 949."]
+    #[deriving(Clone)]
+    struct Windows949Decoder;
 
-impl Windows949Decoder {
-    pub fn new() -> Box<Decoder> { box Windows949Decoder { lead: 0 } as Box<Decoder> }
-}
+    module windows949;
 
-impl Decoder for Windows949Decoder {
-    fn from_self(&self) -> Box<Decoder> { Windows949Decoder::new() }
-    fn is_ascii_compatible(&self) -> bool { true }
-
-    fn raw_feed(&mut self, input: &[u8], output: &mut StringWriter) -> (uint, Option<CodecError>) {
-        output.writer_hint(input.len());
-
-        fn map_two_bytes(lead: u8, trail: u8) -> u32 {
-            let lead = lead as uint;
-            let trail = trail as uint;
-            let index = match (lead, trail) {
-                (0x81..0xc6, 0x41..0x5a) =>
-                    (26 + 26 + 126) * (lead - 0x81) + trail - 0x41,
-                (0x81..0xc6, 0x61..0x7a) =>
-                    (26 + 26 + 126) * (lead - 0x81) + 26 + trail - 0x61,
-                (0x81..0xc6, 0x81..0xfe) =>
-                    (26 + 26 + 126) * (lead - 0x81) + 26 + 26 + trail - 0x81,
-                (0xc7..0xfe, 0xa1..0xfe) =>
-                    (26 + 26 + 126) * (0xc7 - 0x81) + (lead - 0xc7) * 94 + trail - 0xa1,
-                (_, _) => 0xffff,
-            };
-            index::forward(index as u16)
-        }
-
-        let mut i = 0;
-        let mut processed = 0;
-        let len = input.len();
-
-        if i >= len { return (processed, None); }
-
-        if self.lead != 0 {
-            let ch = map_two_bytes(self.lead, input[i]);
-            if ch == 0xffff {
-                self.lead = 0;
-                return (processed, Some(CodecError {
-                    upto: i, cause: "invalid sequence".into_maybe_owned()
-                }));
-            }
-            output.write_char(as_char(ch));
-            i += 1;
-        }
-
-        self.lead = 0;
-        processed = i;
-        while i < len {
-            match input[i] {
-                0x00..0x7f => { output.write_char(input[i] as char); }
-                0x81..0xfe => {
-                    i += 1;
-                    if i >= len {
-                        self.lead = input[i-1];
-                        break;
-                    }
-                    let ch = map_two_bytes(input[i-1], input[i]);
-                    if ch == 0xffff {
-                        return (processed, Some(CodecError {
-                            upto: i, cause: "invalid sequence".into_maybe_owned()
-                        }));
-                    }
-                    output.write_char(as_char(ch));
-                }
-                _ => {
-                    return (processed, Some(CodecError {
-                        upto: i+1, cause: "invalid sequence".into_maybe_owned()
-                    }));
-                }
-            }
-            i += 1;
-            processed = i;
-        }
-        (processed, None)
+    internal fn map_two_bytes(lead: u8, trail: u8) -> u32 {
+        let lead = lead as uint;
+        let trail = trail as uint;
+        let index = match (lead, trail) {
+            (0x81..0xc6, 0x41..0x5a) =>
+                (26 + 26 + 126) * (lead - 0x81) + trail - 0x41,
+            (0x81..0xc6, 0x61..0x7a) =>
+                (26 + 26 + 126) * (lead - 0x81) + 26 + trail - 0x61,
+            (0x81..0xc6, 0x81..0xfe) =>
+                (26 + 26 + 126) * (lead - 0x81) + 26 + 26 + trail - 0x81,
+            (0xc7..0xfe, 0xa1..0xfe) =>
+                (26 + 26 + 126) * (0xc7 - 0x81) + (lead - 0xc7) * 94 + trail - 0xa1,
+            (_, _) => 0xffff,
+        };
+        index::forward(index as u16)
     }
 
-    fn raw_finish(&mut self, _output: &mut StringWriter) -> Option<CodecError> {
-        let lead = self.lead;
-        self.lead = 0;
-        if lead != 0 {
-            Some(CodecError { upto: 0, cause: "incomplete sequence".into_maybe_owned() })
-        } else {
-            None
-        }
+    // euc-kr lead = 0x00
+    initial state S0(ctx) {
+        case b @ 0x00..0x7f => ctx.emit(b as u32);
+        case b @ 0x81..0xfe => S1(ctx, b);
+        case _ => ctx.err("invalid sequence");
+    }
+
+    // euc-kr lead != 0x00
+    state S1(ctx, lead: u8) {
+        case b => {
+            let ch = map_two_bytes(lead, b);
+            if ch == 0xffff {
+                ctx.backup_and_err(1, "invalid sequence") // unconditional
+            } else {
+                ctx.emit(ch as u32)
+            }
+        };
     }
 }
 
 #[cfg(test)]
 mod windows949_tests {
+    extern crate test;
     use super::Windows949Encoding;
+    use testutils;
     use types::*;
 
     #[test]
@@ -273,6 +225,16 @@ mod windows949_tests {
         assert_finish_err!(d, "");
         assert_feed_ok!(d, [0xb0, 0xa1], [], "\uac00");
         assert_finish_ok!(d, "");
+    }
+
+    #[bench]
+    fn bench_decode_short_text(bencher: &mut test::Bencher) {
+        static Encoding: Windows949Encoding = Windows949Encoding;
+        let s = Encoding.encode(testutils::KOREAN_TEXT, EncodeStrict).ok().unwrap();
+        bencher.bytes = s.len() as u64;
+        bencher.iter(|| {
+            Encoding.decode(s.as_slice(), DecodeStrict).ok().unwrap();
+        })
     }
 }
 
