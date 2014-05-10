@@ -48,7 +48,7 @@ impl<'r> StrCharIndex<'r> for &'r str {
 }
 
 /// A helper struct for the stateful decoder DSL.
-pub struct StatefulDecoderHelper<'a, State> {
+pub struct StatefulDecoderHelper<'a> {
     /// The current buffer.
     pub buf: &'a [u8],
     /// The current index to the buffer.
@@ -57,7 +57,7 @@ pub struct StatefulDecoderHelper<'a, State> {
     pub output: &'a mut types::StringWriter,
 }
 
-impl<'a, State: Default> StatefulDecoderHelper<'a, State> {
+impl<'a> StatefulDecoderHelper<'a> {
     /// Reads one byte from the buffer if any.
     #[inline(always)]
     pub fn read(&mut self) -> Option<u8> {
@@ -67,24 +67,30 @@ impl<'a, State: Default> StatefulDecoderHelper<'a, State> {
         }
     }
 
+    /// Resets back to the initial state.
+    #[inline(always)]
+    pub fn reset<T:Default,E>(&self) -> Result<T,E> {
+        Ok(Default::default())
+    }
+
     /// Writes one Unicode scalar value to the output and resets back to the initial state.
     /// There is intentionally no check for `c`, so the caller should ensure that it's valid.
     #[inline(always)]
-    pub fn emit(&mut self, c: u32) -> Result<State,types::CodecError> {
+    pub fn emit<T:Default,E>(&mut self, c: u32) -> Result<T,E> {
         self.output.write_char(unsafe {mem::transmute(c)});
         Ok(Default::default())
     }
 
     /// Writes a Unicode string to the output and resets back to the initial state.
     #[inline(always)]
-    pub fn emit_str(&mut self, s: &str) -> Result<State,types::CodecError> {
+    pub fn emit_str<T:Default,E>(&mut self, s: &str) -> Result<T,E> {
         self.output.write_str(s);
         Ok(Default::default())
     }
 
     /// Issues a codec error with given message at the current position.
     #[inline(always)]
-    pub fn err(&self, msg: &'static str) -> Result<State,types::CodecError> {
+    pub fn err<T>(&self, msg: &'static str) -> Result<T,types::CodecError> {
         Err(types::CodecError { upto: self.pos, cause: msg.into_maybe_owned() })
     }
 
@@ -92,26 +98,29 @@ impl<'a, State: Default> StatefulDecoderHelper<'a, State> {
     /// This should be used to implement "prepending byte to the stream" in the Encoding spec,
     /// which corresponds to `ctx.backup_and_err(1, ...)`.
     #[inline(always)]
-    pub fn backup_and_err(&self, backup: uint,
-                          msg: &'static str) -> Result<State,types::CodecError> {
+    pub fn backup_and_err<T>(&self, backup: uint,
+                             msg: &'static str) -> Result<T,types::CodecError> {
         // XXX we should eventually handle a negative `upto`
         let upto = if self.pos < backup {0} else {self.pos - backup};
         Err(types::CodecError { upto: upto, cause: msg.into_maybe_owned() })
     }
 }
 
-/// Defines an ASCII-compatible stateful decoder from given state machine.
-macro_rules! ascii_compatible_stateful_decoder(
+/// Defines a stateful decoder from given state machine.
+macro_rules! stateful_decoder(
     (
         $(#[$decmeta:meta])*
         struct $dec:ident;
         module $stmod:ident; // should be unique from other existing identifiers
+        ascii_compatible $asciicompat:expr;
         $(internal $item:item)* // will only be visible from state functions
         initial state $inist:ident($inictx:ident) {
             $(case $($inilhs:pat)|+ => $inirhs:expr;)+
+            final => $inifin:expr;
         }
         $(state $st:ident($ctx:ident $(, $arg:ident: $ty:ty)*) {
             $(case $($lhs:pat)|+ => $rhs:expr;)+
+            final => $fin:expr;
         })*
     ) => (
         $(#[$decmeta])*
@@ -139,13 +148,13 @@ macro_rules! ascii_compatible_stateful_decoder(
 
         impl Decoder for $dec {
             fn from_self(&self) -> Box<Decoder> { $dec::new() }
-            fn is_ascii_compatible(&self) -> bool { true }
+            fn is_ascii_compatible(&self) -> bool { $asciicompat }
 
             fn raw_feed(&mut self, input: &[u8],
                         output: &mut StringWriter) -> (uint, Option<CodecError>) {
                 output.writer_hint(input.len());
 
-                type Context<'a> = ::util::StatefulDecoderHelper<'a, $stmod::State>;
+                type Context<'a> = ::util::StatefulDecoderHelper<'a>;
 
                 $($item)*
 
@@ -192,14 +201,51 @@ macro_rules! ascii_compatible_stateful_decoder(
                 (processed, None)
             }
 
-            fn raw_finish(&mut self, _output: &mut StringWriter) -> Option<CodecError> {
-                match ::std::mem::replace(&mut self.st, $stmod::$inist) {
-                    $stmod::$inist => None,
-                    _ => Some(CodecError { upto: 0,
-                                           cause: "incomplete sequence".into_maybe_owned() }),
-                }
+            fn raw_finish(&mut self, output: &mut StringWriter) -> Option<CodecError> {
+                #![allow(unused_mut, unused_variable)]
+                let mut ctx = ::util::StatefulDecoderHelper { buf: &[], pos: 0, output: output };
+                let st_or_err: Result<(),CodecError> =
+                    match ::std::mem::replace(&mut self.st, $stmod::$inist) {
+                        $stmod::$inist => { let mut $inictx = ctx; $inifin },
+                        $(
+                            $stmod::$st(() $(, $arg)*) => { let mut $ctx = ctx; $fin },
+                        )*
+                    };
+                st_or_err.err()
             }
         }
+    )
+)
+
+/// Defines an ASCII-compatible stateful decoder from given state machine.
+macro_rules! ascii_compatible_stateful_decoder(
+    (
+        $(#[$decmeta:meta])*
+        struct $dec:ident;
+        module $stmod:ident; // should be unique from other existing identifiers
+        $(internal $item:item)* // will only be visible from state functions
+        initial state $inist:ident($inictx:ident) {
+            $(case $($inilhs:pat)|+ => $inirhs:expr;)+
+        }
+        $(state $st:ident($ctx:ident $(, $arg:ident: $ty:ty)*) {
+            $(case $($lhs:pat)|+ => $rhs:expr;)+
+        })*
+    ) => (
+        stateful_decoder!(
+            $(#[$decmeta])*
+            struct $dec;
+            module $stmod;
+            ascii_compatible true;
+            $(internal $item)*
+            initial state $inist($inictx) {
+                $(case $($inilhs)|+ => $inirhs;)+
+                final => $inictx.reset::<(),CodecError>();
+            }
+            $(state $st($ctx $(, $arg: $ty)*) {
+                $(case $($lhs)|+ => $rhs;)+
+                final => $ctx.err("incomplete sequence");
+            })*
+        )
     )
 )
 
