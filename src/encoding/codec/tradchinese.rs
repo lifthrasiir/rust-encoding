@@ -4,7 +4,7 @@
 
 //! Legacy traditional Chinese encodings.
 
-use util::{as_char, StrCharIndex};
+use util::StrCharIndex;
 use index = index::big5;
 use types::*;
 
@@ -73,111 +73,56 @@ impl Encoder for BigFive2003Encoder {
     }
 }
 
-/// A decoder for Big5-2003 with HKSCS-2008 extension.
-#[deriving(Clone)]
-pub struct BigFive2003HKSCS2008Decoder {
-    lead: u8
-}
+ascii_compatible_stateful_decoder! {
+    #[doc="A decoder for Big5-2003 with HKSCS-2008 extension."]
+    #[deriving(Clone)]
+    struct BigFive2003HKSCS2008Decoder;
 
-impl BigFive2003HKSCS2008Decoder {
-    pub fn new() -> Box<Decoder> { box BigFive2003HKSCS2008Decoder { lead: 0 } as Box<Decoder> }
-}
+    module bigfive2003;
 
-impl Decoder for BigFive2003HKSCS2008Decoder {
-    fn from_self(&self) -> Box<Decoder> { BigFive2003HKSCS2008Decoder::new() }
-    fn is_ascii_compatible(&self) -> bool { true }
-
-    fn raw_feed(&mut self, input: &[u8], output: &mut StringWriter) -> (uint, Option<CodecError>) {
-        output.writer_hint(input.len());
-
-        fn map_two_bytes(lead: u8, trail: u8) -> u32 {
-            let lead = lead as uint;
-            let trail = trail as uint;
-            let index = match (lead, trail) {
-                (0x81..0xfe, 0x40..0x7e) | (0x81..0xfe, 0xa1..0xfe) => {
-                    let trailoffset = if trail < 0x7f {0x40} else {0x62};
-                    (lead - 0x81) * 157 + trail - trailoffset
-                }
-                _ => 0xffff,
-            };
-            index::forward(index as u16) // may return two-letter replacements 0..3
-        }
-
-        let mut i = 0;
-        let mut processed = 0;
-        let len = input.len();
-
-        if i >= len { return (processed, None); }
-
-        if self.lead != 0 {
-            match map_two_bytes(self.lead, input[i]) {
-                0xffff => {
-                    self.lead = 0;
-                    let upto = if input[i] < 0x80 {i} else {i+1};
-                    return (processed, Some(CodecError {
-                        upto: upto, cause: "invalid sequence".into_maybe_owned()
-                    }));
-                }
-                0 /*index=1133*/ => { output.write_str("\u00ca\u0304"); }
-                1 /*index=1135*/ => { output.write_str("\u00ca\u030c"); }
-                2 /*index=1164*/ => { output.write_str("\u00ea\u0304"); }
-                3 /*index=1166*/ => { output.write_str("\u00ea\u030c"); }
-                ch => { output.write_char(as_char(ch)); }
+    internal fn map_two_bytes(lead: u8, trail: u8) -> u32 {
+        let lead = lead as uint;
+        let trail = trail as uint;
+        let index = match (lead, trail) {
+            (0x81..0xfe, 0x40..0x7e) | (0x81..0xfe, 0xa1..0xfe) => {
+                let trailoffset = if trail < 0x7f {0x40} else {0x62};
+                (lead - 0x81) * 157 + trail - trailoffset
             }
-            i += 1;
-        }
-
-        self.lead = 0;
-        processed = i;
-        while i < len {
-            match input[i] {
-                0x00..0x7f => { output.write_char(input[i] as char); }
-                0x81..0xfe => {
-                    i += 1;
-                    if i >= len {
-                        self.lead = input[i-1];
-                        break;
-                    }
-                    match map_two_bytes(input[i-1], input[i]) {
-                        0xffff => {
-                            let upto = if input[i] < 0x80 {i} else {i+1};
-                            return (processed, Some(CodecError {
-                                upto: upto, cause: "invalid sequence".into_maybe_owned()
-                            }));
-                        }
-                        0 /*index=1133*/ => { output.write_str("\u00ca\u0304"); }
-                        1 /*index=1135*/ => { output.write_str("\u00ca\u030c"); }
-                        2 /*index=1164*/ => { output.write_str("\u00ea\u0304"); }
-                        3 /*index=1166*/ => { output.write_str("\u00ea\u030c"); }
-                        ch => { output.write_char(as_char(ch)); }
-                    }
-                }
-                _ => {
-                    return (processed, Some(CodecError {
-                        upto: i+1, cause: "invalid sequence".into_maybe_owned()
-                    }));
-                }
-            }
-            i += 1;
-            processed = i;
-        }
-        (processed, None)
+            _ => 0xffff,
+        };
+        index::forward(index as u16) // may return two-letter replacements 0..3
     }
 
-    fn raw_finish(&mut self, _output: &mut StringWriter) -> Option<CodecError> {
-        let lead = self.lead;
-        self.lead = 0;
-        if lead != 0 {
-            Some(CodecError { upto: 0, cause: "incomplete sequence".into_maybe_owned() })
-        } else {
-            None
-        }
+    // big5 lead = 0x00
+    initial state S0(ctx) {
+        case b @ 0x00..0x7f => ctx.emit(b as u32);
+        case b @ 0x81..0xfe => S1(ctx, b);
+        case _ => ctx.err("invalid sequence");
+    }
+
+    // big5 lead != 0x00
+    state S1(ctx, lead: u8) {
+        case b => {
+            match map_two_bytes(lead, b) {
+                0xffff => {
+                    let backup = if b < 0x80 {1} else {0};
+                    ctx.backup_and_err(backup, "invalid sequence")
+                },
+                0 /*index=1133*/ => ctx.emit_str("\u00ca\u0304"),
+                1 /*index=1135*/ => ctx.emit_str("\u00ca\u030c"),
+                2 /*index=1164*/ => ctx.emit_str("\u00ea\u0304"),
+                3 /*index=1166*/ => ctx.emit_str("\u00ea\u030c"),
+                ch => ctx.emit(ch),
+            }
+        };
     }
 }
 
 #[cfg(test)]
 mod bigfive2003_tests {
+    extern crate test;
     use super::BigFive2003Encoding;
+    use testutils;
     use types::*;
 
     #[test]
@@ -235,6 +180,16 @@ mod bigfive2003_tests {
         assert_finish_err!(d, "");
         assert_feed_ok!(d, [0xa4, 0x40], [], "\u4e00");
         assert_finish_ok!(d, "");
+    }
+
+    #[bench]
+    fn bench_decode_short_text(bencher: &mut test::Bencher) {
+        static Encoding: BigFive2003Encoding = BigFive2003Encoding;
+        let s = Encoding.encode(testutils::TRADITIONAL_CHINESE_TEXT, EncodeStrict).ok().unwrap();
+        bencher.bytes = s.len() as u64;
+        bencher.iter(|| {
+            Encoding.decode(s.as_slice(), DecodeStrict).ok().unwrap();
+        })
     }
 }
 

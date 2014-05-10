@@ -75,6 +75,13 @@ impl<'a, State: Default> StatefulDecoderHelper<'a, State> {
         Ok(Default::default())
     }
 
+    /// Writes a Unicode string to the output and resets back to the initial state.
+    #[inline(always)]
+    pub fn emit_str(&mut self, s: &str) -> Result<State,types::CodecError> {
+        self.output.write_str(s);
+        Ok(Default::default())
+    }
+
     /// Issues a codec error with given message at the current position.
     #[inline(always)]
     pub fn err(&self, msg: &'static str) -> Result<State,types::CodecError> {

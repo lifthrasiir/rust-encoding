@@ -58,8 +58,8 @@ pub mod index {
     pub mod x_mac_cyrillic;
     pub mod big5;
     pub mod euc_kr;
-    pub mod gbk;
     pub mod gb18030;
+    pub mod gb18030_ranges;
     pub mod jis0208;
     pub mod jis0212;
 }

@@ -232,7 +232,7 @@ def generate_multi_byte_range_lbound_index(name):
         print >>f, 'pub fn forward(code: u32) -> u32 {'
         if minkey > 0:
             print >>f, '    if code < %d { return 0xffffffff; }' % minkey
-        if name == 'gb18030': # has "invalid" region inside
+        if name == 'gb18030-ranges': # has "invalid" region inside
             print >>f, '    if (code > 39419 && code < 189000) || code > 1237575 { return 0xffffffff; }'
         print >>f, '    let mut i = if code >= BACKWARD_TABLE[%d] {%d} else {0};' % \
                 (2**maxlog2 - 1, len(data) - 2**maxlog2 + 1)
@@ -313,11 +313,11 @@ INDICES = {
 
     'big5':           generate_multi_byte_index,
     'euc-kr':         generate_multi_byte_index,
-    'gbk':            generate_multi_byte_index,
+    'gb18030':        generate_multi_byte_index,
     'jis0208':        generate_multi_byte_index,
     'jis0212':        generate_multi_byte_index,
 
-    'gb18030':        generate_multi_byte_range_lbound_index,
+    'gb18030-ranges': generate_multi_byte_range_lbound_index,
 }
 
 if __name__ == '__main__':

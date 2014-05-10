@@ -216,14 +216,13 @@ pub fn encoding_from_whatwg_label(label: &str) -> Option<EncodingRef> {
         "chinese" |
         "csgb2312" |
         "csiso58gb231280" |
+        "gb18030" |
         "gb2312" |
         "gb_2312" |
         "gb_2312-80" |
         "gbk" |
         "iso-ir-58" |
         "x-gbk" =>
-            Some(all::GBK18030 as EncodingRef),
-        "gb18030" =>
             Some(all::GB18030 as EncodingRef),
         /*
         "hz-gb-2312" =>
@@ -311,8 +310,7 @@ pub fn encoding_from_windows_code_page(cp: uint) -> Option<EncodingRef> {
         1257 => Some(all::WINDOWS_1257 as EncodingRef),
         1258 => Some(all::WINDOWS_1258 as EncodingRef),
         1259 => Some(all::X_MAC_CYRILLIC as EncodingRef),
-        936 => Some(all::GBK18030 as EncodingRef),
-        54936 => Some(all::GB18030 as EncodingRef),
+        936 | 54936 => Some(all::GB18030 as EncodingRef), // XXX technically wrong
         /*
         52936 => Some(all::HZ_GB_2312 as EncodingRef),
         */
