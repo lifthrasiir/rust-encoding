@@ -1,5 +1,5 @@
 // This is a part of rust-encoding.
-// Copyright (c) 2013, Kang Seonghoon.
+// Copyright (c) 2013-2014, Kang Seonghoon.
 // See README.md and LICENSE.txt for details.
 
 //! Legacy Japanese encodings based on JIS X 0208 and JIS X 0212.

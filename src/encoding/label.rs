@@ -1,5 +1,5 @@
 // This is a part of rust-encoding.
-// Copyright (c) 2013, Kang Seonghoon.
+// Copyright (c) 2013-2014, Kang Seonghoon.
 // See README.md and LICENSE.txt for details.
 
 //! An interface for retrieving an encoding (or a set of encodings) from a string/numeric label.
