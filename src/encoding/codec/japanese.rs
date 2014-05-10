@@ -317,7 +317,7 @@ ascii_compatible_stateful_decoder! {
             // XXX the Encoding spec seems to be incorrect in this regard, see Bug 25649.
             // INCORRECT: (0xf0..0xf9, _) =>
             (0xf0..0xf9, 0x40..0x7e) | (0xf0..0xf9, 0x80..0xfc) =>
-                0xe000 + (lead - leadoffset) * 188 + trail - trailoffset,
+                return (0xe000 + (lead - 0xf0) * 188 + trail - trailoffset) as u32,
             (0x81..0x9f, 0x40..0x7e) | (0x81..0x9f, 0x80..0xfc) |
             (0xe0..0xfc, 0x40..0x7e) | (0xe0..0xfc, 0x80..0xfc) =>
                 (lead - leadoffset) * 188 + trail - trailoffset,
@@ -341,7 +341,7 @@ ascii_compatible_stateful_decoder! {
             if ch == 0xffff {
                 ctx.backup_and_err(1, "invalid sequence") // unconditional
             } else {
-                ctx.emit(ch as u32)
+                ctx.emit(ch)
             }
         };
     }
@@ -369,6 +369,15 @@ mod windows31j_tests {
     }
 
     #[test]
+    fn test_encoder_no_eudc() {
+        let mut e = Windows31JEncoding.encoder();
+        assert_feed_err!(e, "", "\ue000", "", []);
+        assert_feed_err!(e, "", "\ue757", "", []);
+        assert_feed_err!(e, "", "\ue758", "", []);
+        assert_finish_ok!(e, []);
+    }
+
+    #[test]
     fn test_encoder_invalid() {
         let mut e = Windows31JEncoding.encoder();
         assert_feed_err!(e, "", "\uffff", "", []);
@@ -388,6 +397,17 @@ mod windows31j_tests {
         assert_feed_ok!(d, [0x82, 0xc9, 0x82, 0xd9, 0x82, 0xf1], [], "\u306b\u307b\u3093");
         assert_feed_ok!(d, [0xc6, 0xce, 0xdd], [], "\uff86\uff8e\uff9d");
         assert_feed_ok!(d, [0x93, 0xfa, 0x96, 0x7b], [], "\u65e5\u672c");
+        assert_finish_ok!(d, "");
+    }
+
+    #[test]
+    fn test_decoder_eudc() {
+        let mut d = Windows31JEncoding.decoder();
+        assert_feed_ok!(d, [], [0xf0], "");
+        assert_feed_ok!(d, [0x40], [], "\ue000");
+        assert_feed_ok!(d, [0xf9, 0xfc], [], "\ue757");
+        assert_feed_err!(d, [], [0xf0], [0x00], "");
+        assert_feed_err!(d, [], [0xf0], [0xff], "");
         assert_finish_ok!(d, "");
     }
 
