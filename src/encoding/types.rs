@@ -1,5 +1,5 @@
 // This is a part of rust-encoding.
-// Copyright (c) 2013, Kang Seonghoon.
+// Copyright (c) 2013-2014, Kang Seonghoon.
 // See README.md and LICENSE.txt for details.
 
 /*!
@@ -341,11 +341,11 @@ pub trait Encoding {
 
 /// A type of the bare function in `EncoderTrap` values.
 pub type EncoderTrapFunc =
-    extern "Rust" fn(encoder: &Encoder, input: &str, output: &mut ByteWriter) -> bool;
+    extern "Rust" fn(encoder: &mut Encoder, input: &str, output: &mut ByteWriter) -> bool;
 
 /// A type of the bare function in `DecoderTrap` values.
 pub type DecoderTrapFunc =
-    extern "Rust" fn(decoder: &Decoder, input: &[u8], output: &mut StringWriter) -> bool;
+    extern "Rust" fn(decoder: &mut Decoder, input: &[u8], output: &mut StringWriter) -> bool;
 
 /// Trap, which handles decoder errors.
 pub enum DecoderTrap {
@@ -366,7 +366,7 @@ pub enum DecoderTrap {
 impl DecoderTrap {
     /// Handles a decoder error. May write to the output writer.
     /// Returns true only when it is fine to keep going.
-    fn trap(&self, decoder: &Decoder, input: &[u8], output: &mut StringWriter) -> bool {
+    fn trap(&self, decoder: &mut Decoder, input: &[u8], output: &mut StringWriter) -> bool {
         match *self {
             DecodeStrict => false,
             DecodeReplace => { output.write_char('\ufffd'); true },
@@ -399,15 +399,14 @@ pub enum EncoderTrap {
 impl EncoderTrap {
     /// Handles an encoder error. May write to the output writer.
     /// Returns true only when it is fine to keep going.
-    fn trap(&self, encoder: &Encoder, input: &str, output: &mut ByteWriter) -> bool {
-        fn reencode(encoder: &Encoder, input: &str, output: &mut ByteWriter,
+    fn trap(&self, encoder: &mut Encoder, input: &str, output: &mut ByteWriter) -> bool {
+        fn reencode(encoder: &mut Encoder, input: &str, output: &mut ByteWriter,
                     trapname: &str) -> bool {
             if encoder.is_ascii_compatible() { // optimization!
                 output.write_bytes(input.as_bytes());
             } else {
-                let mut e = encoder.from_self();
-                let (_, err) = e.raw_feed(input, output);
-                if err.is_some() || e.raw_finish(output).is_some() {
+                let (_, err) = encoder.raw_feed(input, output);
+                if err.is_some() {
                     fail!("{:s} cannot reencode a replacement string", trapname);
                 }
             }
@@ -443,5 +442,91 @@ pub fn decode(input: &[u8], trap: DecoderTrap, fallback_encoding: EncodingRef)
         (UTF_16LE.decode(input.slice_from(2), trap), UTF_16LE as EncodingRef)
     } else {
         (fallback_encoding.decode(input, trap), fallback_encoding)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use util::StrCharIndex;
+
+    // a contrived encoding example: same as ASCII, but inserts `prepend` between each character
+    // within two "e"s (so that `widespread` becomes `wide*s*p*r*ead` and `eeeeasel` becomes
+    // `e*ee*ease*l` where `*` is substituted by `prepend`) and prohibits `prohibit` character.
+    struct MyEncoder { flag: bool, prohibit: char, prepend: &'static str, toggle: bool }
+    impl Encoder for MyEncoder {
+        fn from_self(&self) -> Box<Encoder> {
+            box MyEncoder { flag: self.flag,
+                            prohibit: self.prohibit,
+                            prepend: self.prepend,
+                            toggle: false } as Box<Encoder>
+        }
+        fn is_ascii_compatible(&self) -> bool { self.flag }
+        fn raw_feed(&mut self, input: &str,
+                    output: &mut ByteWriter) -> (uint, Option<CodecError>) {
+            for ((i,j), ch) in input.index_iter() {
+                if ch <= '\u007f' && ch != self.prohibit {
+                    if self.toggle && !self.prepend.is_empty() {
+                        output.write_bytes(self.prepend.as_bytes());
+                    }
+                    output.write_byte(ch as u8);
+                    if ch == 'e' {
+                        self.toggle = !self.toggle;
+                    }
+                } else {
+                    return (i, Some(CodecError { upto: j, cause: "!!!".into_maybe_owned() }));
+                }
+            }
+            (input.len(), None)
+        }
+        fn raw_finish(&mut self, _output: &mut ByteWriter) -> Option<CodecError> { None }
+    }
+
+    struct MyEncoding { flag: bool, prohibit: char, prepend: &'static str }
+    impl Encoding for MyEncoding {
+        fn name(&self) -> &'static str { "my encoding" }
+        fn encoder(&'static self) -> Box<Encoder> {
+            box MyEncoder { flag: self.flag,
+                            prohibit: self.prohibit,
+                            prepend: self.prepend,
+                            toggle: false } as Box<Encoder>
+        }
+        fn decoder(&'static self) -> Box<Decoder> { fail!("not supported") }
+    }
+
+    #[test]
+    fn test_reencoding_trap_with_ascii_compatible_encoding() {
+        static COMPAT: &'static MyEncoding =
+            &MyEncoding { flag: true, prohibit: '\u0080', prepend: "" };
+        static INCOMPAT: &'static MyEncoding =
+            &MyEncoding { flag: false, prohibit: '\u0080', prepend: "" };
+
+        assert_eq!(COMPAT.encode("Hello\u203d I'm fine.", EncodeNcrEscape),
+                   Ok(Vec::from_slice(bytes!("Hello&#8253; I'm fine."))));
+        assert_eq!(INCOMPAT.encode("Hello\u203d I'm fine.", EncodeNcrEscape),
+                   Ok(Vec::from_slice(bytes!("Hello&#8253; I'm fine."))));
+    }
+
+    #[test]
+    fn test_reencoding_trap_with_ascii_incompatible_encoding() {
+        static COMPAT: &'static MyEncoding =
+            &MyEncoding { flag: true, prohibit: '\u0080', prepend: "*" };
+        static INCOMPAT: &'static MyEncoding =
+            &MyEncoding { flag: false, prohibit: '\u0080', prepend: "*" };
+
+        // this should behave incorrectly as the encoding broke the assumption.
+        assert_eq!(COMPAT.encode("Hello\u203d I'm fine.", EncodeNcrEscape),
+                   Ok(Vec::from_slice(bytes!("He*l*l*o&#8253;* *I*'*m* *f*i*n*e."))));
+        assert_eq!(INCOMPAT.encode("Hello\u203d I'm fine.", EncodeNcrEscape),
+                   Ok(Vec::from_slice(bytes!("He*l*l*o*&*#*8*2*5*3*;* *I*'*m* *f*i*n*e."))));
+    }
+
+    #[test]
+    #[should_fail]
+    fn test_reencoding_trap_can_fail() {
+        static FAIL: &'static MyEncoding = &MyEncoding { flag: false, prohibit: '&', prepend: "" };
+
+        // this should fail as this contrived encoding does not support `&` at all
+        let _ = FAIL.encode("Hello\u203d I'm fine.", EncodeNcrEscape);
     }
 }

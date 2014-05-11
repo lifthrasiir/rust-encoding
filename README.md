@@ -47,7 +47,7 @@ A practical example of custom encoder traps:
 
 ~~~~ {.rust}
 // hexadecimal numeric character reference replacement
-fn hex_ncr_escape(_encoder: &Encoder, input: &str, output: &mut ByteWriter) -> bool {
+fn hex_ncr_escape(_encoder: &mut Encoder, input: &str, output: &mut ByteWriter) -> bool {
     let escapes: Vec<~str> =
         input.chars().map(|ch| format!("&\\#x{:x};", ch as int)).collect();
     let escapes = escapes.concat();
