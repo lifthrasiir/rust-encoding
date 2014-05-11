@@ -5,7 +5,7 @@
 //! Legacy traditional Chinese encodings.
 
 use util::StrCharIndex;
-use index = index::big5;
+use index;
 use types::*;
 
 /**
@@ -51,7 +51,7 @@ impl Encoder for BigFive2003Encoder {
             if ch < '\u0080' {
                 output.write_byte(ch as u8);
             } else {
-                let ptr = index::backward(ch as u32);
+                let ptr = index::big5::backward(ch as u32);
                 if ptr == 0xffff || ptr < (0xa1 - 0x81) * 157 {
                     // no HKSCS extension (XXX doesn't HKSCS include 0xFA40..0xFEFE?)
                     return (i, Some(CodecError {
@@ -80,7 +80,9 @@ ascii_compatible_stateful_decoder! {
 
     module bigfive2003;
 
-    internal fn map_two_bytes(lead: u8, trail: u8) -> u32 {
+    internal pub fn map_two_bytes(lead: u8, trail: u8) -> u32 {
+        use index;
+
         let lead = lead as uint;
         let trail = trail as uint;
         let index = match (lead, trail) {
@@ -90,7 +92,7 @@ ascii_compatible_stateful_decoder! {
             }
             _ => 0xffff,
         };
-        index::forward(index as u16) // may return two-letter replacements 0..3
+        index::big5::forward(index as u16) // may return two-letter replacements 0..3
     }
 
     // big5 lead = 0x00

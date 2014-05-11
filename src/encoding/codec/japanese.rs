@@ -5,8 +5,7 @@
 //! Legacy Japanese encodings based on JIS X 0208 and JIS X 0212.
 
 use util::StrCharIndex;
-use index0208 = index::jis0208;
-use index0212 = index::jis0212;
+use index;
 use types::*;
 
 /**
@@ -59,7 +58,7 @@ impl Encoder for EUCJPEncoder {
                     output.write_byte((ch as uint - 0xff61 + 0xa1) as u8);
                 }
                 _ => {
-                    let ptr = index0208::backward(ch as u32);
+                    let ptr = index::jis0208::backward(ch as u32);
                     if ptr == 0xffff {
                         return (i, Some(CodecError {
                             upto: j, cause: "unrepresentable character".into_maybe_owned()
@@ -88,24 +87,28 @@ ascii_compatible_stateful_decoder! {
 
     module eucjp;
 
-    internal fn map_two_0208_bytes(lead: u8, trail: u8) -> u32 {
+    internal pub fn map_two_0208_bytes(lead: u8, trail: u8) -> u32 {
+        use index;
+
         let lead = lead as uint;
         let trail = trail as uint;
         let index = match (lead, trail) {
             (0xa1..0xfe, 0xa1..0xfe) => (lead - 0xa1) * 94 + trail - 0xa1,
             _ => 0xffff,
         };
-        index0208::forward(index as u16)
+        index::jis0208::forward(index as u16)
     }
 
-    internal fn map_two_0212_bytes(lead: u8, trail: u8) -> u32 {
+    internal pub fn map_two_0212_bytes(lead: u8, trail: u8) -> u32 {
+        use index;
+
         let lead = lead as uint;
         let trail = trail as uint;
         let index = match (lead, trail) {
             (0xa1..0xfe, 0xa1..0xfe) => (lead - 0xa1) * 94 + trail - 0xa1,
             _ => 0xffff,
         };
-        index0212::forward(index as u16)
+        index::jis0212::forward(index as u16)
     }
 
     // euc-jp lead = 0x00
@@ -277,7 +280,7 @@ impl Encoder for Windows31JEncoder {
                 '\u203e' => { output.write_byte(0x7e); }
                 '\uff61'..'\uff9f' => { output.write_byte((ch as uint - 0xff61 + 0xa1) as u8); }
                 _ => {
-                    let ptr = index0208::backward(ch as u32);
+                    let ptr = index::jis0208::backward(ch as u32);
                     if ptr == 0xffff {
                         return (i, Some(CodecError {
                             upto: j, cause: "unrepresentable character".into_maybe_owned(),
@@ -308,7 +311,9 @@ ascii_compatible_stateful_decoder! {
 
     module windows31j;
 
-    internal fn map_two_0208_bytes(lead: u8, trail: u8) -> u32 {
+    internal pub fn map_two_0208_bytes(lead: u8, trail: u8) -> u32 {
+        use index;
+
         let lead = lead as uint;
         let trail = trail as uint;
         let leadoffset = if lead < 0xa0 {0x81} else {0xc1};
@@ -323,7 +328,7 @@ ascii_compatible_stateful_decoder! {
                 (lead - leadoffset) * 188 + trail - trailoffset,
             _ => 0xffff,
         };
-        index0208::forward(index as u16)
+        index::jis0208::forward(index as u16)
     }
 
     // shift_jis lead = 0x00

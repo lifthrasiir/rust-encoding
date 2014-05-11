@@ -4,8 +4,7 @@
 
 //! Legacy simplified Chinese encodings based on GB 2312 and GB 18030.
 
-use index = index::gb18030;
-use ranges_index = index::gb18030_ranges;
+use index;
 use types::*;
 
 /**
@@ -60,9 +59,9 @@ impl Encoder for GB18030Encoder {
             if ch < '\u0080' {
                 output.write_byte(ch as u8);
             } else {
-                let ptr = index::backward(ch as u32);
+                let ptr = index::gb18030::backward(ch as u32);
                 if ptr == 0xffff {
-                    let ptr = ranges_index::backward(ch as u32);
+                    let ptr = index::gb18030_ranges::backward(ch as u32);
                     assert!(ptr != 0xffffffff);
                     let (ptr, byte4) = (ptr / 10, ptr % 10);
                     let (ptr, byte3) = (ptr / 126, ptr % 126);
@@ -95,7 +94,9 @@ ascii_compatible_stateful_decoder! {
 
     module gb18030;
 
-    internal fn map_two_bytes(lead: u8, trail: u8) -> u32 {
+    internal pub fn map_two_bytes(lead: u8, trail: u8) -> u32 {
+        use index;
+
         let lead = lead as uint;
         let trail = trail as uint;
         let index = match (lead, trail) {
@@ -105,14 +106,16 @@ ascii_compatible_stateful_decoder! {
             }
             _ => 0xffff,
         };
-        index::forward(index as u16)
+        index::gb18030::forward(index as u16)
     }
 
-    internal fn map_four_bytes(b1: u8, b2: u8, b3: u8, b4: u8) -> u32 {
+    internal pub fn map_four_bytes(b1: u8, b2: u8, b3: u8, b4: u8) -> u32 {
+        use index;
+
         // no range check here, caller should have done all checks
         let index = (b1 as uint - 0x81) * 12600 + (b2 as uint - 0x30) * 1260 +
                     (b3 as uint - 0x81) * 10 + (b4 as uint - 0x30);
-        ranges_index::forward(index as u32)
+        index::gb18030_ranges::forward(index as u32)
     }
 
     // gb18030 first = 0x00, gb18030 second = 0x00, gb18030 third = 0x00

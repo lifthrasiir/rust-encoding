@@ -5,7 +5,7 @@
 //! Legacy Korean encodings based on KS X 1001.
 
 use util::StrCharIndex;
-use index = index::euc_kr;
+use index;
 use types::*;
 
 /**
@@ -48,7 +48,7 @@ impl Encoder for Windows949Encoder {
             if ch <= '\u007f' {
                 output.write_byte(ch as u8);
             } else {
-                let ptr = index::backward(ch as u32);
+                let ptr = index::euc_kr::backward(ch as u32);
                 if ptr == 0xffff {
                     return (i, Some(CodecError {
                         upto: j, cause: "unrepresentable character".into_maybe_owned()
@@ -83,7 +83,9 @@ ascii_compatible_stateful_decoder! {
 
     module windows949;
 
-    internal fn map_two_bytes(lead: u8, trail: u8) -> u32 {
+    internal pub fn map_two_bytes(lead: u8, trail: u8) -> u32 {
+        use index;
+
         let lead = lead as uint;
         let trail = trail as uint;
         let index = match (lead, trail) {
@@ -97,7 +99,7 @@ ascii_compatible_stateful_decoder! {
                 (26 + 26 + 126) * (0xc7 - 0x81) + (lead - 0xc7) * 94 + trail - 0xa1,
             (_, _) => 0xffff,
         };
-        index::forward(index as u16)
+        index::euc_kr::forward(index as u16)
     }
 
     // euc-kr lead = 0x00
