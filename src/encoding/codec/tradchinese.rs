@@ -104,18 +104,16 @@ ascii_compatible_stateful_decoder! {
 
     // big5 lead != 0x00
     state S1(ctx, lead: u8) {
-        case b => {
-            match map_two_bytes(lead, b) {
-                0xffff => {
-                    let backup = if b < 0x80 {1} else {0};
-                    ctx.backup_and_err(backup, "invalid sequence")
-                },
-                0 /*index=1133*/ => ctx.emit_str("\u00ca\u0304"),
-                1 /*index=1135*/ => ctx.emit_str("\u00ca\u030c"),
-                2 /*index=1164*/ => ctx.emit_str("\u00ea\u0304"),
-                3 /*index=1166*/ => ctx.emit_str("\u00ea\u030c"),
-                ch => ctx.emit(ch),
-            }
+        case b => match map_two_bytes(lead, b) {
+            0xffff => {
+                let backup = if b < 0x80 {1} else {0};
+                ctx.backup_and_err(backup, "invalid sequence")
+            },
+            0 /*index=1133*/ => ctx.emit_str("\u00ca\u0304"),
+            1 /*index=1135*/ => ctx.emit_str("\u00ca\u030c"),
+            2 /*index=1164*/ => ctx.emit_str("\u00ea\u0304"),
+            3 /*index=1166*/ => ctx.emit_str("\u00ea\u030c"),
+            ch => ctx.emit(ch),
         };
     }
 }

@@ -137,14 +137,10 @@ ascii_compatible_stateful_decoder! {
     // euc-jp lead != 0x00, euc-jp jis0212 flag = unset
     // JIS X 0208 two-byte sequence
     state S3(ctx, lead: u8) {
-        case b @ 0xa1..0xfe => {
-            let ch = map_two_0208_bytes(lead, b);
-            if ch == 0xffff {
-                // do NOT backup, we only backup for out-of-range trails.
-                ctx.err("invalid sequence")
-            } else {
-                ctx.emit(ch as u32)
-            }
+        case b @ 0xa1..0xfe => match map_two_0208_bytes(lead, b) {
+            // do NOT backup, we only backup for out-of-range trails.
+            0xffff => ctx.err("invalid sequence"),
+            ch => ctx.emit(ch as u32)
         };
         case _ => ctx.backup_and_err(1, "invalid sequence");
     }
@@ -152,14 +148,10 @@ ascii_compatible_stateful_decoder! {
     // euc-jp lead != 0x00, euc-jp jis0212 flag = set
     // JIS X 0212 three-byte sequence
     state S4(ctx, lead: u8) {
-        case b @ 0xa1..0xfe => {
-            let ch = map_two_0212_bytes(lead, b);
-            if ch == 0xffff {
-                // do NOT backup, we only backup for out-of-range trails.
-                ctx.err("invalid sequence")
-            } else {
-                ctx.emit(ch as u32)
-            }
+        case b @ 0xa1..0xfe => match map_two_0212_bytes(lead, b) {
+            // do NOT backup, we only backup for out-of-range trails.
+            0xffff => ctx.err("invalid sequence"),
+            ch => ctx.emit(ch as u32)
         };
         case _ => ctx.backup_and_err(1, "invalid sequence");
     }
@@ -341,13 +333,9 @@ ascii_compatible_stateful_decoder! {
 
     // shift_jis lead != 0x00
     state S1(ctx, lead: u8) {
-        case b => {
-            let ch = map_two_0208_bytes(lead, b);
-            if ch == 0xffff {
-                ctx.backup_and_err(1, "invalid sequence") // unconditional
-            } else {
-                ctx.emit(ch)
-            }
+        case b => match map_two_0208_bytes(lead, b) {
+            0xffff => ctx.backup_and_err(1, "invalid sequence"), // unconditional
+            ch => ctx.emit(ch)
         };
     }
 }

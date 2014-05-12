@@ -111,13 +111,9 @@ ascii_compatible_stateful_decoder! {
 
     // euc-kr lead != 0x00
     state S1(ctx, lead: u8) {
-        case b => {
-            let ch = map_two_bytes(lead, b);
-            if ch == 0xffff {
-                ctx.backup_and_err(1, "invalid sequence") // unconditional
-            } else {
-                ctx.emit(ch as u32)
-            }
+        case b => match map_two_bytes(lead, b) {
+            0xffff => ctx.backup_and_err(1, "invalid sequence"), // unconditional
+            ch => ctx.emit(ch as u32)
         };
     }
 }

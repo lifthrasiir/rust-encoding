@@ -129,13 +129,9 @@ ascii_compatible_stateful_decoder! {
     // gb18030 first != 0x00, gb18030 second = 0x00, gb18030 third = 0x00
     state S1(ctx, first: u8) {
         case b @ 0x30..0x39 => S2(ctx, first, b);
-        case b => {
-            let ch = map_two_bytes(first, b);
-            if ch == 0xffff {
-                ctx.backup_and_err(1, "invalid sequence") // unconditional
-            } else {
-                ctx.emit(ch)
-            }
+        case b => match map_two_bytes(first, b) {
+            0xffff => ctx.backup_and_err(1, "invalid sequence"), // unconditional
+            ch => ctx.emit(ch)
         };
     }
 
@@ -147,13 +143,9 @@ ascii_compatible_stateful_decoder! {
 
     // gb18030 first != 0x00, gb18030 second != 0x00, gb18030 third != 0x00
     state S3(ctx, first: u8, second: u8, third: u8) {
-        case b @ 0x30..0x39 => {
-            let ch = map_four_bytes(first, second, third, b);
-            if ch == 0xffffffff {
-                ctx.backup_and_err(3, "invalid sequence") // unconditional
-            } else {
-                ctx.emit(ch)
-            }
+        case b @ 0x30..0x39 => match map_four_bytes(first, second, third, b) {
+            0xffffffff => ctx.backup_and_err(3, "invalid sequence"), // unconditional
+            ch => ctx.emit(ch)
         };
         case _ => ctx.backup_and_err(3, "invalid sequence");
     }

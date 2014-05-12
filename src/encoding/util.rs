@@ -48,7 +48,7 @@ impl<'r> StrCharIndex<'r> for &'r str {
 }
 
 /// A helper struct for the stateful decoder DSL.
-pub struct StatefulDecoderHelper<'a> {
+pub struct StatefulDecoderHelper<'a, St> {
     /// The current buffer.
     pub buf: &'a [u8],
     /// The current index to the buffer.
@@ -59,7 +59,7 @@ pub struct StatefulDecoderHelper<'a> {
     pub err: Option<types::CodecError>,
 }
 
-impl<'a> StatefulDecoderHelper<'a> {
+impl<'a, St:Default> StatefulDecoderHelper<'a, St> {
     /// Reads one byte from the buffer if any.
     #[inline(always)]
     pub fn read(&mut self) -> Option<u8> {
@@ -72,7 +72,7 @@ impl<'a> StatefulDecoderHelper<'a> {
     /// Resets back to the initial state.
     /// This should be the last expr in the rules.
     #[inline(always)]
-    pub fn reset<St:Default>(&self) -> St {
+    pub fn reset(&self) -> St {
         Default::default()
     }
 
@@ -80,7 +80,7 @@ impl<'a> StatefulDecoderHelper<'a> {
     /// There is intentionally no check for `c`, so the caller should ensure that it's valid.
     /// If this is the last expr in the rules, also resets back to the initial state.
     #[inline(always)]
-    pub fn emit<St:Default>(&mut self, c: u32) -> St {
+    pub fn emit(&mut self, c: u32) -> St {
         self.output.write_char(unsafe {mem::transmute(c)});
         Default::default()
     }
@@ -88,7 +88,7 @@ impl<'a> StatefulDecoderHelper<'a> {
     /// Writes a Unicode string to the output.
     /// If this is the last expr in the rules, also resets back to the initial state.
     #[inline(always)]
-    pub fn emit_str<St:Default>(&mut self, s: &str) -> St {
+    pub fn emit_str(&mut self, s: &str) -> St {
         self.output.write_str(s);
         Default::default()
     }
@@ -96,7 +96,7 @@ impl<'a> StatefulDecoderHelper<'a> {
     /// Issues a codec error with given message at the current position.
     /// If this is the last expr in the rules, also resets back to the initial state.
     #[inline(always)]
-    pub fn err<St:Default>(&mut self, msg: &'static str) -> St {
+    pub fn err(&mut self, msg: &'static str) -> St {
         self.err = Some(types::CodecError { upto: self.pos, cause: msg.into_maybe_owned() });
         Default::default()
     }
@@ -107,7 +107,7 @@ impl<'a> StatefulDecoderHelper<'a> {
     /// This should be used to implement "prepending byte to the stream" in the Encoding spec,
     /// which corresponds to `ctx.backup_and_err(1, ...)`.
     #[inline(always)]
-    pub fn backup_and_err<St:Default>(&mut self, backup: uint, msg: &'static str) -> St {
+    pub fn backup_and_err(&mut self, backup: uint, msg: &'static str) -> St {
         // XXX we should eventually handle a negative `upto`
         let upto = if self.pos < backup {0} else {self.pos - backup};
         self.err = Some(types::CodecError { upto: upto, cause: msg.into_maybe_owned() });
@@ -158,14 +158,16 @@ macro_rules! stateful_decoder(
             }
 
             pub mod internal {
+                pub type Context<'a> = ::util::StatefulDecoderHelper<'a, super::State>;
+
                 $($item)*
             }
 
             pub mod start {
-                #[allow(unused_imports)] use super::internal::*;
+                use super::internal::*;
 
                 #[inline(always)]
-                pub fn $inist($inictx: &mut ::util::StatefulDecoderHelper) -> super::State {
+                pub fn $inist($inictx: &mut Context) -> super::State {
                     // prohibits all kind of recursions, including self-recursions
                     #[allow(unused_imports)] use super::transient::*;
                     match $inictx.read() {
@@ -176,8 +178,7 @@ macro_rules! stateful_decoder(
 
                 $(
                     #[inline(always)]
-                    pub fn $ckst($ckctx: &mut ::util::StatefulDecoderHelper
-                                 $(, $ckarg: $ckty)*) -> super::State {
+                    pub fn $ckst($ckctx: &mut Context $(, $ckarg: $ckty)*) -> super::State {
                         // prohibits all kind of recursions, including self-recursions
                         #[allow(unused_imports)] use super::transient::*;
                         match $ckctx.read() {
@@ -189,27 +190,25 @@ macro_rules! stateful_decoder(
             }
 
             pub mod transient {
-                #[allow(unused_imports)] use super::internal::*;
+                use super::internal::*;
 
                 #[inline(always)]
                 #[allow(dead_code)]
-                pub fn $inist(_: &mut ::util::StatefulDecoderHelper) -> super::State {
+                pub fn $inist(_: &mut Context) -> super::State {
                     super::$inist // do not recurse further
                 }
 
                 $(
                     #[inline(always)]
                     #[allow(dead_code)]
-                    pub fn $ckst(_: &mut ::util::StatefulDecoderHelper
-                                 $(, $ckarg: $ckty)*) -> super::State {
+                    pub fn $ckst(_: &mut Context $(, $ckarg: $ckty)*) -> super::State {
                         super::$ckst(() $(, $ckarg)*) // do not recurse further
                     }
                 )*
 
                 $(
                     #[inline(always)]
-                    pub fn $st($ctx: &mut ::util::StatefulDecoderHelper
-                               $(, $arg: $ty)*) -> super::State {
+                    pub fn $st($ctx: &mut Context $(, $arg: $ty)*) -> super::State {
                         match $inictx.read() {
                             None => super::$st(() $(, $arg)*),
                             Some(c) => match c { $($($lhs)|+ => { $($rhs);+ })+ },
