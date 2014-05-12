@@ -55,6 +55,8 @@ pub struct StatefulDecoderHelper<'a> {
     pub pos: uint,
     /// The output buffer.
     pub output: &'a mut types::StringWriter,
+    /// The last codec error. The caller will later collect this.
+    pub err: Option<types::CodecError>,
 }
 
 impl<'a> StatefulDecoderHelper<'a> {
@@ -68,41 +70,48 @@ impl<'a> StatefulDecoderHelper<'a> {
     }
 
     /// Resets back to the initial state.
+    /// This should be the last expr in the rules.
     #[inline(always)]
-    pub fn reset<T:Default,E>(&self) -> Result<T,E> {
-        Ok(Default::default())
+    pub fn reset<St:Default>(&self) -> St {
+        Default::default()
     }
 
-    /// Writes one Unicode scalar value to the output and resets back to the initial state.
+    /// Writes one Unicode scalar value to the output.
     /// There is intentionally no check for `c`, so the caller should ensure that it's valid.
+    /// If this is the last expr in the rules, also resets back to the initial state.
     #[inline(always)]
-    pub fn emit<T:Default,E>(&mut self, c: u32) -> Result<T,E> {
+    pub fn emit<St:Default>(&mut self, c: u32) -> St {
         self.output.write_char(unsafe {mem::transmute(c)});
-        Ok(Default::default())
+        Default::default()
     }
 
-    /// Writes a Unicode string to the output and resets back to the initial state.
+    /// Writes a Unicode string to the output.
+    /// If this is the last expr in the rules, also resets back to the initial state.
     #[inline(always)]
-    pub fn emit_str<T:Default,E>(&mut self, s: &str) -> Result<T,E> {
+    pub fn emit_str<St:Default>(&mut self, s: &str) -> St {
         self.output.write_str(s);
-        Ok(Default::default())
+        Default::default()
     }
 
     /// Issues a codec error with given message at the current position.
+    /// If this is the last expr in the rules, also resets back to the initial state.
     #[inline(always)]
-    pub fn err<T>(&self, msg: &'static str) -> Result<T,types::CodecError> {
-        Err(types::CodecError { upto: self.pos, cause: msg.into_maybe_owned() })
+    pub fn err<St:Default>(&mut self, msg: &'static str) -> St {
+        self.err = Some(types::CodecError { upto: self.pos, cause: msg.into_maybe_owned() });
+        Default::default()
     }
 
     /// Issues a codec error with given message at the current position minus `backup` bytes.
+    /// If this is the last expr in the rules, also resets back to the initial state.
+    ///
     /// This should be used to implement "prepending byte to the stream" in the Encoding spec,
     /// which corresponds to `ctx.backup_and_err(1, ...)`.
     #[inline(always)]
-    pub fn backup_and_err<T>(&self, backup: uint,
-                             msg: &'static str) -> Result<T,types::CodecError> {
+    pub fn backup_and_err<St:Default>(&mut self, backup: uint, msg: &'static str) -> St {
         // XXX we should eventually handle a negative `upto`
         let upto = if self.pos < backup {0} else {self.pos - backup};
-        Err(types::CodecError { upto: upto, cause: msg.into_maybe_owned() })
+        self.err = Some(types::CodecError { upto: upto, cause: msg.into_maybe_owned() });
+        Default::default()
     }
 }
 
@@ -115,16 +124,16 @@ macro_rules! stateful_decoder(
         ascii_compatible $asciicompat:expr;
         $(internal $item:item)* // will only be visible from state functions
         initial state $inist:ident($inictx:ident) {
-            $(case $($inilhs:pat)|+ => $inirhs:expr;)+
-            final => $inifin:expr;
+            $(case $($inilhs:pat)|+ => $($inirhs:expr),+;)+
+            final => $($inifin:expr),+;
         }
         $(checkpoint state $ckst:ident($ckctx:ident $(, $ckarg:ident: $ckty:ty)*) {
-            $(case $($cklhs:pat)|+ => $ckrhs:expr;)+
-            final => $ckfin:expr;
+            $(case $($cklhs:pat)|+ => $($ckrhs:expr),+;)+
+            final => $($ckfin:expr),+;
         })*
         $(state $st:ident($ctx:ident $(, $arg:ident: $ty:ty)*) {
-            $(case $($lhs:pat)|+ => $rhs:expr;)+
-            final => $fin:expr;
+            $(case $($lhs:pat)|+ => $($rhs:expr),+;)+
+            final => $($fin:expr),+;
         })*
     ) => (
         $(#[$decmeta])*
@@ -145,7 +154,7 @@ macro_rules! stateful_decoder(
             }
 
             impl ::std::default::Default for State {
-                fn default() -> State { $inist }
+                #[inline(always)] fn default() -> State { $inist }
             }
 
             pub mod internal {
@@ -154,26 +163,26 @@ macro_rules! stateful_decoder(
 
             pub mod start {
                 #[allow(unused_imports)] use super::internal::*;
-                $(
-                    #[allow(unused_imports)] use super::transient::$st;
-                )*
 
                 #[inline(always)]
-                pub fn $inist($inictx: &mut ::util::StatefulDecoderHelper)
-                                                -> Result<super::State,::types::CodecError> {
+                pub fn $inist($inictx: &mut ::util::StatefulDecoderHelper) -> super::State {
+                    // prohibits all kind of recursions, including self-recursions
+                    #[allow(unused_imports)] use super::transient::*;
                     match $inictx.read() {
-                        None => Ok(super::$inist),
-                        Some(c) => match c { $($($inilhs)|+ => $inirhs,)+ },
+                        None => super::$inist,
+                        Some(c) => match c { $($($inilhs)|+ => { $($inirhs);+ })+ },
                     }
                 }
 
                 $(
                     #[inline(always)]
-                    pub fn $ckst($ckctx: &mut ::util::StatefulDecoderHelper $(, $ckarg: $ckty)*)
-                                                    -> Result<super::State,::types::CodecError> {
+                    pub fn $ckst($ckctx: &mut ::util::StatefulDecoderHelper
+                                 $(, $ckarg: $ckty)*) -> super::State {
+                        // prohibits all kind of recursions, including self-recursions
+                        #[allow(unused_imports)] use super::transient::*;
                         match $ckctx.read() {
-                            None => Ok(super::$ckst(() $(, $ckarg)*)),
-                            Some(c) => match c { $($($cklhs)|+ => $ckrhs,)+ },
+                            None => super::$ckst(() $(, $ckarg)*),
+                            Some(c) => match c { $($($cklhs)|+ => { $($ckrhs);+ })+ },
                         }
                     }
                 )*
@@ -184,27 +193,26 @@ macro_rules! stateful_decoder(
 
                 #[inline(always)]
                 #[allow(dead_code)]
-                pub fn $inist(_: &mut ::util::StatefulDecoderHelper)
-                                                -> Result<super::State,::types::CodecError> {
-                    Ok(super::$inist) // do not recurse further
+                pub fn $inist(_: &mut ::util::StatefulDecoderHelper) -> super::State {
+                    super::$inist // do not recurse further
                 }
 
                 $(
                     #[inline(always)]
                     #[allow(dead_code)]
-                    pub fn $ckst(_: &mut ::util::StatefulDecoderHelper $(, $ckarg: $ckty)*)
-                                                    -> Result<super::State,::types::CodecError> {
-                        Ok(super::$ckst(() $(, $ckarg)*)) // do not recurse further
+                    pub fn $ckst(_: &mut ::util::StatefulDecoderHelper
+                                 $(, $ckarg: $ckty)*) -> super::State {
+                        super::$ckst(() $(, $ckarg)*) // do not recurse further
                     }
                 )*
 
                 $(
                     #[inline(always)]
-                    pub fn $st($ctx: &mut ::util::StatefulDecoderHelper $(, $arg: $ty)*)
-                                                    -> Result<super::State,::types::CodecError> {
+                    pub fn $st($ctx: &mut ::util::StatefulDecoderHelper
+                               $(, $arg: $ty)*) -> super::State {
                         match $inictx.read() {
-                            None => Ok(super::$st(() $(, $arg)*)),
-                            Some(c) => match c { $($($lhs)|+ => $rhs,)+ },
+                            None => super::$st(() $(, $arg)*),
+                            Some(c) => match c { $($($lhs)|+ => { $($rhs);+ })+ },
                         }
                     }
                 )*
@@ -225,12 +233,14 @@ macro_rules! stateful_decoder(
 
                 output.writer_hint(input.len());
 
-                let mut ctx = ::util::StatefulDecoderHelper { buf: input, pos: 0, output: output };
+                let mut ctx = ::util::StatefulDecoderHelper {
+                    buf: input, pos: 0, output: output, err: None
+                };
                 let mut processed = 0;
                 let mut st = self.st;
 
-                let st_or_err = match st {
-                    $stmod::$inist => Ok($stmod::$inist),
+                let st_ = match st {
+                    $stmod::$inist => $stmod::$inist,
                     $(
                         $stmod::$ckst(() $(, $ckarg)*) => start::$ckst(&mut ctx $(, $ckarg)*),
                     )*
@@ -238,26 +248,28 @@ macro_rules! stateful_decoder(
                         $stmod::$st(() $(, $arg)*) => transient::$st(&mut ctx $(, $arg)*),
                     )*
                 };
-                match st_or_err {
-                    Ok(st_ @ $stmod::$inist)
-                        $(| Ok(st_ @ $stmod::$ckst(..)))* => { st = st_; processed = ctx.pos; }
-                    Ok(st) => { self.st = st; return (processed, None); }
-                    Err(err) => { self.st = $stmod::$inist; return (processed, Some(err)); }
+                match (ctx.err.take(), st_) {
+                    (None, $stmod::$inist) $(| (None, $stmod::$ckst(..)))* =>
+                        { st = st_; processed = ctx.pos; }
+                    // XXX splitting the match case improves the performance somehow, but why?
+                    (None, _) => { self.st = st_; return (processed, None); }
+                    (Some(err), _) => { self.st = st_; return (processed, Some(err)); }
                 }
 
                 while ctx.pos < ctx.buf.len() {
-                    let st_or_err = match st {
+                    let st_ = match st {
                         $stmod::$inist => start::$inist(&mut ctx),
                         $(
                             $stmod::$ckst(() $(, $ckarg)*) => start::$ckst(&mut ctx $(, $ckarg)*),
                         )*
                         _ => unreachable!(),
                     };
-                    match st_or_err {
-                        Ok(st_ @ $stmod::$inist)
-                            $(| Ok(st_ @ $stmod::$ckst(..)))* => { st = st_; processed = ctx.pos; }
-                        Ok(st) => { self.st = st; return (processed, None); }
-                        Err(err) => { self.st = $stmod::$inist; return (processed, Some(err)); }
+                    match (ctx.err.take(), st_) {
+                        (None, $stmod::$inist) $(| (None, $stmod::$ckst(..)))* =>
+                            { st = st_; processed = ctx.pos; }
+                        // XXX splitting the match case improves the performance somehow, but why?
+                        (None, _) => { self.st = st_; return (processed, None); }
+                        (Some(err), _) => { self.st = st_; return (processed, Some(err)); }
                     }
                 }
 
@@ -267,15 +279,19 @@ macro_rules! stateful_decoder(
 
             fn raw_finish(&mut self, output: &mut StringWriter) -> Option<CodecError> {
                 #![allow(unused_mut, unused_variable)]
-                let mut ctx = ::util::StatefulDecoderHelper { buf: &[], pos: 0, output: output };
-                let st_or_err: Result<(),CodecError> =
-                    match ::std::mem::replace(&mut self.st, $stmod::$inist) {
-                        $stmod::$inist => { let mut $inictx = ctx; $inifin },
-                        $(
-                            $stmod::$st(() $(, $arg)*) => { let mut $ctx = ctx; $fin },
-                        )*
-                    };
-                st_or_err.err()
+                let mut ctx = ::util::StatefulDecoderHelper {
+                    buf: &[], pos: 0, output: output, err: None
+                };
+                self.st = match ::std::mem::replace(&mut self.st, $stmod::$inist) {
+                    $stmod::$inist => { let $inictx = &mut ctx; $($inifin);+ },
+                    $(
+                        $stmod::$ckst(() $(, $ckarg)*) => { let $ckctx = &mut ctx; $($ckfin);+ },
+                    )*
+                    $(
+                        $stmod::$st(() $(, $arg)*) => { let $ctx = &mut ctx; $($fin);+ },
+                    )*
+                };
+                ctx.err.take()
             }
         }
     )
@@ -289,10 +305,10 @@ macro_rules! ascii_compatible_stateful_decoder(
         module $stmod:ident; // should be unique from other existing identifiers
         $(internal $item:item)* // will only be visible from state functions
         initial state $inist:ident($inictx:ident) {
-            $(case $($inilhs:pat)|+ => $inirhs:expr;)+
+            $(case $($inilhs:pat)|+ => $($inirhs:expr),+;)+
         }
         $(state $st:ident($ctx:ident $(, $arg:ident: $ty:ty)*) {
-            $(case $($lhs:pat)|+ => $rhs:expr;)+
+            $(case $($lhs:pat)|+ => $($rhs:expr),+;)+
         })*
     ) => (
         stateful_decoder!(
@@ -302,11 +318,11 @@ macro_rules! ascii_compatible_stateful_decoder(
             ascii_compatible true;
             $(internal $item)*
             initial state $inist($inictx) {
-                $(case $($inilhs)|+ => $inirhs;)+
+                $(case $($inilhs)|+ => $($inirhs),+;)+
                 final => $inictx.reset();
             }
             $(state $st($ctx $(, $arg: $ty)*) {
-                $(case $($lhs)|+ => $rhs;)+
+                $(case $($lhs)|+ => $($rhs),+;)+
                 final => $ctx.err("incomplete sequence");
             })*
         )
