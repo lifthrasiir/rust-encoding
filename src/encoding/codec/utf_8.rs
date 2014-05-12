@@ -24,7 +24,7 @@
 
 //! UTF-8, the universal encoding.
 
-use std::{str, cast};
+use std::{str, mem};
 use types::*;
 
 /**
@@ -66,7 +66,7 @@ impl Encoder for UTF8Encoder {
 
     fn raw_feed(&mut self, input: &str, output: &mut ByteWriter) -> (uint, Option<CodecError>) {
         unsafe {
-            let input: &[u8] = cast::transmute(input);
+            let input: &[u8] = mem::transmute(input);
             assert!(str::is_utf8(input));
             output.write_bytes(input);
         }
@@ -146,7 +146,7 @@ impl Decoder for UTF8Decoder {
         output.writer_hint(input.len());
 
         fn write_bytes(output: &mut StringWriter, bytes: &[u8]) {
-            output.write_str(unsafe {cast::transmute(bytes)});
+            output.write_str(unsafe {mem::transmute(bytes)});
         }
 
         let mut state = self.state;

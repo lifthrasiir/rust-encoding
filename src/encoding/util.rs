@@ -6,13 +6,13 @@
 
 #![macro_escape]
 
-use std::{str, cast};
+use std::{str, mem};
 use std::default::Default;
 use types;
 
 /// Unchecked conversion to `char`.
 pub fn as_char<T:Int+NumCast>(ch: T) -> char {
-    unsafe { cast::transmute(ch.to_u32().unwrap()) }
+    unsafe { mem::transmute(ch.to_u32().unwrap()) }
 }
 
 /// External iterator for a string's characters with its corresponding byte offset range.
@@ -71,7 +71,7 @@ impl<'a, State: Default> StatefulDecoderHelper<'a, State> {
     /// There is intentionally no check for `c`, so the caller should ensure that it's valid.
     #[inline(always)]
     pub fn emit(&mut self, c: u32) -> Result<State,types::CodecError> {
-        self.output.write_char(unsafe {cast::transmute(c)});
+        self.output.write_char(unsafe {mem::transmute(c)});
         Ok(Default::default())
     }
 
