@@ -94,7 +94,8 @@ Rust-encoding is a work in progress and this list will certainly be updated.
     * Windows code page 949 (`euc-kr`, since the strict EUC-KR is hardly used)
     * EUC-JP and Windows code page 932 (`shift_jis`,
       since it's the most widespread extension to Shift_JIS)
-    * GB 18030 and its GBK subset
+    * ISO-2022-JP with asymmetric JIS X 0212 support
+    * GB 18030
     * Big5-2003 with HKSCS-2008 extensions
 * ISO 8859-1 (distinct from Windows code page 1252)
 

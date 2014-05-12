@@ -67,6 +67,7 @@ unique!(var=UTF_16BE, mod=codec::utf_16, val=UTF16BEEncoding)
 unique!(var=WINDOWS_949, mod=codec::korean, val=Windows949Encoding)
 unique!(var=EUC_JP, mod=codec::japanese, val=EUCJPEncoding)
 unique!(var=WINDOWS_31J, mod=codec::japanese, val=Windows31JEncoding)
+unique!(var=ISO_2022_JP, mod=codec::japanese, val=ISO2022JPEncoding)
 unique!(var=GB18030, mod=codec::simpchinese, val=GB18030Encoding)
 unique!(var=BIG5_2003, mod=codec::tradchinese, val=BigFive2003Encoding)
 

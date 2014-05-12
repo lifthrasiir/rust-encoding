@@ -426,3 +426,359 @@ mod windows31j_tests {
     }
 }
 
+/**
+ * ISO-2022-JP.
+ *
+ * This version of ISO-2022-JP does not correspond to any standardized repertoire of character sets
+ * due to the widespread implementation differences. The following character sets are supported:
+ *
+ * - JIS X 0201-1976 roman (`ESC ( J` or `ESC ( B`; the latter is originally allocated to ASCII
+ *   but willfully violated)
+ * - JIS X 0201-1976 kana (`ESC ( I`)
+ * - JIS X 0208-1983 (`ESC $ B` or `ESC $ @`; the latter is originally allocated to JIS X 0208-1978
+ *   but willfully violated)
+ * - JIS X 0212-1990 (`ESC $ ( D`, XXX asymmetric support)
+ */
+#[deriving(Clone)]
+pub struct ISO2022JPEncoding;
+
+impl Encoding for ISO2022JPEncoding {
+    fn name(&self) -> &'static str { "iso-2022-jp" }
+    fn whatwg_name(&self) -> Option<&'static str> { Some("iso-2022-jp") }
+    fn encoder(&self) -> Box<Encoder> { ISO2022JPEncoder::new() }
+    fn decoder(&self) -> Box<Decoder> { ISO2022JPDecoder::new() }
+}
+
+#[deriving(Eq,Clone)]
+enum ISO2022JPState {
+    ASCII, // U+0000..007F, U+00A5, U+203E
+    Katakana, // JIS X 0201: U+FF61..FF9F
+    Lead, // JIS X 0208
+}
+
+/// An encoder for ISO-2022-JP without JIS X 0212/0213 support.
+#[deriving(Clone)]
+pub struct ISO2022JPEncoder {
+    st: ISO2022JPState
+}
+
+impl ISO2022JPEncoder {
+    pub fn new() -> Box<Encoder> { box ISO2022JPEncoder { st: ASCII } as Box<Encoder> }
+}
+
+impl Encoder for ISO2022JPEncoder {
+    fn from_self(&self) -> Box<Encoder> { ISO2022JPEncoder::new() }
+    fn is_ascii_compatible(&self) -> bool { true }
+
+    fn raw_feed(&mut self, input: &str, output: &mut ByteWriter) -> (uint, Option<CodecError>) {
+        output.writer_hint(input.len());
+
+        let mut st = self.st;
+        macro_rules! ensure_ASCII(
+            () => (if st != ASCII { output.write_bytes(bytes!("\x1b(B")); st = ASCII; })
+        )
+        macro_rules! ensure_Katakana(
+            () => (if st != Katakana { output.write_bytes(bytes!("\x1b(I")); st = Katakana; })
+        )
+        macro_rules! ensure_Lead(
+            () => (if st != Lead { output.write_bytes(bytes!("\x1b$B")); st = Lead; })
+        )
+
+        for ((i,j), ch) in input.index_iter() {
+            match ch {
+                '\u0000'..'\u007f' => { ensure_ASCII!(); output.write_byte(ch as u8); }
+                '\u00a5' => { ensure_ASCII!(); output.write_byte(0x5c); }
+                '\u203e' => { ensure_ASCII!(); output.write_byte(0x7e); }
+                '\uff61'..'\uff9f' => {
+                    ensure_Katakana!();
+                    output.write_byte((ch as uint - 0xff61 + 0x21) as u8);
+                }
+                _ => {
+                    let ptr = index::jis0208::backward(ch as u32);
+                    if ptr == 0xffff {
+                        self.st = st; // do NOT reset the state!
+                        return (i, Some(CodecError {
+                            upto: j, cause: "unrepresentable character".into_maybe_owned()
+                        }));
+                    } else {
+                        ensure_Lead!();
+                        let lead = ptr / 94 + 0x21;
+                        let trail = ptr % 94 + 0x21;
+                        output.write_byte(lead as u8);
+                        output.write_byte(trail as u8);
+                    }
+                }
+            }
+        }
+
+        self.st = st;
+        (input.len(), None)
+    }
+
+    fn raw_finish(&mut self, _output: &mut ByteWriter) -> Option<CodecError> {
+        None
+    }
+}
+
+stateful_decoder! {
+    #[doc="A decoder for ISO-2022-JP with JIS X 0212 support."]
+    #[deriving(Clone)]
+    struct ISO2022JPDecoder;
+
+    module iso2022jp;
+
+    ascii_compatible false;
+
+    internal pub fn map_two_0208_bytes(lead: u8, trail: u8) -> u32 {
+        use index;
+
+        let lead = lead as uint;
+        let trail = trail as uint;
+        let index = match (lead, trail) {
+            (0x21..0x7e, 0x21..0x7e) => (lead - 0x21) * 94 + trail - 0x21,
+            _ => 0xffff,
+        };
+        index::jis0208::forward(index as u16)
+    }
+
+    internal pub fn map_two_0212_bytes(lead: u8, trail: u8) -> u32 {
+        use index;
+
+        let lead = lead as uint;
+        let trail = trail as uint;
+        let index = match (lead, trail) {
+            (0x21..0x7e, 0x21..0x7e) => (lead - 0x21) * 94 + trail - 0x21,
+            _ => 0xffff,
+        };
+        index::jis0212::forward(index as u16)
+    }
+
+    // iso-2022-jp state = ASCII, iso-2022-jp jis0212 flag = unset, iso-2022-jp lead = 0x00
+    initial state ASCII(ctx) {
+        case 0x1b => EscapeStart(ctx);
+        case b @ 0x00..0x7f => ctx.emit(b as u32), ASCII(ctx);
+        case _ => ctx.err("invalid sequence"), ASCII(ctx);
+        final => ctx.reset();
+    }
+
+    // iso-2022-jp state = Lead, iso-2022-jp jis0212 flag = unset
+    checkpoint state Lead0208(ctx) {
+        case 0x0a => ctx.emit(0x000a); // return to ASCII
+        case 0x1b => EscapeStart(ctx);
+        case b => Trail0208(ctx, b);
+        final => ctx.reset();
+    }
+
+    // iso-2022-jp state = Lead, iso-2022-jp jis0212 flag = set
+    checkpoint state Lead0212(ctx) {
+        case 0x0a => ctx.emit(0x000a); // return to ASCII
+        case 0x1b => EscapeStart(ctx);
+        case b => Trail0212(ctx, b);
+        final => ctx.reset();
+    }
+
+    // iso-2022-jp state = Katakana
+    checkpoint state Katakana(ctx) {
+        case 0x1b => EscapeStart(ctx);
+        case b @ 0x21..0x5f => ctx.emit(0xff61 + b as u32 - 0x21), Katakana(ctx);
+        case _ => ctx.err("invalid sequence"), Katakana(ctx);
+        final => ctx.reset();
+    }
+
+    // iso-2022-jp state = EscapeStart
+    // ESC
+    state EscapeStart(ctx) {
+        case 0x24 => EscapeMiddle24(ctx); // ESC $
+        case 0x28 => EscapeMiddle28(ctx); // ESC (
+        case _ => ctx.backup_and_err(1, "invalid sequence");
+        final => ctx.err("incomplete sequence");
+    }
+
+    // iso-2022-jp state = EscapeMiddle, iso-2022-jp lead = 0x24
+    // ESC $
+    state EscapeMiddle24(ctx) {
+        case 0x40 | 0x42 => Lead0208(ctx); // ESC $ @ (JIS X 0208-1978) or ESC $ B (-1983)
+        case 0x28 => EscapeFinal(ctx); // ESC $ (
+        case _ => ctx.backup_and_err(2, "invalid sequence");
+        final => ctx.err("incomplete sequence");
+    }
+
+    // iso-2022-jp state = EscapeMiddle, iso-2022-jp lead = 0x28
+    // ESC (
+    state EscapeMiddle28(ctx) {
+        case 0x42 | 0x4a => ctx.reset(); // ESC ( B (ASCII) or ESC ( J (JIS X 0201-1976 roman)
+        case 0x49 => Katakana(ctx); // ESC ( I (JIS X 0201-1976 kana)
+        case _ => ctx.backup_and_err(2, "invalid sequence");
+        final => ctx.err("incomplete sequence");
+    }
+
+    // iso-2022-jp state = EscapeFinal
+    // ESC $ (
+    state EscapeFinal(ctx) {
+        case 0x44 => Lead0212(ctx); // ESC $ ( D (JIS X 0212-1990)
+        case _ => ctx.backup_and_err(3, "invalid sequence");
+        final => ctx.backup_and_err(1, "incomplete sequence");
+    }
+
+    // iso-2022-jp state = Trail, iso-2022-jp jis0212 flag = unset
+    state Trail0208(ctx, lead: u8) {
+        case b =>
+            match map_two_0208_bytes(lead, b) {
+                0xffff => ctx.err("invalid sequence"),
+                ch => ctx.emit(ch as u32)
+            },
+            Lead0208(ctx);
+        final => ctx.err("incomplete sequence");
+    }
+
+    // iso-2022-jp state = Trail, iso-2022-jp jis0212 flag = set
+    state Trail0212(ctx, lead: u8) {
+        case b =>
+            match map_two_0212_bytes(lead, b) {
+                0xffff => ctx.err("invalid sequence"),
+                ch => ctx.emit(ch as u32)
+            },
+            Lead0212(ctx);
+        final => ctx.err("incomplete sequence");
+    }
+}
+
+#[cfg(test)]
+mod iso2022jp_tests {
+    extern crate test;
+    use super::ISO2022JPEncoding;
+    use testutils;
+    use types::*;
+
+    #[test]
+    fn test_encoder_valid() {
+        let mut e = ISO2022JPEncoding.encoder();
+        assert_feed_ok!(e, "A", "", [0x41]);
+        assert_feed_ok!(e, "BC", "", [0x42, 0x43]);
+        assert_feed_ok!(e, "", "", []);
+        assert_feed_ok!(e, "\u00a5", "", [0x5c]);
+        assert_feed_ok!(e, "\u203e", "", [0x7e]);
+        assert_feed_ok!(e, "\u306b\u307b\u3093", "", [0x1b, 0x24, 0x42,
+                                                      0x24, 0x4b, 0x24, 0x5b, 0x24, 0x73]);
+        assert_feed_ok!(e, "\u65e5\u672c", "", [0x46, 0x7c, 0x4b, 0x5c]);
+        assert_feed_ok!(e, "\uff86\uff8e\uff9d", "", [0x1b, 0x28, 0x49,
+                                                      0x46, 0x4e, 0x5d]);
+        assert_feed_ok!(e, "XYZ", "", [0x1b, 0x28, 0x42,
+                                       0x58, 0x59, 0x5a]);
+        assert_finish_ok!(e, []);
+
+        // one ASCII character and two similarly looking characters:
+        // - A: U+0020 SPACE (requires ASCII state)
+        // - B: U+30CD KATAKANA LETTER NE (requires JIS X 0208 Lead state)
+        // - C: U+FF88 HALFWIDTH KATAKANA LETTER NE (requires Katakana state)
+        // - D is omitted as the encoder does not support JIS X 0212.
+        // a (3,2) De Bruijn near-sequence "ABCACBA" is used to test all possible cases.
+        static Ad: &'static str = "\x20";
+        static Bd: &'static str = "\u30cd";
+        static Cd: &'static str = "\uff88";
+        static Ae: &'static [u8] = &[0x1b, 0x28, 0x42, 0x20];
+        static Be: &'static [u8] = &[0x1b, 0x24, 0x42, 0x25, 0x4d];
+        static Ce: &'static [u8] = &[0x1b, 0x28, 0x49, 0x48];
+        let mut e = ISO2022JPEncoding.encoder();
+        let decoded = [ "\x20", Bd, Cd, Ad, Cd, Bd, Ad].concat();
+        let encoded = [&[0x20], Be, Ce, Ae, Ce, Be, Ae].concat_vec();
+        assert_feed_ok!(e, decoded.as_slice(), "", encoded.as_slice());
+        assert_finish_ok!(e, []);
+    }
+
+    #[test]
+    fn test_encoder_invalid() {
+        let mut e = ISO2022JPEncoding.encoder();
+        assert_feed_err!(e, "", "\uffff", "", []);
+        assert_feed_err!(e, "?", "\uffff", "!", [0x3f]);
+        // JIS X 0212 is not supported in the encoder
+        assert_feed_err!(e, "", "\u736c", "\u8c78", []);
+        assert_finish_ok!(e, []);
+    }
+
+    #[test]
+    fn test_decoder_valid() {
+        let mut d = ISO2022JPEncoding.decoder();
+        assert_feed_ok!(d, [0x41], [], "A");
+        assert_feed_ok!(d, [0x42, 0x43], [], "BC");
+        assert_feed_ok!(d, [0x1b, 0x28, 0x4a,
+                            0x44, 0x45, 0x46], [], "DEF");
+        assert_feed_ok!(d, [], [], "");
+        assert_feed_ok!(d, [0x5c], [], "\\");
+        assert_feed_ok!(d, [0x7e], [], "~");
+        assert_feed_ok!(d, [0x1b, 0x24, 0x42,
+                            0x24, 0x4b,
+                            0x1b, 0x24, 0x42,
+                            0x24, 0x5b, 0x24, 0x73], [], "\u306b\u307b\u3093");
+        assert_feed_ok!(d, [0x46, 0x7c, 0x4b, 0x5c], [], "\u65e5\u672c");
+        assert_feed_ok!(d, [0x1b, 0x28, 0x49,
+                            0x46, 0x4e, 0x5d], [], "\uff86\uff8e\uff9d");
+        assert_feed_ok!(d, [0x1b, 0x24, 0x28, 0x44,
+                            0x4b, 0x46,
+                            0x1b, 0x24, 0x40,
+                            0x6c, 0x38], [], "\u736c\u8c78");
+        assert_feed_ok!(d, [0x1b, 0x28, 0x42,
+                            0x58, 0x59, 0x5a], [], "XYZ");
+        assert_finish_ok!(d, "");
+
+        let mut d = ISO2022JPEncoding.decoder();
+        assert_feed_ok!(d, [0x1b, 0x24, 0x42,
+                            0x24, 0x4b, 0x24, 0x5b, 0x24, 0x73], [], "\u306b\u307b\u3093");
+        assert_finish_ok!(d, "");
+
+        let mut d = ISO2022JPEncoding.decoder();
+        assert_feed_ok!(d, [0x1b, 0x28, 0x49,
+                            0x46, 0x4e, 0x5d], [], "\uff86\uff8e\uff9d");
+        assert_finish_ok!(d, "");
+
+        let mut d = ISO2022JPEncoding.decoder();
+        assert_feed_ok!(d, [0x1b, 0x24, 0x28, 0x44,
+                            0x4b, 0x46], [], "\u736c");
+        assert_finish_ok!(d, "");
+
+        // one ASCII character and three similarly looking characters:
+        // - A: U+0020 SPACE (requires ASCII state)
+        // - B: U+30CD KATAKANA LETTER NE (requires JIS X 0208 Lead state)
+        // - C: U+FF88 HALFWIDTH KATAKANA LETTER NE (requires Katakana state)
+        // - D: U+793B CJK UNIFIED IDEOGRAPH-793B (requires JIS X 0212 Lead state)
+        // a (4,2) De Bruijn sequence "AABBCCACBADDBDCDA" is used to test all possible cases.
+        static Ad: &'static str = "\x20";
+        static Bd: &'static str = "\u30cd";
+        static Cd: &'static str = "\uff88";
+        static Dd: &'static str = "\u793b";
+        static Ae: &'static [u8] = &[0x1b, 0x28, 0x42,       0x20];
+        static Be: &'static [u8] = &[0x1b, 0x24, 0x42,       0x25, 0x4d];
+        static Ce: &'static [u8] = &[0x1b, 0x28, 0x49,       0x48];
+        static De: &'static [u8] = &[0x1b, 0x24, 0x28, 0x44, 0x50, 0x4b];
+        let mut d = ISO2022JPEncoding.decoder();
+        let decoded = [ "\x20",Ad,Bd,Bd,Cd,Cd,Ad,Cd,Bd,Ad,Dd,Dd,Bd,Dd,Cd,Dd,Ad].concat();
+        let encoded = [&[0x20],Ae,Be,Be,Ce,Ce,Ae,Ce,Be,Ae,De,De,Be,De,Ce,De,Ae].concat_vec();
+        assert_feed_ok!(d, encoded.as_slice(), [], decoded.as_slice());
+        assert_finish_ok!(d, "");
+    }
+
+    // TODO more tests
+
+    #[test]
+    fn test_decoder_feed_after_finish() {
+        let mut d = ISO2022JPEncoding.decoder();
+        assert_feed_ok!(d, [0x24, 0x22,
+                            0x1b, 0x24, 0x42,
+                            0x24, 0x22], [0x24], "\x24\x22\u3042");
+        assert_finish_err!(d, "");
+        assert_feed_ok!(d, [0x24, 0x22,
+                            0x1b, 0x24, 0x42,
+                            0x24, 0x22], [], "\x24\x22\u3042");
+        assert_finish_ok!(d, "");
+    }
+
+    #[bench]
+    fn bench_decode_short_text(bencher: &mut test::Bencher) {
+        static Encoding: ISO2022JPEncoding = ISO2022JPEncoding;
+        let s = Encoding.encode(testutils::JAPANESE_TEXT, EncodeStrict).ok().unwrap();
+        bencher.bytes = s.len() as u64;
+        bencher.iter(|| {
+            Encoding.decode(s.as_slice(), DecodeStrict).ok().unwrap();
+        })
+    }
+}

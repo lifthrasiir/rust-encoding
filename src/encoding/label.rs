@@ -238,11 +238,9 @@ pub fn encoding_from_whatwg_label(label: &str) -> Option<EncodingRef> {
         "euc-jp" |
         "x-euc-jp" =>
             Some(all::EUC_JP as EncodingRef),
-        /*
         "csiso2022jp" |
         "iso-2022-jp" =>
             Some(all::ISO_2022_JP as EncodingRef),
-        */
         "csshiftjis" |
         "ms_kanji" |
         "shift-jis" |
@@ -316,9 +314,7 @@ pub fn encoding_from_windows_code_page(cp: uint) -> Option<EncodingRef> {
         */
         950 => Some(all::BIG5_2003 as EncodingRef),
         20932 => Some(all::EUC_JP as EncodingRef),
-        /*
         50220 => Some(all::ISO_2022_JP as EncodingRef),
-        */
         932 => Some(all::WINDOWS_31J as EncodingRef),
         949 => Some(all::WINDOWS_949 as EncodingRef),
         1201 => Some(all::UTF_16BE as EncodingRef),
