@@ -122,6 +122,32 @@ def generate_multi_byte_index(name):
             best = len(lower) + len(upper)
             besttrie = (triebits, lower, upper)
 
+    # JIS X 0208 index has two ranges [8272,8836) and [8836,11280) to support two slightly
+    # different encodings EUC-JP and Shift_JIS; the default backward function would favor
+    # the former, so we need a separate mapping for the latter.
+    #
+    # fortunately for us, all allocated codes in [8272,8836) have counterparts in others,
+    # so we only need a smaller remapping from [8272,8836) to other counterparts.
+    remap = None
+    if name == 'jis0208':
+        REMAP_MIN = 8272
+        REMAP_MAX = 8836
+
+        invdataminusremap = {}
+        for key, value in data.items():
+            if value not in invdataminusremap and not REMAP_MIN <= key < REMAP_MAX:
+                invdataminusremap[value] = key
+
+        remap = []
+        for i in xrange(REMAP_MIN, REMAP_MAX):
+            if i in data:
+                assert data[i] in invdataminusremap
+                value = invdataminusremap[data[i]]
+                assert value < 0x10000
+                remap.append(value)
+            else:
+                remap.append(0xffff)
+
     minkey = min(data)
     maxkey = max(data) + 1
     triebits, lower, upper = besttrie
@@ -171,6 +197,11 @@ def generate_multi_byte_index(name):
         print >>f, "static BACKWARD_TABLE_UPPER: &'static [u16] = &["
         write_comma_separated(f, '    ', ['%d, ' % v for v in upper])
         print >>f, '];'
+        if remap:
+            print >>f
+            print >>f, "static BACKWARD_TABLE_REMAPPED: &'static [u16] = &["
+            write_comma_separated(f, '    ', ['%d, ' % v for v in remap])
+            print >>f, '];'
         print >>f
         print >>f, '#[inline]'
         print >>f, 'pub fn backward(code: u32) -> u16 {'
@@ -178,10 +209,24 @@ def generate_multi_byte_index(name):
         print >>f, '    let offset = if offset < %d {BACKWARD_TABLE_UPPER[offset] as uint} else {0};' % len(upper)
         print >>f, '    BACKWARD_TABLE_LOWER[offset + ((code & %d) as uint)]' % ((1<<triebits)-1)
         print >>f, '}'
+        if remap:
+            print >>f
+            print >>f, '#[inline]'
+            print >>f, 'pub fn backward_remapped(code: u32) -> u16 {'
+            print >>f, '    let value = backward(code);'
+            print >>f, '    if %d <= value && value < %d {' % (REMAP_MIN, REMAP_MAX)
+            print >>f, '        BACKWARD_TABLE_REMAPPED[(value - %d) as uint]' % REMAP_MIN
+            print >>f, '    } else {'
+            print >>f, '        value'
+            print >>f, '    }'
+            print >>f, '}'
         print >>f
         print >>f, '#[cfg(test)]'
         print >>f, 'mod tests {'
-        print >>f, '    use super::{forward, backward};'
+        if remap:
+            print >>f, '    use super::{forward, backward, backward_remapped};'
+        else:
+            print >>f, '    use super::{forward, backward};'
         print >>f
         print >>f, '    #[test]'
         print >>f, '    fn test_correct_table() {'
@@ -193,10 +238,25 @@ def generate_multi_byte_index(name):
         print >>f, '            if j != 0xffff { assert_eq!(backward(j), i); }'
         print >>f, '        }'
         print >>f, '    }'
+        if remap:
+            print >>f
+            print >>f, '    #[test]'
+            print >>f, '    fn test_correct_remapping() {'
+            print >>f, '        for i in range(%du16, %d) {' % (REMAP_MIN, REMAP_MAX)
+            print >>f, '            let j = forward(i);'
+            print >>f, '            if j != 0xffff {'
+            print >>f, '                let ii = backward_remapped(j);'
+            print >>f, '                assert!(ii != i && ii != 0xffff);'
+            print >>f, '                let jj = forward(ii);'
+            print >>f, '                assert_eq!(j, jj);'
+            print >>f, '            }'
+            print >>f, '        }'
+            print >>f, '    }'
         print >>f, '}'
 
     tablesz = 2 * (maxkey - minkey) + 2 * len(lower) + 2 * len(upper)
     if morebits: tablesz += 4 * ((maxkey - minkey + 31) // 32)
+    if remap: tablesz += 2 * len(remap)
     return tablesz
 
 def generate_multi_byte_range_lbound_index(name):

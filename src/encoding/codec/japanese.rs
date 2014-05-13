@@ -179,6 +179,15 @@ mod eucjp_tests {
     }
 
     #[test]
+    fn test_encoder_double_mapped() {
+        // these characters are double-mapped to both EUDC area and Shift_JIS extension area
+        // but only the former should be used. (note that U+FFE2 is triple-mapped!)
+        let mut e = EUCJPEncoding.encoder();
+        assert_feed_ok!(e, "\u9ed1\u2170\uffe2", "", [0xfc, 0xee, 0xfc, 0xf1, 0xa2, 0xcc]);
+        assert_finish_ok!(e, []);
+    }
+
+    #[test]
     fn test_encoder_invalid() {
         let mut e = EUCJPEncoding.encoder();
         assert_feed_err!(e, "", "\uffff", "", []);
@@ -272,7 +281,8 @@ impl Encoder for Windows31JEncoder {
                 '\u203e' => { output.write_byte(0x7e); }
                 '\uff61'..'\uff9f' => { output.write_byte((ch as uint - 0xff61 + 0xa1) as u8); }
                 _ => {
-                    let ptr = index::jis0208::backward(ch as u32);
+                    // corresponds to the "index shift_jis pointer" in the WHATWG spec
+                    let ptr = index::jis0208::backward_remapped(ch as u32);
                     if ptr == 0xffff {
                         return (i, Some(CodecError {
                             upto: j, cause: "unrepresentable character".into_maybe_owned(),
@@ -311,8 +321,6 @@ ascii_compatible_stateful_decoder! {
         let leadoffset = if lead < 0xa0 {0x81} else {0xc1};
         let trailoffset = if trail < 0x7f {0x40} else {0x41};
         let index = match (lead, trail) {
-            // XXX the Encoding spec seems to be incorrect in this regard, see Bug 25649.
-            // INCORRECT: (0xf0..0xf9, _) =>
             (0xf0..0xf9, 0x40..0x7e) | (0xf0..0xf9, 0x80..0xfc) =>
                 return (0xe000 + (lead - 0xf0) * 188 + trail - trailoffset) as u32,
             (0x81..0x9f, 0x40..0x7e) | (0x81..0x9f, 0x80..0xfc) |
@@ -367,6 +375,15 @@ mod windows31j_tests {
         assert_feed_err!(e, "", "\ue000", "", []);
         assert_feed_err!(e, "", "\ue757", "", []);
         assert_feed_err!(e, "", "\ue758", "", []);
+        assert_finish_ok!(e, []);
+    }
+
+    #[test]
+    fn test_encoder_double_mapped() {
+        // these characters are double-mapped to both EUDC area and Shift_JIS extension area
+        // but only the latter should be used. (note that U+FFE2 is triple-mapped!)
+        let mut e = Windows31JEncoding.encoder();
+        assert_feed_ok!(e, "\u9ed1\u2170\uffe2", "", [0xfc, 0x4b, 0xfa, 0x40, 0x81, 0xca]);
         assert_finish_ok!(e, []);
     }
 
