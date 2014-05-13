@@ -90,12 +90,13 @@ Rust-encoding is a work in progress and this list will certainly be updated.
     * MacRoman (`macintosh`), Macintosh Cyrillic encoding (`x-mac-cyrillic`)
     * Windows code page 874, 1250, 1251, 1252 (instead of ISO-8859-1), 1253,
       1254 (instead of ISO-8859-9), 1255, 1256, 1257, 1258
-* Multi byte encodings in WHATWG Encoding Standard:
+* All multi byte encodings in WHATWG Encoding Standard:
     * Windows code page 949 (`euc-kr`, since the strict EUC-KR is hardly used)
     * EUC-JP and Windows code page 932 (`shift_jis`,
       since it's the most widespread extension to Shift_JIS)
     * ISO-2022-JP with asymmetric JIS X 0212 support
     * GB 18030
+    * HZ
     * Big5-2003 with HKSCS-2008 extensions
 * ISO 8859-1 (distinct from Windows code page 1252)
 

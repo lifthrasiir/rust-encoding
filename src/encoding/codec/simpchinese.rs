@@ -4,6 +4,7 @@
 
 //! Legacy simplified Chinese encodings based on GB 2312 and GB 18030.
 
+use util::StrCharIndex;
 use index;
 use types::*;
 
@@ -241,6 +242,232 @@ mod gb18030_tests {
     #[bench]
     fn bench_decode_short_text(bencher: &mut test::Bencher) {
         static Encoding: GB18030Encoding = GB18030Encoding;
+        let s = Encoding.encode(testutils::SIMPLIFIED_CHINESE_TEXT, EncodeStrict).ok().unwrap();
+        bencher.bytes = s.len() as u64;
+        bencher.iter(|| {
+            Encoding.decode(s.as_slice(), DecodeStrict).ok().unwrap();
+        })
+    }
+}
+
+/**
+ * HZ. (RFC 1843)
+ *
+ * This is a simplified Chinese encoding based on GB 2312.
+ * It bears a resemblance to ISO 2022 encodings in such that the printable escape sequences `~{`
+ * and `~}` are used to delimit a sequence of 7-bit-safe GB 2312 sequences. For the comparison,
+ * they are equivalent to ISO-2022-CN escape sequences `ESC $ ) A` and `ESC ( B`.
+ * Additional escape sequences `~~` (for a literal `~`) and `~\n` (ignored) are also supported.
+ */
+#[deriving(Clone)]
+pub struct HZEncoding;
+
+impl Encoding for HZEncoding {
+    fn name(&self) -> &'static str { "hz" }
+    fn whatwg_name(&self) -> Option<&'static str> { Some("hz-gb-2312") }
+    fn encoder(&self) -> Box<Encoder> { HZEncoder::new() }
+    fn decoder(&self) -> Box<Decoder> { HZDecoder::new() }
+}
+
+/// An encoder for HZ.
+#[deriving(Clone)]
+pub struct HZEncoder {
+    escaped: bool,
+}
+
+impl HZEncoder {
+    pub fn new() -> Box<Encoder> { box HZEncoder { escaped: false } as Box<Encoder> }
+}
+
+impl Encoder for HZEncoder {
+    fn from_self(&self) -> Box<Encoder> { HZEncoder::new() }
+    fn is_ascii_compatible(&self) -> bool { false }
+
+    fn raw_feed(&mut self, input: &str, output: &mut ByteWriter) -> (uint, Option<CodecError>) {
+        output.writer_hint(input.len());
+
+        let mut escaped = self.escaped;
+        macro_rules! ensure_escaped(
+            () => (if !escaped { output.write_bytes(bytes!("~{")); escaped = true; })
+        )
+        macro_rules! ensure_unescaped(
+            () => (if escaped { output.write_bytes(bytes!("~}")); escaped = false; })
+        )
+
+        for ((i,j), ch) in input.index_iter() {
+            if ch < '\u0080' {
+                ensure_unescaped!();
+                output.write_byte(ch as u8);
+                if ch == '~' { output.write_byte('~' as u8); }
+            } else {
+                let ptr = index::gb18030::backward(ch as u32);
+                if ptr == 0xffff {
+                    self.escaped = escaped; // do NOT reset the state!
+                    return (i, Some(CodecError {
+                        upto: j, cause: "unrepresentable character".into_maybe_owned()
+                    }));
+                } else {
+                    let lead = ptr / 190;
+                    let trail = ptr % 190;
+                    if lead < 0x21 - 1 || trail < 0x21 + 0x3f { // GBK extension, ignored
+                        self.escaped = escaped; // do NOT reset the state!
+                        return (i, Some(CodecError {
+                            upto: j, cause: "unrepresentable character".into_maybe_owned()
+                        }));
+                    } else {
+                        ensure_escaped!();
+                        output.write_byte((lead + 1) as u8);
+                        output.write_byte((trail - 0x3f) as u8);
+                    }
+                }
+            }
+        }
+
+        self.escaped = escaped;
+        (input.len(), None)
+    }
+
+    fn raw_finish(&mut self, _output: &mut ByteWriter) -> Option<CodecError> {
+        None
+    }
+}
+
+stateful_decoder! {
+    #[doc="A decoder for HZ."]
+    #[deriving(Clone)]
+    struct HZDecoder;
+
+    module hz;
+
+    ascii_compatible false;
+
+    internal pub fn map_two_bytes(lead: u8, trail: u8) -> u32 {
+        use index;
+
+        let lead = lead as uint;
+        let trail = trail as uint;
+        let index = match (lead, trail) {
+            (0x20..0x7f, 0x21..0x7e) => (lead - 1) * 190 + (trail + 0x3f),
+            _ => 0xffff,
+        };
+        index::gb18030::forward(index as u16)
+    }
+
+    // hz-gb-2312 flag = unset, hz-gb-2312 lead = 0x00
+    initial state A0(ctx) {
+        case 0x7e => A1(ctx);
+        case b @ 0x00..0x7f => ctx.emit(b as u32);
+        case _ => ctx.err("invalid sequence");
+        final => ctx.reset();
+    }
+
+    // hz-gb-2312 flag = set, hz-gb-2312 lead = 0x00
+    checkpoint state B0(ctx) {
+        case 0x7e => B1(ctx);
+        case b @ 0x20..0x7f => B2(ctx, b);
+        case 0x0a => A0(ctx);
+        case _ => ctx.err("invalid sequence");
+        final => ctx.reset();
+    }
+
+    // hz-gb-2312 flag = unset, hz-gb-2312 lead = 0x7e
+    state A1(ctx) {
+        case 0x7b => B0(ctx);
+        case 0x7d => A0(ctx);
+        case 0x7e => ctx.emit(0x7e), A0(ctx);
+        case 0x0a => A0(ctx);
+        case _ => ctx.backup_and_err(1, "invalid sequence");
+        final => ctx.err("incomplete sequence");
+    }
+
+    // hz-gb-2312 flag = set, hz-gb-2312 lead = 0x7e
+    state B1(ctx) {
+        case 0x7b => B0(ctx);
+        case 0x7d => A0(ctx);
+        case 0x7e => ctx.emit(0x7e), B0(ctx);
+        case 0x0a => A0(ctx);
+        case _ => ctx.backup_and_err(1, "invalid sequence");
+        final => ctx.err("incomplete sequence");
+    }
+
+    // hz-gb-2312 flag = set, hz-gb-2312 lead != 0 & != 0x7e
+    state B2(ctx, lead: u8) {
+        case 0x0a => ctx.err("invalid sequence"), A0(ctx); // should reset the state!
+        case b =>
+            match map_two_bytes(lead, b) {
+                0xffff => ctx.err("invalid sequence"),
+                ch => ctx.emit(ch)
+            },
+            B0(ctx);
+        final => ctx.err("incomplete sequence");
+    }
+}
+
+#[cfg(test)]
+mod hz_tests {
+    extern crate test;
+    use super::HZEncoding;
+    use testutils;
+    use types::*;
+
+    #[test]
+    fn test_encoder_valid() {
+        let mut e = HZEncoding.encoder();
+        assert_feed_ok!(e, "A", "", bytes!("A"));
+        assert_feed_ok!(e, "BC", "", bytes!("BC"));
+        assert_feed_ok!(e, "", "", bytes!(""));
+        assert_feed_ok!(e, "\u4e2d\u534e\u4eba\u6c11\u5171\u548c\u56fd", "",
+                        bytes!("~{VP;*HKCq92:M9z"));
+        assert_feed_ok!(e, "\uff21\uff22\uff23", "", bytes!("#A#B#C"));
+        assert_feed_ok!(e, "1\u20ac/m", "", bytes!("~}1~{\"c~}/m"));
+        assert_feed_ok!(e, "~<\u00a4~\u00a4>~", "", bytes!("~~<~{!h~}~~~{!h~}>~~"));
+        assert_finish_ok!(e, []);
+    }
+
+    #[test]
+    fn test_encoder_invalid() {
+        let mut e = HZEncoding.encoder();
+        assert_feed_err!(e, "", "\uffff", "", []);
+        assert_feed_err!(e, "?", "\uffff", "!", [0x3f]);
+        // no support for GBK extension
+        assert_feed_err!(e, "", "\u3007", "", []);
+        assert_finish_ok!(e, []);
+    }
+
+    #[test]
+    fn test_decoder_valid() {
+        let mut d = HZEncoding.decoder();
+        assert_feed_ok!(d, bytes!("A"), bytes!(""), "A");
+        assert_feed_ok!(d, bytes!("BC"), bytes!(""), "BC");
+        assert_feed_ok!(d, bytes!("D~~E"), bytes!("~"), "D~E");
+        assert_feed_ok!(d, bytes!("~F~\nG"), bytes!("~"), "~FG");
+        assert_feed_ok!(d, bytes!(""), bytes!(""), "");
+        assert_feed_ok!(d, bytes!("\nH"), bytes!("~"), "H");
+        assert_feed_ok!(d, bytes!("{VP~}~{;*HKCq92:M9z"), bytes!(""),
+                        "\u4e2d\u534e\u4eba\u6c11\u5171\u548c\u56fd");
+        assert_feed_ok!(d, bytes!(""), bytes!("#"), "");
+        assert_feed_ok!(d, bytes!("A"), bytes!("~"), "\uff21");
+        assert_feed_ok!(d, bytes!("~#B~~#C"), bytes!("~"), "~\uff22~\uff23");
+        assert_feed_ok!(d, bytes!(""), bytes!(""), "");
+        assert_feed_ok!(d, bytes!("\n#D~{#E~\n#F~{#G"), bytes!("~"), "#D\uff25#F\uff27");
+        assert_feed_ok!(d, bytes!("}X~}YZ"), bytes!(""), "XYZ");
+        assert_finish_ok!(d, "");
+    }
+
+    // TODO more tests
+
+    #[test]
+    fn test_decoder_feed_after_finish() {
+        let mut d = HZEncoding.decoder();
+        assert_feed_ok!(d, bytes!("R;~{R;"), bytes!("R"), "R;\u4e00");
+        assert_finish_err!(d, "");
+        assert_feed_ok!(d, bytes!("R;~{R;"), bytes!(""), "R;\u4e00");
+        assert_finish_ok!(d, "");
+    }
+
+    #[bench]
+    fn bench_decode_short_text(bencher: &mut test::Bencher) {
+        static Encoding: HZEncoding = HZEncoding;
         let s = Encoding.encode(testutils::SIMPLIFIED_CHINESE_TEXT, EncodeStrict).ok().unwrap();
         bencher.bytes = s.len() as u64;
         bencher.iter(|| {

@@ -224,10 +224,8 @@ pub fn encoding_from_whatwg_label(label: &str) -> Option<EncodingRef> {
         "iso-ir-58" |
         "x-gbk" =>
             Some(all::GB18030 as EncodingRef),
-        /*
         "hz-gb-2312" =>
-            Some(all::HZ_GB_2312 as EncodingRef),
-        */
+            Some(all::HZ as EncodingRef),
         "big5" |
         "big5-hkscs" |
         "cn-big5" |
@@ -309,9 +307,7 @@ pub fn encoding_from_windows_code_page(cp: uint) -> Option<EncodingRef> {
         1258 => Some(all::WINDOWS_1258 as EncodingRef),
         1259 => Some(all::X_MAC_CYRILLIC as EncodingRef),
         936 | 54936 => Some(all::GB18030 as EncodingRef), // XXX technically wrong
-        /*
-        52936 => Some(all::HZ_GB_2312 as EncodingRef),
-        */
+        52936 => Some(all::HZ as EncodingRef),
         950 => Some(all::BIG5_2003 as EncodingRef),
         20932 => Some(all::EUC_JP as EncodingRef),
         50220 => Some(all::ISO_2022_JP as EncodingRef),

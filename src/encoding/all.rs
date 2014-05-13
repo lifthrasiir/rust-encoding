@@ -69,6 +69,7 @@ unique!(var=EUC_JP, mod=codec::japanese, val=EUCJPEncoding)
 unique!(var=WINDOWS_31J, mod=codec::japanese, val=Windows31JEncoding)
 unique!(var=ISO_2022_JP, mod=codec::japanese, val=ISO2022JPEncoding)
 unique!(var=GB18030, mod=codec::simpchinese, val=GB18030Encoding)
+unique!(var=HZ, mod=codec::simpchinese, val=HZEncoding)
 unique!(var=BIG5_2003, mod=codec::tradchinese, val=BigFive2003Encoding)
 
 pub mod whatwg {
