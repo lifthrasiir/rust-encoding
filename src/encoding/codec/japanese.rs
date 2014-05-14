@@ -228,9 +228,9 @@ mod eucjp_tests {
         static Encoding: EUCJPEncoding = EUCJPEncoding;
         let s = testutils::JAPANESE_TEXT;
         bencher.bytes = s.len() as u64;
-        bencher.iter(|| {
-            Encoding.encode(s.as_slice(), EncodeStrict).ok().unwrap();
-        })
+        bencher.iter(|| test::black_box({
+            Encoding.encode(s.as_slice(), EncodeStrict)
+        }))
     }
 
     #[bench]
@@ -238,9 +238,9 @@ mod eucjp_tests {
         static Encoding: EUCJPEncoding = EUCJPEncoding;
         let s = Encoding.encode(testutils::JAPANESE_TEXT, EncodeStrict).ok().unwrap();
         bencher.bytes = s.len() as u64;
-        bencher.iter(|| {
-            Encoding.decode(s.as_slice(), DecodeStrict).ok().unwrap();
-        })
+        bencher.iter(|| test::black_box({
+            Encoding.decode(s.as_slice(), DecodeStrict)
+        }))
     }
 }
 
@@ -447,9 +447,9 @@ mod windows31j_tests {
         static Encoding: Windows31JEncoding = Windows31JEncoding;
         let s = testutils::JAPANESE_TEXT;
         bencher.bytes = s.len() as u64;
-        bencher.iter(|| {
-            Encoding.encode(s.as_slice(), EncodeStrict).ok().unwrap();
-        })
+        bencher.iter(|| test::black_box({
+            Encoding.encode(s.as_slice(), EncodeStrict)
+        }))
     }
 
     #[bench]
@@ -457,9 +457,9 @@ mod windows31j_tests {
         static Encoding: Windows31JEncoding = Windows31JEncoding;
         let s = Encoding.encode(testutils::JAPANESE_TEXT, EncodeStrict).ok().unwrap();
         bencher.bytes = s.len() as u64;
-        bencher.iter(|| {
-            Encoding.decode(s.as_slice(), DecodeStrict).ok().unwrap();
-        })
+        bencher.iter(|| test::black_box({
+            Encoding.decode(s.as_slice(), DecodeStrict)
+        }))
     }
 }
 
@@ -814,9 +814,9 @@ mod iso2022jp_tests {
         static Encoding: ISO2022JPEncoding = ISO2022JPEncoding;
         let s = testutils::JAPANESE_TEXT;
         bencher.bytes = s.len() as u64;
-        bencher.iter(|| {
-            Encoding.encode(s.as_slice(), EncodeStrict).ok().unwrap();
-        })
+        bencher.iter(|| test::black_box({
+            Encoding.encode(s.as_slice(), EncodeStrict)
+        }))
     }
 
     #[bench]
@@ -824,8 +824,8 @@ mod iso2022jp_tests {
         static Encoding: ISO2022JPEncoding = ISO2022JPEncoding;
         let s = Encoding.encode(testutils::JAPANESE_TEXT, EncodeStrict).ok().unwrap();
         bencher.bytes = s.len() as u64;
-        bencher.iter(|| {
-            Encoding.decode(s.as_slice(), DecodeStrict).ok().unwrap();
-        })
+        bencher.iter(|| test::black_box({
+            Encoding.decode(s.as_slice(), DecodeStrict)
+        }))
     }
 }

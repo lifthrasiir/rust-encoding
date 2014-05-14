@@ -338,9 +338,9 @@ mod tests {
 
     #[bench]
     fn bench_encoding_from_whatwg_label(bencher: &mut test::Bencher) {
-        bencher.iter(|| {
-            encoding_from_whatwg_label("iso-8859-bazinga");
-        })
+        bencher.iter(|| test::black_box({
+            encoding_from_whatwg_label("iso-8859-bazinga")
+        }))
     }
 }
 

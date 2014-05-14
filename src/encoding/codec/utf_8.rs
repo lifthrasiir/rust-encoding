@@ -235,12 +235,10 @@ pub fn from_utf8<'a>(input: &'a [u8]) -> Option<&'a str> {
 
     for &ch in iter {
         state = next_state!(state, ch);
+        if is_reject_state!(state) { return None; }
     }
-    if state == ACCEPT_STATE {
-        Some(unsafe {mem::transmute(input)})
-    } else {
-        None
-    }
+    if state != ACCEPT_STATE { return None; }
+    Some(unsafe {mem::transmute(input)})
 }
 
 #[cfg(test)]
@@ -646,9 +644,9 @@ mod tests {
             static Encoding: UTF8Encoding = UTF8Encoding;
             let s = testutils::ASCII_TEXT;
             bencher.bytes = s.len() as u64;
-            bencher.iter(|| {
-                Encoding.encode(s, EncodeStrict).ok().unwrap();
-            })
+            bencher.iter(|| test::black_box({
+                Encoding.encode(s, EncodeStrict)
+            }))
         }
 
         #[bench]
@@ -656,36 +654,36 @@ mod tests {
             static Encoding: UTF8Encoding = UTF8Encoding;
             let s = testutils::ASCII_TEXT.as_bytes();
             bencher.bytes = s.len() as u64;
-            bencher.iter(|| {
-                Encoding.decode(s, DecodeStrict).ok().unwrap();
-            })
+            bencher.iter(|| test::black_box({
+                Encoding.decode(s, DecodeStrict)
+            }))
         }
 
         #[bench]
         fn bench_from_utf8(bencher: &mut test::Bencher) {
             let s = testutils::ASCII_TEXT.as_bytes();
             bencher.bytes = s.len() as u64;
-            bencher.iter(|| {
-                from_utf8(s).unwrap();
-            })
+            bencher.iter(|| test::black_box({
+                from_utf8(s)
+            }))
         }
 
         #[bench] // for the comparison
         fn bench_stdlib_from_utf8(bencher: &mut test::Bencher) {
             let s = testutils::ASCII_TEXT.as_bytes();
             bencher.bytes = s.len() as u64;
-            bencher.iter(|| {
-                str::from_utf8(s).unwrap();
-            })
+            bencher.iter(|| test::black_box({
+                str::from_utf8(s)
+            }))
         }
 
         #[bench] // for the comparison
         fn bench_stdlib_from_utf8_lossy(bencher: &mut test::Bencher) {
             let s = testutils::ASCII_TEXT.as_bytes();
             bencher.bytes = s.len() as u64;
-            bencher.iter(|| {
-                str::from_utf8_lossy(s);
-            })
+            bencher.iter(|| test::black_box({
+                str::from_utf8_lossy(s)
+            }))
         }
     }
 
@@ -703,9 +701,9 @@ mod tests {
             static Encoding: UTF8Encoding = UTF8Encoding;
             let s = testutils::KOREAN_TEXT;
             bencher.bytes = s.len() as u64;
-            bencher.iter(|| {
-                Encoding.encode(s, EncodeStrict).ok().unwrap();
-            })
+            bencher.iter(|| test::black_box({
+                Encoding.encode(s, EncodeStrict)
+            }))
         }
 
         #[bench]
@@ -713,42 +711,42 @@ mod tests {
             static Encoding: UTF8Encoding = UTF8Encoding;
             let s = testutils::KOREAN_TEXT.as_bytes();
             bencher.bytes = s.len() as u64;
-            bencher.iter(|| {
-                Encoding.decode(s, DecodeStrict).ok().unwrap();
-            })
+            bencher.iter(|| test::black_box({
+                Encoding.decode(s, DecodeStrict)
+            }))
         }
 
         #[bench]
         fn bench_from_utf8(bencher: &mut test::Bencher) {
             let s = testutils::KOREAN_TEXT.as_bytes();
             bencher.bytes = s.len() as u64;
-            bencher.iter(|| {
-                from_utf8(s).unwrap();
-            })
+            bencher.iter(|| test::black_box({
+                from_utf8(s)
+            }))
         }
 
         #[bench] // for the comparison
         fn bench_stdlib_from_utf8(bencher: &mut test::Bencher) {
             let s = testutils::KOREAN_TEXT.as_bytes();
             bencher.bytes = s.len() as u64;
-            bencher.iter(|| {
-                str::from_utf8(s).unwrap();
-            })
+            bencher.iter(|| test::black_box({
+                str::from_utf8(s)
+            }))
         }
 
         #[bench] // for the comparison
         fn bench_stdlib_from_utf8_lossy(bencher: &mut test::Bencher) {
             let s = testutils::KOREAN_TEXT.as_bytes();
             bencher.bytes = s.len() as u64;
-            bencher.iter(|| {
-                str::from_utf8_lossy(s);
-            })
+            bencher.iter(|| test::black_box({
+                str::from_utf8_lossy(s)
+            }))
         }
     }
 
     mod bench_lossy_invalid {
         extern crate test;
-        use super::super::UTF8Encoding;
+        use super::super::{UTF8Encoding, from_utf8};
         use std::str;
         use testutils;
         use types::*;
@@ -758,24 +756,42 @@ mod tests {
             static Encoding: UTF8Encoding = UTF8Encoding;
             let s = testutils::INVALID_UTF8_TEXT;
             bencher.bytes = s.len() as u64;
-            bencher.iter(|| {
-                Encoding.decode(s, DecodeReplace).ok().unwrap();
-            })
+            bencher.iter(|| test::black_box({
+                Encoding.decode(s, DecodeReplace)
+            }))
+        }
+
+        #[bench] // for the comparison
+        fn bench_from_utf8_failing(bencher: &mut test::Bencher) {
+            let s = testutils::INVALID_UTF8_TEXT;
+            bencher.bytes = s.len() as u64;
+            bencher.iter(|| test::black_box({
+                from_utf8(s)
+            }))
+        }
+
+        #[bench] // for the comparison
+        fn bench_stdlib_from_utf8_failing(bencher: &mut test::Bencher) {
+            let s = testutils::INVALID_UTF8_TEXT;
+            bencher.bytes = s.len() as u64;
+            bencher.iter(|| test::black_box({
+                str::from_utf8(s)
+            }))
         }
 
         #[bench] // for the comparison
         fn bench_stdlib_from_utf8_lossy(bencher: &mut test::Bencher) {
             let s = testutils::INVALID_UTF8_TEXT;
             bencher.bytes = s.len() as u64;
-            bencher.iter(|| {
-                str::from_utf8_lossy(s);
-            })
+            bencher.iter(|| test::black_box({
+                str::from_utf8_lossy(s)
+            }))
         }
     }
 
     mod bench_lossy_external {
         extern crate test;
-        use super::super::UTF8Encoding;
+        use super::super::{UTF8Encoding, from_utf8};
         use std::str;
         use testutils;
         use types::*;
@@ -785,18 +801,36 @@ mod tests {
             static Encoding: UTF8Encoding = UTF8Encoding;
             let s = testutils::get_external_bench_data();
             bencher.bytes = s.len() as u64;
-            bencher.iter(|| {
-                Encoding.decode(s.as_slice(), DecodeReplace).ok().unwrap();
-            })
+            bencher.iter(|| test::black_box({
+                Encoding.decode(s.as_slice(), DecodeReplace)
+            }))
+        }
+
+        #[bench] // for the comparison
+        fn bench_from_utf8_failing(bencher: &mut test::Bencher) {
+            let s = testutils::get_external_bench_data();
+            bencher.bytes = s.len() as u64;
+            bencher.iter(|| test::black_box({
+                from_utf8(s.as_slice())
+            }))
+        }
+
+        #[bench] // for the comparison
+        fn bench_stdlib_from_utf8_failing(bencher: &mut test::Bencher) {
+            let s = testutils::get_external_bench_data();
+            bencher.bytes = s.len() as u64;
+            bencher.iter(|| test::black_box({
+                str::from_utf8(s.as_slice())
+            }))
         }
 
         #[bench] // for the comparison
         fn bench_stdlib_from_utf8_lossy(bencher: &mut test::Bencher) {
             let s = testutils::get_external_bench_data();
             bencher.bytes = s.len() as u64;
-            bencher.iter(|| {
-                str::from_utf8_lossy(s.as_slice());
-            })
+            bencher.iter(|| test::black_box({
+                str::from_utf8_lossy(s.as_slice())
+            }))
         }
     }
 }

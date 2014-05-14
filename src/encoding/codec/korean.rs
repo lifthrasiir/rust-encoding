@@ -230,9 +230,9 @@ mod windows949_tests {
         static Encoding: Windows949Encoding = Windows949Encoding;
         let s = testutils::KOREAN_TEXT;
         bencher.bytes = s.len() as u64;
-        bencher.iter(|| {
-            Encoding.encode(s.as_slice(), EncodeStrict).ok().unwrap();
-        })
+        bencher.iter(|| test::black_box({
+            Encoding.encode(s.as_slice(), EncodeStrict)
+        }))
     }
 
     #[bench]
@@ -240,9 +240,9 @@ mod windows949_tests {
         static Encoding: Windows949Encoding = Windows949Encoding;
         let s = Encoding.encode(testutils::KOREAN_TEXT, EncodeStrict).ok().unwrap();
         bencher.bytes = s.len() as u64;
-        bencher.iter(|| {
-            Encoding.decode(s.as_slice(), DecodeStrict).ok().unwrap();
-        })
+        bencher.iter(|| test::black_box({
+            Encoding.decode(s.as_slice(), DecodeStrict)
+        }))
     }
 }
 
