@@ -121,22 +121,28 @@ static CHAR_CATEGORY: [u8, ..256] = [
     10,3,3,3,3,3,3,3,3,3,3,3,3,4,3,3, 11,6,6,6,5,8,8,8,8,8,8,8,8,8,8,8,
 ];
 
-static STATE_TRANSITIONS: [u8, ..108] = [
-     0,12,24,36,60,96,84,12,12,12,48,72, //  0: '??
-    13,13,13,13,13,13,13,13,13,13,13,13, // 12: xx '.. / 13: .. xx '..
-    13, 0,13,13,13,13,13, 0,13, 0,13,13, // 24: .. 'cc
-    13,24,13,13,13,13,13,24,13,24,13,13, // 36: .. 'cc cc
-    13,13,13,13,13,13,13,24,13,13,13,13, // 48: .. 'cc(A0-BF) cc
-    13,24,13,13,13,13,13,13,13,24,13,13, // 60: .. 'cc(80-9F) cc
-    13,13,13,13,13,13,13,36,13,36,13,13, // 72: .. 'cc(90-BF) cc cc
-    13,36,13,13,13,13,13,36,13,36,13,13, // 84: .. 'cc cc cc
-    13,36,13,13,13,13,13,13,13,13,13,13, // 96: .. 'cc(80-8F) cc cc
+static STATE_TRANSITIONS: [u8, ..110] = [
+     0,98,12,24,48,84,72,98,98,98,36,60,       //  0: '??
+    86, 0,86,86,86,86,86, 0,86, 0,86,86,       // 12: .. 'cc
+    86,12,86,86,86,86,86,12,86,12,86,86,       // 24: .. 'cc cc
+    86,86,86,86,86,86,86,12,86,86,86,86,       // 36: .. 'cc(A0-BF) cc
+    86,12,86,86,86,86,86,86,86,12,86,86,       // 48: .. 'cc(80-9F) cc
+    86,86,86,86,86,86,86,24,86,24,86,86,       // 60: .. 'cc(90-BF) cc cc
+    86,24,86,86,86,86,86,24,86,24,86,86,       // 72: .. 'cc cc cc
+    86,24,86,86,86,86,86,86,86,86,86,86,86,86, // 84: .. 'cc(80-8F) cc cc
+       // 86,86,86,86,86,86,86,86,86,86,86,86, // 86: .. xx '..
+          98,98,98,98,98,98,98,98,98,98,98,98, // 98: xx '..
 ];
 
 static INITIAL_STATE: u8 = 0;
 static ACCEPT_STATE: u8 = 0;
-static REJECT_STATE: u8 = 12;
-static REJECT_STATE_WITH_BACKUP: u8 = REJECT_STATE | 1;
+static REJECT_STATE: u8 = 98;
+static REJECT_STATE_WITH_BACKUP: u8 = 86;
+
+macro_rules! is_reject_state(($state:expr) => ($state >= REJECT_STATE_WITH_BACKUP))
+macro_rules! next_state(($state:expr, $ch:expr) => (
+    STATE_TRANSITIONS[($state + CHAR_CATEGORY[$ch as uint]) as uint]
+))
 
 impl Decoder for UTF8Decoder {
     fn from_self(&self) -> Box<Decoder> { UTF8Decoder::new() }
@@ -150,28 +156,31 @@ impl Decoder for UTF8Decoder {
         }
 
         let mut state = self.state;
-        let mut i = 0;
         let mut processed = 0;
-        let len = input.len();
-        while i < len {
-            let ch = input[i];
-            state = STATE_TRANSITIONS[(state + CHAR_CATEGORY[ch as uint]) as uint];
-            i += 1;
-            match state {
-                ACCEPT_STATE => { processed = i; }
-                REJECT_STATE | REJECT_STATE_WITH_BACKUP => {
-                    let upto = i - (state & 1) as uint;
-                    self.state = INITIAL_STATE;
-                    if processed > 0 && self.queuelen > 0 { // flush `queue` outside the problem
-                        write_bytes(output, self.queue.slice(0, self.queuelen));
-                    }
-                    self.queuelen = 0;
-                    write_bytes(output, input.slice(0, processed));
-                    return (processed, Some(CodecError {
-                        upto: upto, cause: "invalid sequence".into_maybe_owned()
-                    }));
+        let mut offset = 0;
+
+        // optimization: if we are in the initial state, quickly skip to the first non-MSB-set byte.
+        if state == INITIAL_STATE {
+            let first_msb = input.iter().position(|&ch| ch >= 0x80).unwrap_or(input.len());
+            offset += first_msb;
+            processed += first_msb;
+        }
+
+        for (i, &ch) in input.slice_from(offset).iter().enumerate() {
+            state = next_state!(state, ch);
+            if state == ACCEPT_STATE {
+                processed = i + offset + 1;
+            } else if is_reject_state!(state) {
+                let upto = if state == REJECT_STATE {i + offset + 1} else {i + offset};
+                self.state = INITIAL_STATE;
+                if processed > 0 && self.queuelen > 0 { // flush `queue` outside the problem
+                    write_bytes(output, self.queue.slice(0, self.queuelen));
                 }
-                _ => {}
+                self.queuelen = 0;
+                write_bytes(output, input.slice(0, processed));
+                return (processed, Some(CodecError {
+                    upto: upto, cause: "invalid sequence".into_maybe_owned()
+                }));
             }
         }
 
@@ -181,8 +190,8 @@ impl Decoder for UTF8Decoder {
             self.queuelen = 0;
         }
         write_bytes(output, input.slice(0, processed));
-        if processed < len {
-            let morequeuelen = len - processed;
+        if processed < input.len() {
+            let morequeuelen = input.len() - processed;
             for i in range(0, morequeuelen) {
                 self.queue[self.queuelen + i] = input[processed + i];
             }
@@ -205,12 +214,41 @@ impl Decoder for UTF8Decoder {
     }
 }
 
+/// Equivalent to `std::str::from_utf8`.
+/// This function is provided for the fair benchmark against the stdlib's UTF-8 conversion
+/// functions, as rust-encoding always allocates a new string.
+pub fn from_utf8<'a>(input: &'a [u8]) -> Option<&'a str> {
+    let mut iter = input.iter();
+    let mut state;
+
+    // optimization: if we are in the initial state, quickly skip to the first non-MSB-set byte.
+    loop {
+        match iter.next() {
+            Some(&ch) if ch < 0x80 => {}
+            Some(&ch) => {
+                state = next_state!(INITIAL_STATE, ch);
+                break;
+            }
+            None => { return Some(unsafe {mem::transmute(input)}); }
+        }
+    }
+
+    for &ch in iter {
+        state = next_state!(state, ch);
+    }
+    if state == ACCEPT_STATE {
+        Some(unsafe {mem::transmute(input)})
+    } else {
+        None
+    }
+}
+
 #[cfg(test)]
 mod tests {
     // portions of these tests are adopted from Markus Kuhn's UTF-8 decoder capability and
     // stress test: <http://www.cl.cam.ac.uk/~mgk25/ucs/examples/UTF-8-test.txt>.
 
-    use super::UTF8Encoding;
+    use super::{UTF8Encoding, from_utf8};
     use std::str;
     use testutils;
     use types::*;
@@ -584,9 +622,21 @@ mod tests {
         assert_finish_ok!(d, "");
     }
 
+    #[test]
+    fn test_correct_from_utf8() {
+        let s = testutils::ASCII_TEXT.as_bytes();
+        assert_eq!(from_utf8(s), str::from_utf8(s));
+
+        let s = testutils::KOREAN_TEXT.as_bytes();
+        assert_eq!(from_utf8(s), str::from_utf8(s));
+
+        let s = testutils::INVALID_UTF8_TEXT;
+        assert_eq!(from_utf8(s), str::from_utf8(s));
+    }
+
     mod bench_ascii {
         extern crate test;
-        use super::super::UTF8Encoding;
+        use super::super::{UTF8Encoding, from_utf8};
         use std::str;
         use testutils;
         use types::*;
@@ -608,6 +658,15 @@ mod tests {
             bencher.bytes = s.len() as u64;
             bencher.iter(|| {
                 Encoding.decode(s, DecodeStrict).ok().unwrap();
+            })
+        }
+
+        #[bench]
+        fn bench_from_utf8(bencher: &mut test::Bencher) {
+            let s = testutils::ASCII_TEXT.as_bytes();
+            bencher.bytes = s.len() as u64;
+            bencher.iter(|| {
+                from_utf8(s).unwrap();
             })
         }
 
@@ -634,7 +693,7 @@ mod tests {
     // unlike other CJK scripts, so it reflects a practical use case a bit better.
     mod bench_korean {
         extern crate test;
-        use super::super::UTF8Encoding;
+        use super::super::{UTF8Encoding, from_utf8};
         use std::str;
         use testutils;
         use types::*;
@@ -656,6 +715,15 @@ mod tests {
             bencher.bytes = s.len() as u64;
             bencher.iter(|| {
                 Encoding.decode(s, DecodeStrict).ok().unwrap();
+            })
+        }
+
+        #[bench]
+        fn bench_from_utf8(bencher: &mut test::Bencher) {
+            let s = testutils::KOREAN_TEXT.as_bytes();
+            bencher.bytes = s.len() as u64;
+            bencher.iter(|| {
+                from_utf8(s).unwrap();
             })
         }
 
