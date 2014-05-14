@@ -72,6 +72,20 @@ macro_rules! assert_finish_err(
     })
 )
 
+/// Some ASCII-only text to test.
+//
+// the first paragraphs of the article "English Language" from English Wikipedia.
+// https://en.wikipedia.org/w/index.php?title=English_language&oldid=608500518
+pub static ASCII_TEXT: &'static str =
+    "English is a West Germanic language that was first spoken in early medieval England \
+     and is now a global lingua franca. It is spoken as a first language by \
+     the majority populations of several sovereign states, including the United Kingdom, \
+     the United States, Canada, Australia, Ireland, New Zealand and a number of Caribbean nations; \
+     and it is an official language of almost 60 sovereign states. It is the third-most-common \
+     native language in the world, after Mandarin Chinese and Spanish. It is widely learned as \
+     a second language and is an official language of the European Union, many Commonwealth \
+     countries and the United Nations, as well as in many world organisations.";
+
 /// Some Korean text to test.
 //
 // the first paragraphs of the article "Korean Language" from Korean Wikipedia.
@@ -130,4 +144,32 @@ pub static TRADITIONAL_CHINESE_TEXT: &'static str =
      也有其他人認為閩語其實是一個語族，下轄閩南語、閩東語、閩中語以及莆仙語，\
      國際標準化組織即持此觀點，部分資料將其中的一至六種也算成單獨的漢語言，\
      這就是八至十三種漢語言的由來）。";
+
+/// Some text with various invalid UTF-8 sequences.
+//
+// Markus Kuhn's UTF-8 decoder capability and stress test.
+// http://www.cl.cam.ac.uk/~mgk25/ucs/examples/UTF-8-test.txt
+pub static INVALID_UTF8_TEXT: &'static [u8] = include_bin!("examples/UTF-8-test.txt");
+
+/// Returns a longer text used for external data benchmarks.
+/// This can be overriden with an environment variable `EXTERNAL_BENCH_DATA`,
+/// or it will use a built-in sample data (of about 100KB).
+pub fn get_external_bench_data() -> Vec<u8> {
+    use std::{io, os};
+
+    // An HTML file derived from the Outer Space Treaty of 1967, in six available languages.
+    // http://www.unoosa.org/oosa/SpaceLaw/outerspt.html
+    static LONGER_TEXT: &'static [u8] = include_bin!("examples/outer-space-treaty.html");
+
+    match os::getenv("EXTERNAL_BENCH_DATA") {
+        Some(path) => {
+            let path = Path::new(path);
+            let mut file = io::File::open(&path).ok().expect("cannot read an external bench data");
+            file.read_to_end().ok().expect("cannot read an external bench data")
+        }
+        None => {
+            Vec::from_slice(LONGER_TEXT)
+        }
+    }
+}
 

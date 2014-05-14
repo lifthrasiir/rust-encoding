@@ -183,6 +183,16 @@ mod bigfive2003_tests {
     }
 
     #[bench]
+    fn bench_encode_short_text(bencher: &mut test::Bencher) {
+        static Encoding: BigFive2003Encoding = BigFive2003Encoding;
+        let s = testutils::TRADITIONAL_CHINESE_TEXT;
+        bencher.bytes = s.len() as u64;
+        bencher.iter(|| {
+            Encoding.encode(s.as_slice(), EncodeStrict).ok().unwrap();
+        })
+    }
+
+    #[bench]
     fn bench_decode_short_text(bencher: &mut test::Bencher) {
         static Encoding: BigFive2003Encoding = BigFive2003Encoding;
         let s = Encoding.encode(testutils::TRADITIONAL_CHINESE_TEXT, EncodeStrict).ok().unwrap();

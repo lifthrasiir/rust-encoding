@@ -211,6 +211,8 @@ mod tests {
     // stress test: <http://www.cl.cam.ac.uk/~mgk25/ucs/examples/UTF-8-test.txt>.
 
     use super::UTF8Encoding;
+    use std::str;
+    use testutils;
     use types::*;
 
     #[test]
@@ -580,6 +582,154 @@ mod tests {
         assert_finish_err!(d, "");
         assert_feed_ok!(d, [0xc2, 0x80], [], "\x80");
         assert_finish_ok!(d, "");
+    }
+
+    mod bench_ascii {
+        extern crate test;
+        use super::super::UTF8Encoding;
+        use std::str;
+        use testutils;
+        use types::*;
+
+        #[bench]
+        fn bench_encode(bencher: &mut test::Bencher) {
+            static Encoding: UTF8Encoding = UTF8Encoding;
+            let s = testutils::ASCII_TEXT;
+            bencher.bytes = s.len() as u64;
+            bencher.iter(|| {
+                Encoding.encode(s, EncodeStrict).ok().unwrap();
+            })
+        }
+
+        #[bench]
+        fn bench_decode(bencher: &mut test::Bencher) {
+            static Encoding: UTF8Encoding = UTF8Encoding;
+            let s = testutils::ASCII_TEXT.as_bytes();
+            bencher.bytes = s.len() as u64;
+            bencher.iter(|| {
+                Encoding.decode(s, DecodeStrict).ok().unwrap();
+            })
+        }
+
+        #[bench] // for the comparison
+        fn bench_stdlib_from_utf8(bencher: &mut test::Bencher) {
+            let s = testutils::ASCII_TEXT.as_bytes();
+            bencher.bytes = s.len() as u64;
+            bencher.iter(|| {
+                str::from_utf8(s).unwrap();
+            })
+        }
+
+        #[bench] // for the comparison
+        fn bench_stdlib_from_utf8_lossy(bencher: &mut test::Bencher) {
+            let s = testutils::ASCII_TEXT.as_bytes();
+            bencher.bytes = s.len() as u64;
+            bencher.iter(|| {
+                str::from_utf8_lossy(s);
+            })
+        }
+    }
+
+    // why Korean? it has an excellent mix of multibyte sequences and ASCII sequences
+    // unlike other CJK scripts, so it reflects a practical use case a bit better.
+    mod bench_korean {
+        extern crate test;
+        use super::super::UTF8Encoding;
+        use std::str;
+        use testutils;
+        use types::*;
+
+        #[bench]
+        fn bench_encode(bencher: &mut test::Bencher) {
+            static Encoding: UTF8Encoding = UTF8Encoding;
+            let s = testutils::KOREAN_TEXT;
+            bencher.bytes = s.len() as u64;
+            bencher.iter(|| {
+                Encoding.encode(s, EncodeStrict).ok().unwrap();
+            })
+        }
+
+        #[bench]
+        fn bench_decode(bencher: &mut test::Bencher) {
+            static Encoding: UTF8Encoding = UTF8Encoding;
+            let s = testutils::KOREAN_TEXT.as_bytes();
+            bencher.bytes = s.len() as u64;
+            bencher.iter(|| {
+                Encoding.decode(s, DecodeStrict).ok().unwrap();
+            })
+        }
+
+        #[bench] // for the comparison
+        fn bench_stdlib_from_utf8(bencher: &mut test::Bencher) {
+            let s = testutils::KOREAN_TEXT.as_bytes();
+            bencher.bytes = s.len() as u64;
+            bencher.iter(|| {
+                str::from_utf8(s).unwrap();
+            })
+        }
+
+        #[bench] // for the comparison
+        fn bench_stdlib_from_utf8_lossy(bencher: &mut test::Bencher) {
+            let s = testutils::KOREAN_TEXT.as_bytes();
+            bencher.bytes = s.len() as u64;
+            bencher.iter(|| {
+                str::from_utf8_lossy(s);
+            })
+        }
+    }
+
+    mod bench_lossy_invalid {
+        extern crate test;
+        use super::super::UTF8Encoding;
+        use std::str;
+        use testutils;
+        use types::*;
+
+        #[bench]
+        fn bench_decode_replace(bencher: &mut test::Bencher) {
+            static Encoding: UTF8Encoding = UTF8Encoding;
+            let s = testutils::INVALID_UTF8_TEXT;
+            bencher.bytes = s.len() as u64;
+            bencher.iter(|| {
+                Encoding.decode(s, DecodeReplace).ok().unwrap();
+            })
+        }
+
+        #[bench] // for the comparison
+        fn bench_stdlib_from_utf8_lossy(bencher: &mut test::Bencher) {
+            let s = testutils::INVALID_UTF8_TEXT;
+            bencher.bytes = s.len() as u64;
+            bencher.iter(|| {
+                str::from_utf8_lossy(s);
+            })
+        }
+    }
+
+    mod bench_lossy_external {
+        extern crate test;
+        use super::super::UTF8Encoding;
+        use std::str;
+        use testutils;
+        use types::*;
+
+        #[bench]
+        fn bench_decode_replace(bencher: &mut test::Bencher) {
+            static Encoding: UTF8Encoding = UTF8Encoding;
+            let s = testutils::get_external_bench_data();
+            bencher.bytes = s.len() as u64;
+            bencher.iter(|| {
+                Encoding.decode(s.as_slice(), DecodeReplace).ok().unwrap();
+            })
+        }
+
+        #[bench] // for the comparison
+        fn bench_stdlib_from_utf8_lossy(bencher: &mut test::Bencher) {
+            let s = testutils::get_external_bench_data();
+            bencher.bytes = s.len() as u64;
+            bencher.iter(|| {
+                str::from_utf8_lossy(s.as_slice());
+            })
+        }
     }
 }
 

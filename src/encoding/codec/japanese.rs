@@ -224,6 +224,16 @@ mod eucjp_tests {
     }
 
     #[bench]
+    fn bench_encode_short_text(bencher: &mut test::Bencher) {
+        static Encoding: EUCJPEncoding = EUCJPEncoding;
+        let s = testutils::JAPANESE_TEXT;
+        bencher.bytes = s.len() as u64;
+        bencher.iter(|| {
+            Encoding.encode(s.as_slice(), EncodeStrict).ok().unwrap();
+        })
+    }
+
+    #[bench]
     fn bench_decode_short_text(bencher: &mut test::Bencher) {
         static Encoding: EUCJPEncoding = EUCJPEncoding;
         let s = Encoding.encode(testutils::JAPANESE_TEXT, EncodeStrict).ok().unwrap();
@@ -430,6 +440,16 @@ mod windows31j_tests {
         assert_finish_err!(d, "");
         assert_feed_ok!(d, [0x82, 0xa0], [], "\u3042");
         assert_finish_ok!(d, "");
+    }
+
+    #[bench]
+    fn bench_encode_short_text(bencher: &mut test::Bencher) {
+        static Encoding: Windows31JEncoding = Windows31JEncoding;
+        let s = testutils::JAPANESE_TEXT;
+        bencher.bytes = s.len() as u64;
+        bencher.iter(|| {
+            Encoding.encode(s.as_slice(), EncodeStrict).ok().unwrap();
+        })
     }
 
     #[bench]
@@ -787,6 +807,16 @@ mod iso2022jp_tests {
                             0x1b, 0x24, 0x42,
                             0x24, 0x22], [], "\x24\x22\u3042");
         assert_finish_ok!(d, "");
+    }
+
+    #[bench]
+    fn bench_encode_short_text(bencher: &mut test::Bencher) {
+        static Encoding: ISO2022JPEncoding = ISO2022JPEncoding;
+        let s = testutils::JAPANESE_TEXT;
+        bencher.bytes = s.len() as u64;
+        bencher.iter(|| {
+            Encoding.encode(s.as_slice(), EncodeStrict).ok().unwrap();
+        })
     }
 
     #[bench]

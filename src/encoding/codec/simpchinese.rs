@@ -240,6 +240,16 @@ mod gb18030_tests {
     }
 
     #[bench]
+    fn bench_encode_short_text(bencher: &mut test::Bencher) {
+        static Encoding: GB18030Encoding = GB18030Encoding;
+        let s = testutils::SIMPLIFIED_CHINESE_TEXT;
+        bencher.bytes = s.len() as u64;
+        bencher.iter(|| {
+            Encoding.encode(s.as_slice(), EncodeStrict).ok().unwrap();
+        })
+    }
+
+    #[bench]
     fn bench_decode_short_text(bencher: &mut test::Bencher) {
         static Encoding: GB18030Encoding = GB18030Encoding;
         let s = Encoding.encode(testutils::SIMPLIFIED_CHINESE_TEXT, EncodeStrict).ok().unwrap();
@@ -463,6 +473,16 @@ mod hz_tests {
         assert_finish_err!(d, "");
         assert_feed_ok!(d, bytes!("R;~{R;"), bytes!(""), "R;\u4e00");
         assert_finish_ok!(d, "");
+    }
+
+    #[bench]
+    fn bench_encode_short_text(bencher: &mut test::Bencher) {
+        static Encoding: HZEncoding = HZEncoding;
+        let s = testutils::SIMPLIFIED_CHINESE_TEXT;
+        bencher.bytes = s.len() as u64;
+        bencher.iter(|| {
+            Encoding.encode(s.as_slice(), EncodeStrict).ok().unwrap();
+        })
     }
 
     #[bench]
