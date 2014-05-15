@@ -65,11 +65,9 @@ impl Encoder for UTF8Encoder {
     fn is_ascii_compatible(&self) -> bool { true }
 
     fn raw_feed(&mut self, input: &str, output: &mut ByteWriter) -> (uint, Option<CodecError>) {
-        unsafe {
-            let input: &[u8] = mem::transmute(input);
-            assert!(str::is_utf8(input));
-            output.write_bytes(input);
-        }
+        let input: &[u8] = input.as_bytes();
+        assert!(str::is_utf8(input));
+        output.write_bytes(input);
         (input.len(), None)
     }
 
@@ -221,6 +219,8 @@ pub fn from_utf8<'a>(input: &'a [u8]) -> Option<&'a str> {
     let mut iter = input.iter();
     let mut state;
 
+    macro_rules! return_as_whole(() => (return Some(unsafe {mem::transmute(input)})))
+
     // optimization: if we are in the initial state, quickly skip to the first non-MSB-set byte.
     loop {
         match iter.next() {
@@ -229,7 +229,7 @@ pub fn from_utf8<'a>(input: &'a [u8]) -> Option<&'a str> {
                 state = next_state!(INITIAL_STATE, ch);
                 break;
             }
-            None => { return Some(unsafe {mem::transmute(input)}); }
+            None => { return_as_whole!(); }
         }
     }
 
@@ -238,7 +238,7 @@ pub fn from_utf8<'a>(input: &'a [u8]) -> Option<&'a str> {
         if is_reject_state!(state) { return None; }
     }
     if state != ACCEPT_STATE { return None; }
-    Some(unsafe {mem::transmute(input)})
+    return_as_whole!();
 }
 
 #[cfg(test)]

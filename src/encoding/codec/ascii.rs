@@ -4,7 +4,7 @@
 
 //! 7-bit ASCII encoding.
 
-use util::StrCharIndex;
+use std::{str, mem};
 use types::*;
 
 /**
@@ -37,16 +37,19 @@ impl Encoder for ASCIIEncoder {
     fn raw_feed(&mut self, input: &str, output: &mut ByteWriter) -> (uint, Option<CodecError>) {
         output.writer_hint(input.len());
 
-        for ((i,j), ch) in input.index_iter() {
-            if ch <= '\u007f' {
-                output.write_byte(ch as u8);
-            } else {
-                return (i, Some(CodecError {
-                    upto: j, cause: "unrepresentable character".into_maybe_owned()
-                }));
+        match input.as_bytes().iter().position(|&ch| ch >= 0x80) {
+            Some(first_error) => {
+                output.write_bytes(input.as_bytes().slice_to(first_error));
+                let str::CharRange {ch: _, next} = input.char_range_at(first_error);
+                (first_error, Some(CodecError {
+                    upto: next, cause: "unrepresentable character".into_maybe_owned()
+                }))
+            }
+            None => {
+                output.write_bytes(input.as_bytes());
+                (input.len(), None)
             }
         }
-        (input.len(), None)
     }
 
     fn raw_finish(&mut self, _output: &mut ByteWriter) -> Option<CodecError> {
@@ -68,20 +71,23 @@ impl Decoder for ASCIIDecoder {
 
     fn raw_feed(&mut self, input: &[u8], output: &mut StringWriter) -> (uint, Option<CodecError>) {
         output.writer_hint(input.len());
-                                        
-        let mut i = 0;
-        let len = input.len();
-        while i < len {
-            if input[i] <= 0x7f {
-                output.write_char(input[i] as char);
-            } else {
-                return (i, Some(CodecError {
-                    upto: i+1, cause: "invalid sequence".into_maybe_owned()
-                }));
-            }
-            i += 1;
+
+        fn write_ascii_bytes(output: &mut StringWriter, buf: &[u8]) {
+            output.write_str(unsafe {mem::transmute(buf)});
         }
-        (i, None)
+
+        match input.iter().position(|&ch| ch >= 0x80) {
+            Some(first_error) => {
+                write_ascii_bytes(output, input.slice_to(first_error));
+                (first_error, Some(CodecError {
+                    upto: first_error+1, cause: "invalid sequence".into_maybe_owned()
+                }))
+            }
+            None => {
+                write_ascii_bytes(output, input);
+                (input.len(), None)
+            }
+        }
     }
 
     fn raw_finish(&mut self, _output: &mut StringWriter) -> Option<CodecError> {
@@ -91,7 +97,9 @@ impl Decoder for ASCIIDecoder {
 
 #[cfg(test)]
 mod tests {
+    extern crate test;
     use super::ASCIIEncoding;
+    use testutils;
     use types::*;
 
     #[test]
@@ -101,6 +109,7 @@ mod tests {
         assert_feed_ok!(e, "BC", "", [0x42, 0x43]);
         assert_feed_ok!(e, "", "", []);
         assert_feed_err!(e, "", "\xa0", "", []);
+        assert_feed_err!(e, "X", "\xa0", "Z", [0x58]);
         assert_finish_ok!(e, []);
     }
 
@@ -111,7 +120,47 @@ mod tests {
         assert_feed_ok!(d, [0x42, 0x43], [], "BC");
         assert_feed_ok!(d, [], [], "");
         assert_feed_err!(d, [], [0xa0], [], "");
+        assert_feed_err!(d, [0x58], [0xa0], [0x5a], "X");
         assert_finish_ok!(d, "");
     }
-}
 
+    #[bench]
+    fn bench_encode(bencher: &mut test::Bencher) {
+        static Encoding: ASCIIEncoding = ASCIIEncoding;
+        let s = testutils::ASCII_TEXT;
+        bencher.bytes = s.len() as u64;
+        bencher.iter(|| test::black_box({
+            Encoding.encode(s, EncodeStrict)
+        }))
+    }
+
+    #[bench]
+    fn bench_decode(bencher: &mut test::Bencher) {
+        static Encoding: ASCIIEncoding = ASCIIEncoding;
+        let s = testutils::ASCII_TEXT.as_bytes();
+        bencher.bytes = s.len() as u64;
+        bencher.iter(|| test::black_box({
+            Encoding.decode(s, DecodeStrict)
+        }))
+    }
+
+    #[bench]
+    fn bench_encode_replace(bencher: &mut test::Bencher) {
+        static Encoding: ASCIIEncoding = ASCIIEncoding;
+        let s = testutils::KOREAN_TEXT;
+        bencher.bytes = s.len() as u64;
+        bencher.iter(|| test::black_box({
+            Encoding.encode(s, EncodeReplace)
+        }))
+    }
+
+    #[bench]
+    fn bench_decode_replace(bencher: &mut test::Bencher) {
+        static Encoding: ASCIIEncoding = ASCIIEncoding;
+        let s = testutils::KOREAN_TEXT.as_bytes();
+        bencher.bytes = s.len() as u64;
+        bencher.iter(|| test::black_box({
+            Encoding.decode(s, DecodeReplace)
+        }))
+    }
+}
