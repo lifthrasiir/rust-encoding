@@ -3310,7 +3310,7 @@ pub fn backward(code: u32) -> u16 {
 #[inline]
 pub fn backward_remapped(code: u32) -> u16 {
     let value = backward(code);
-    if 8272 <= value && value < 8836 {
+    if 8272 <= value && value <= 8835 {
         BACKWARD_TABLE_REMAPPED[(value - 8272) as uint]
     } else {
         value
@@ -3318,426 +3318,48 @@ pub fn backward_remapped(code: u32) -> u16 {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::{forward, backward, backward_remapped};
-
-    #[test]
-    fn test_correct_table() {
-        for i in range(0u32, 0x10000) {
-            let i = i as u16;
-            if i == 1207 { continue; }
-            if i == 1208 { continue; }
-            if i == 1209 { continue; }
-            if i == 1212 { continue; }
-            if i == 1213 { continue; }
-            if i == 1214 { continue; }
-            if i == 1217 { continue; }
-            if i == 1218 { continue; }
-            if i == 1219 { continue; }
-            if i == 8644 { continue; }
-            if i == 10716 { continue; }
-            if i == 10717 { continue; }
-            if i == 10718 { continue; }
-            if i == 10719 { continue; }
-            if i == 10720 { continue; }
-            if i == 10721 { continue; }
-            if i == 10722 { continue; }
-            if i == 10723 { continue; }
-            if i == 10724 { continue; }
-            if i == 10725 { continue; }
-            if i == 10726 { continue; }
-            if i == 10727 { continue; }
-            if i == 10728 { continue; }
-            if i == 10729 { continue; }
-            if i == 10730 { continue; }
-            if i == 10731 { continue; }
-            if i == 10732 { continue; }
-            if i == 10733 { continue; }
-            if i == 10734 { continue; }
-            if i == 10735 { continue; }
-            if i == 10736 { continue; }
-            if i == 10737 { continue; }
-            if i == 10738 { continue; }
-            if i == 10739 { continue; }
-            if i == 10740 { continue; }
-            if i == 10741 { continue; }
-            if i == 10742 { continue; }
-            if i == 10743 { continue; }
-            if i == 10744 { continue; }
-            if i == 10745 { continue; }
-            if i == 10746 { continue; }
-            if i == 10747 { continue; }
-            if i == 10748 { continue; }
-            if i == 10749 { continue; }
-            if i == 10750 { continue; }
-            if i == 10751 { continue; }
-            if i == 10752 { continue; }
-            if i == 10753 { continue; }
-            if i == 10754 { continue; }
-            if i == 10755 { continue; }
-            if i == 10756 { continue; }
-            if i == 10757 { continue; }
-            if i == 10758 { continue; }
-            if i == 10759 { continue; }
-            if i == 10760 { continue; }
-            if i == 10761 { continue; }
-            if i == 10762 { continue; }
-            if i == 10763 { continue; }
-            if i == 10764 { continue; }
-            if i == 10765 { continue; }
-            if i == 10766 { continue; }
-            if i == 10767 { continue; }
-            if i == 10768 { continue; }
-            if i == 10769 { continue; }
-            if i == 10770 { continue; }
-            if i == 10771 { continue; }
-            if i == 10772 { continue; }
-            if i == 10773 { continue; }
-            if i == 10774 { continue; }
-            if i == 10775 { continue; }
-            if i == 10776 { continue; }
-            if i == 10777 { continue; }
-            if i == 10778 { continue; }
-            if i == 10779 { continue; }
-            if i == 10780 { continue; }
-            if i == 10781 { continue; }
-            if i == 10782 { continue; }
-            if i == 10783 { continue; }
-            if i == 10784 { continue; }
-            if i == 10785 { continue; }
-            if i == 10786 { continue; }
-            if i == 10787 { continue; }
-            if i == 10788 { continue; }
-            if i == 10789 { continue; }
-            if i == 10790 { continue; }
-            if i == 10791 { continue; }
-            if i == 10792 { continue; }
-            if i == 10793 { continue; }
-            if i == 10794 { continue; }
-            if i == 10795 { continue; }
-            if i == 10796 { continue; }
-            if i == 10797 { continue; }
-            if i == 10798 { continue; }
-            if i == 10799 { continue; }
-            if i == 10800 { continue; }
-            if i == 10801 { continue; }
-            if i == 10802 { continue; }
-            if i == 10803 { continue; }
-            if i == 10804 { continue; }
-            if i == 10805 { continue; }
-            if i == 10806 { continue; }
-            if i == 10807 { continue; }
-            if i == 10808 { continue; }
-            if i == 10809 { continue; }
-            if i == 10810 { continue; }
-            if i == 10811 { continue; }
-            if i == 10812 { continue; }
-            if i == 10813 { continue; }
-            if i == 10814 { continue; }
-            if i == 10815 { continue; }
-            if i == 10816 { continue; }
-            if i == 10817 { continue; }
-            if i == 10818 { continue; }
-            if i == 10819 { continue; }
-            if i == 10820 { continue; }
-            if i == 10821 { continue; }
-            if i == 10822 { continue; }
-            if i == 10823 { continue; }
-            if i == 10824 { continue; }
-            if i == 10825 { continue; }
-            if i == 10826 { continue; }
-            if i == 10827 { continue; }
-            if i == 10828 { continue; }
-            if i == 10829 { continue; }
-            if i == 10830 { continue; }
-            if i == 10831 { continue; }
-            if i == 10832 { continue; }
-            if i == 10833 { continue; }
-            if i == 10834 { continue; }
-            if i == 10835 { continue; }
-            if i == 10836 { continue; }
-            if i == 10837 { continue; }
-            if i == 10838 { continue; }
-            if i == 10839 { continue; }
-            if i == 10840 { continue; }
-            if i == 10841 { continue; }
-            if i == 10842 { continue; }
-            if i == 10843 { continue; }
-            if i == 10844 { continue; }
-            if i == 10845 { continue; }
-            if i == 10846 { continue; }
-            if i == 10847 { continue; }
-            if i == 10848 { continue; }
-            if i == 10849 { continue; }
-            if i == 10850 { continue; }
-            if i == 10851 { continue; }
-            if i == 10852 { continue; }
-            if i == 10853 { continue; }
-            if i == 10854 { continue; }
-            if i == 10855 { continue; }
-            if i == 10856 { continue; }
-            if i == 10857 { continue; }
-            if i == 10858 { continue; }
-            if i == 10859 { continue; }
-            if i == 10860 { continue; }
-            if i == 10861 { continue; }
-            if i == 10862 { continue; }
-            if i == 10863 { continue; }
-            if i == 10864 { continue; }
-            if i == 10865 { continue; }
-            if i == 10866 { continue; }
-            if i == 10867 { continue; }
-            if i == 10868 { continue; }
-            if i == 10869 { continue; }
-            if i == 10870 { continue; }
-            if i == 10871 { continue; }
-            if i == 10872 { continue; }
-            if i == 10873 { continue; }
-            if i == 10874 { continue; }
-            if i == 10875 { continue; }
-            if i == 10876 { continue; }
-            if i == 10877 { continue; }
-            if i == 10878 { continue; }
-            if i == 10879 { continue; }
-            if i == 10880 { continue; }
-            if i == 10881 { continue; }
-            if i == 10882 { continue; }
-            if i == 10883 { continue; }
-            if i == 10884 { continue; }
-            if i == 10885 { continue; }
-            if i == 10886 { continue; }
-            if i == 10887 { continue; }
-            if i == 10888 { continue; }
-            if i == 10889 { continue; }
-            if i == 10890 { continue; }
-            if i == 10891 { continue; }
-            if i == 10892 { continue; }
-            if i == 10893 { continue; }
-            if i == 10894 { continue; }
-            if i == 10895 { continue; }
-            if i == 10896 { continue; }
-            if i == 10897 { continue; }
-            if i == 10898 { continue; }
-            if i == 10899 { continue; }
-            if i == 10900 { continue; }
-            if i == 10901 { continue; }
-            if i == 10902 { continue; }
-            if i == 10903 { continue; }
-            if i == 10904 { continue; }
-            if i == 10905 { continue; }
-            if i == 10906 { continue; }
-            if i == 10907 { continue; }
-            if i == 10908 { continue; }
-            if i == 10909 { continue; }
-            if i == 10910 { continue; }
-            if i == 10911 { continue; }
-            if i == 10912 { continue; }
-            if i == 10913 { continue; }
-            if i == 10914 { continue; }
-            if i == 10915 { continue; }
-            if i == 10916 { continue; }
-            if i == 10917 { continue; }
-            if i == 10918 { continue; }
-            if i == 10919 { continue; }
-            if i == 10920 { continue; }
-            if i == 10921 { continue; }
-            if i == 10922 { continue; }
-            if i == 10923 { continue; }
-            if i == 10924 { continue; }
-            if i == 10925 { continue; }
-            if i == 10926 { continue; }
-            if i == 10927 { continue; }
-            if i == 10928 { continue; }
-            if i == 10929 { continue; }
-            if i == 10930 { continue; }
-            if i == 10931 { continue; }
-            if i == 10932 { continue; }
-            if i == 10933 { continue; }
-            if i == 10934 { continue; }
-            if i == 10935 { continue; }
-            if i == 10936 { continue; }
-            if i == 10937 { continue; }
-            if i == 10938 { continue; }
-            if i == 10939 { continue; }
-            if i == 10940 { continue; }
-            if i == 10941 { continue; }
-            if i == 10942 { continue; }
-            if i == 10943 { continue; }
-            if i == 10944 { continue; }
-            if i == 10945 { continue; }
-            if i == 10946 { continue; }
-            if i == 10947 { continue; }
-            if i == 10948 { continue; }
-            if i == 10949 { continue; }
-            if i == 10950 { continue; }
-            if i == 10951 { continue; }
-            if i == 10952 { continue; }
-            if i == 10953 { continue; }
-            if i == 10954 { continue; }
-            if i == 10955 { continue; }
-            if i == 10956 { continue; }
-            if i == 10957 { continue; }
-            if i == 10958 { continue; }
-            if i == 10959 { continue; }
-            if i == 10960 { continue; }
-            if i == 10961 { continue; }
-            if i == 10962 { continue; }
-            if i == 10963 { continue; }
-            if i == 10964 { continue; }
-            if i == 10965 { continue; }
-            if i == 10966 { continue; }
-            if i == 10967 { continue; }
-            if i == 10968 { continue; }
-            if i == 10969 { continue; }
-            if i == 10970 { continue; }
-            if i == 10971 { continue; }
-            if i == 10972 { continue; }
-            if i == 10973 { continue; }
-            if i == 10974 { continue; }
-            if i == 10975 { continue; }
-            if i == 10976 { continue; }
-            if i == 10977 { continue; }
-            if i == 10978 { continue; }
-            if i == 10979 { continue; }
-            if i == 10980 { continue; }
-            if i == 10981 { continue; }
-            if i == 10982 { continue; }
-            if i == 10983 { continue; }
-            if i == 10984 { continue; }
-            if i == 10985 { continue; }
-            if i == 10986 { continue; }
-            if i == 10987 { continue; }
-            if i == 10988 { continue; }
-            if i == 10989 { continue; }
-            if i == 10990 { continue; }
-            if i == 10991 { continue; }
-            if i == 10992 { continue; }
-            if i == 10993 { continue; }
-            if i == 10994 { continue; }
-            if i == 10995 { continue; }
-            if i == 10996 { continue; }
-            if i == 10997 { continue; }
-            if i == 10998 { continue; }
-            if i == 10999 { continue; }
-            if i == 11000 { continue; }
-            if i == 11001 { continue; }
-            if i == 11002 { continue; }
-            if i == 11003 { continue; }
-            if i == 11004 { continue; }
-            if i == 11005 { continue; }
-            if i == 11006 { continue; }
-            if i == 11007 { continue; }
-            if i == 11008 { continue; }
-            if i == 11009 { continue; }
-            if i == 11010 { continue; }
-            if i == 11011 { continue; }
-            if i == 11012 { continue; }
-            if i == 11013 { continue; }
-            if i == 11014 { continue; }
-            if i == 11015 { continue; }
-            if i == 11016 { continue; }
-            if i == 11017 { continue; }
-            if i == 11018 { continue; }
-            if i == 11019 { continue; }
-            if i == 11020 { continue; }
-            if i == 11021 { continue; }
-            if i == 11022 { continue; }
-            if i == 11023 { continue; }
-            if i == 11024 { continue; }
-            if i == 11025 { continue; }
-            if i == 11026 { continue; }
-            if i == 11027 { continue; }
-            if i == 11028 { continue; }
-            if i == 11029 { continue; }
-            if i == 11030 { continue; }
-            if i == 11031 { continue; }
-            if i == 11032 { continue; }
-            if i == 11033 { continue; }
-            if i == 11034 { continue; }
-            if i == 11035 { continue; }
-            if i == 11036 { continue; }
-            if i == 11037 { continue; }
-            if i == 11038 { continue; }
-            if i == 11039 { continue; }
-            if i == 11040 { continue; }
-            if i == 11041 { continue; }
-            if i == 11042 { continue; }
-            if i == 11043 { continue; }
-            if i == 11044 { continue; }
-            if i == 11045 { continue; }
-            if i == 11046 { continue; }
-            if i == 11047 { continue; }
-            if i == 11048 { continue; }
-            if i == 11049 { continue; }
-            if i == 11050 { continue; }
-            if i == 11051 { continue; }
-            if i == 11052 { continue; }
-            if i == 11053 { continue; }
-            if i == 11054 { continue; }
-            if i == 11055 { continue; }
-            if i == 11056 { continue; }
-            if i == 11057 { continue; }
-            if i == 11058 { continue; }
-            if i == 11059 { continue; }
-            if i == 11060 { continue; }
-            if i == 11061 { continue; }
-            if i == 11062 { continue; }
-            if i == 11063 { continue; }
-            if i == 11064 { continue; }
-            if i == 11065 { continue; }
-            if i == 11066 { continue; }
-            if i == 11067 { continue; }
-            if i == 11068 { continue; }
-            if i == 11069 { continue; }
-            if i == 11070 { continue; }
-            if i == 11071 { continue; }
-            if i == 11072 { continue; }
-            if i == 11073 { continue; }
-            if i == 11074 { continue; }
-            if i == 11075 { continue; }
-            if i == 11076 { continue; }
-            if i == 11077 { continue; }
-            if i == 11078 { continue; }
-            if i == 11079 { continue; }
-            if i == 11080 { continue; }
-            if i == 11081 { continue; }
-            if i == 11082 { continue; }
-            if i == 11083 { continue; }
-            if i == 11084 { continue; }
-            if i == 11085 { continue; }
-            if i == 11086 { continue; }
-            if i == 11087 { continue; }
-            if i == 11088 { continue; }
-            if i == 11089 { continue; }
-            if i == 11090 { continue; }
-            if i == 11091 { continue; }
-            if i == 11092 { continue; }
-            if i == 11093 { continue; }
-            if i == 11094 { continue; }
-            if i == 11095 { continue; }
-            if i == 11096 { continue; }
-            if i == 11097 { continue; }
-            if i == 11098 { continue; }
-            if i == 11099 { continue; }
-            if i == 11100 { continue; }
-            if i == 11101 { continue; }
-            if i == 11102 { continue; }
-            if i == 11103 { continue; }
-            let j = forward(i);
-            if j != 0xffff { assert_eq!(backward(j), i); }
-        }
-    }
-
-    #[test]
-    fn test_correct_remapping() {
-        for i in range(8272u16, 8836) {
-            let j = forward(i);
-            if j != 0xffff {
-                let ii = backward_remapped(j);
-                assert!(ii != i && ii != 0xffff);
-                let jj = forward(ii);
-                assert_eq!(j, jj);
-            }
-        }
-    }
-}
+multi_byte_tests!(
+    remap = 8272 .. 8835,
+    dups = [
+        1207, 1208, 1209, 1212, 1213, 1214, 1217, 1218, 1219, 8644, 10716,
+        10717, 10718, 10719, 10720, 10721, 10722, 10723, 10724, 10725, 10726,
+        10727, 10728, 10729, 10730, 10731, 10732, 10733, 10734, 10735, 10736,
+        10737, 10738, 10739, 10740, 10741, 10742, 10743, 10744, 10745, 10746,
+        10747, 10748, 10749, 10750, 10751, 10752, 10753, 10754, 10755, 10756,
+        10757, 10758, 10759, 10760, 10761, 10762, 10763, 10764, 10765, 10766,
+        10767, 10768, 10769, 10770, 10771, 10772, 10773, 10774, 10775, 10776,
+        10777, 10778, 10779, 10780, 10781, 10782, 10783, 10784, 10785, 10786,
+        10787, 10788, 10789, 10790, 10791, 10792, 10793, 10794, 10795, 10796,
+        10797, 10798, 10799, 10800, 10801, 10802, 10803, 10804, 10805, 10806,
+        10807, 10808, 10809, 10810, 10811, 10812, 10813, 10814, 10815, 10816,
+        10817, 10818, 10819, 10820, 10821, 10822, 10823, 10824, 10825, 10826,
+        10827, 10828, 10829, 10830, 10831, 10832, 10833, 10834, 10835, 10836,
+        10837, 10838, 10839, 10840, 10841, 10842, 10843, 10844, 10845, 10846,
+        10847, 10848, 10849, 10850, 10851, 10852, 10853, 10854, 10855, 10856,
+        10857, 10858, 10859, 10860, 10861, 10862, 10863, 10864, 10865, 10866,
+        10867, 10868, 10869, 10870, 10871, 10872, 10873, 10874, 10875, 10876,
+        10877, 10878, 10879, 10880, 10881, 10882, 10883, 10884, 10885, 10886,
+        10887, 10888, 10889, 10890, 10891, 10892, 10893, 10894, 10895, 10896,
+        10897, 10898, 10899, 10900, 10901, 10902, 10903, 10904, 10905, 10906,
+        10907, 10908, 10909, 10910, 10911, 10912, 10913, 10914, 10915, 10916,
+        10917, 10918, 10919, 10920, 10921, 10922, 10923, 10924, 10925, 10926,
+        10927, 10928, 10929, 10930, 10931, 10932, 10933, 10934, 10935, 10936,
+        10937, 10938, 10939, 10940, 10941, 10942, 10943, 10944, 10945, 10946,
+        10947, 10948, 10949, 10950, 10951, 10952, 10953, 10954, 10955, 10956,
+        10957, 10958, 10959, 10960, 10961, 10962, 10963, 10964, 10965, 10966,
+        10967, 10968, 10969, 10970, 10971, 10972, 10973, 10974, 10975, 10976,
+        10977, 10978, 10979, 10980, 10981, 10982, 10983, 10984, 10985, 10986,
+        10987, 10988, 10989, 10990, 10991, 10992, 10993, 10994, 10995, 10996,
+        10997, 10998, 10999, 11000, 11001, 11002, 11003, 11004, 11005, 11006,
+        11007, 11008, 11009, 11010, 11011, 11012, 11013, 11014, 11015, 11016,
+        11017, 11018, 11019, 11020, 11021, 11022, 11023, 11024, 11025, 11026,
+        11027, 11028, 11029, 11030, 11031, 11032, 11033, 11034, 11035, 11036,
+        11037, 11038, 11039, 11040, 11041, 11042, 11043, 11044, 11045, 11046,
+        11047, 11048, 11049, 11050, 11051, 11052, 11053, 11054, 11055, 11056,
+        11057, 11058, 11059, 11060, 11061, 11062, 11063, 11064, 11065, 11066,
+        11067, 11068, 11069, 11070, 11071, 11072, 11073, 11074, 11075, 11076,
+        11077, 11078, 11079, 11080, 11081, 11082, 11083, 11084, 11085, 11086,
+        11087, 11088, 11089, 11090, 11091, 11092, 11093, 11094, 11095, 11096,
+        11097, 11098, 11099, 11100, 11101, 11102, 11103,
+    ]
+)

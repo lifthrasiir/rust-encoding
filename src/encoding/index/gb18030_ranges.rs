@@ -79,27 +79,7 @@ pub fn backward(code: u32) -> u32 {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::{forward, backward};
-
-    #[test]
-    fn test_no_failure() {
-        for i in range(0u32, 189002) {
-            forward(i);
-        }
-        for j in range(127u32, 65538) {
-            backward(j);
-        }
-    }
-
-    #[test]
-    fn test_correct_table() {
-        for i in range(0u32, 189002) {
-            let j = forward(i);
-            if j == 0xffffffff { continue; }
-            let i_ = backward(j);
-            if i_ == 0xffffffff { continue; }
-            assert!(i_ == i, "backward(forward({})) = backward({}) = {} != {}", i, j, i_, i);
-        }
-    }
-}
+multi_byte_range_tests!(
+    key = 0 .. 189000,
+    value = 128 .. 65536
+)

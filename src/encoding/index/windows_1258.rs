@@ -52,15 +52,4 @@ pub fn backward(code: u16) -> u8 {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::{forward, backward};
-
-    #[test]
-    fn test_correct_table() {
-        for i in range(128, 256) {
-            let i = i as u8;
-            let j = forward(i);
-            if j != 0xffff { assert_eq!(backward(j), i); }
-        }
-    }
-}
+single_byte_tests!()

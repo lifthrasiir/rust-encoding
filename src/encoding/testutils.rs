@@ -173,3 +173,104 @@ pub fn get_external_bench_data() -> Vec<u8> {
     }
 }
 
+/// Makes a common test suite for single-byte indices.
+macro_rules! single_byte_tests(
+    () => (
+        mod tests {
+            use super::{forward, backward};
+
+            #[test]
+            fn test_correct_table() {
+                for i in range(128, 256) {
+                    let i = i as u8;
+                    let j = forward(i);
+                    if j != 0xffff { assert_eq!(backward(j), i); }
+                }
+            }
+        }
+    );
+)
+
+/// Makes a common test suite for multi-byte indices.
+macro_rules! multi_byte_tests(
+    (make shared tests with dups = $dups:expr) => ( // internal macro
+        #[test]
+        fn test_correct_table() {
+            static DUPS: &'static [u16] = &$dups;
+            for i in range(0u32, 0x10000) {
+                let i = i as u16;
+                if DUPS.contains(&i) { continue; }
+                let j = forward(i);
+                if j != 0xffff { assert_eq!(backward(j), i); }
+            }
+        }
+    );
+
+    (
+        dups = $dups:expr
+    ) => (
+        mod tests {
+            use super::{forward, backward};
+
+            multi_byte_tests!(make shared tests with dups = $dups)
+        }
+    );
+
+    (
+        remap = $remap_min:expr .. $remap_max:expr,
+        dups = $dups:expr
+    ) => (
+        mod tests {
+            use super::{forward, backward, backward_remapped};
+
+            multi_byte_tests!(make shared tests with dups = $dups)
+
+            #[test]
+            fn test_correct_remapping() {
+                for i in range::<u16>($remap_min, $remap_max+1) {
+                    let j = forward(i);
+                    if j != 0xffff {
+                        let ii = backward_remapped(j);
+                        assert!(ii != i && ii != 0xffff);
+                        let jj = forward(ii);
+                        assert_eq!(j, jj);
+                    }
+                }
+            }
+        }
+    );
+)
+
+/// Makes a common test suite for multi-byte range indices.
+macro_rules! multi_byte_range_tests(
+    (
+        key = $minkey:expr .. $maxkey:expr,
+        value = $minvalue:expr .. $maxvalue:expr
+    ) => (
+        mod tests {
+            use super::{forward, backward};
+
+            #[test]
+            fn test_no_failure() {
+                for i in range::<u32>(if $minkey>0 {$minkey-1} else {0}, $maxkey+2) {
+                    forward(i);
+                }
+                for j in range::<u32>(if $minvalue>0 {$minvalue-1} else {0}, $maxvalue+2) {
+                    backward(j);
+                }
+            }
+
+            #[test]
+            fn test_correct_table() {
+                for i in range::<u32>($minkey, $maxkey+2) {
+                    let j = forward(i);
+                    if j == 0xffffffff { continue; }
+                    let i_ = backward(j);
+                    if i_ == 0xffffffff { continue; }
+                    assert!(i_ == i, "backward(forward({})) = backward({}) = {} != {}", i, j, i_, i);
+                }
+            }
+        }
+    );
+)
+

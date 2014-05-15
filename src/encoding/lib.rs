@@ -15,6 +15,8 @@
 
 #![feature(globs, macro_rules)]
 
+#[cfg(test)] extern crate test;
+
 pub use self::types::{CodecError, ByteWriter, StringWriter,
                       Encoder, Decoder, EncodingRef, Encoding,
                       EncoderTrapFunc, DecoderTrapFunc, DecoderTrap,

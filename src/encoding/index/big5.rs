@@ -6580,119 +6580,17 @@ pub fn backward(code: u32) -> u16 {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::{forward, backward};
-
-    #[test]
-    fn test_correct_table() {
-        for i in range(0u32, 0x10000) {
-            let i = i as u16;
-            if i == 1133 { continue; }
-            if i == 1135 { continue; }
-            if i == 1164 { continue; }
-            if i == 1166 { continue; }
-            if i == 2673 { continue; }
-            if i == 3437 { continue; }
-            if i == 4369 { continue; }
-            if i == 4748 { continue; }
-            if i == 4828 { continue; }
-            if i == 4898 { continue; }
-            if i == 4902 { continue; }
-            if i == 4981 { continue; }
-            if i == 4982 { continue; }
-            if i == 4997 { continue; }
-            if i == 5206 { continue; }
-            if i == 5207 { continue; }
-            if i == 5208 { continue; }
-            if i == 5209 { continue; }
-            if i == 5214 { continue; }
-            if i == 5512 { continue; }
-            if i == 5599 { continue; }
-            if i == 6410 { continue; }
-            if i == 6422 { continue; }
-            if i == 6543 { continue; }
-            if i == 6732 { continue; }
-            if i == 7300 { continue; }
-            if i == 7410 { continue; }
-            if i == 7915 { continue; }
-            if i == 8240 { continue; }
-            if i == 8281 { continue; }
-            if i == 8870 { continue; }
-            if i == 9081 { continue; }
-            if i == 9103 { continue; }
-            if i == 9741 { continue; }
-            if i == 9802 { continue; }
-            if i == 9810 { continue; }
-            if i == 9840 { continue; }
-            if i == 9909 { continue; }
-            if i == 10024 { continue; }
-            if i == 10696 { continue; }
-            if i == 10825 { continue; }
-            if i == 10950 { continue; }
-            if i == 10957 { continue; }
-            if i == 11332 { continue; }
-            if i == 11345 { continue; }
-            if i == 11458 { continue; }
-            if i == 11479 { continue; }
-            if i == 12065 { continue; }
-            if i == 12497 { continue; }
-            if i == 12739 { continue; }
-            if i == 13142 { continue; }
-            if i == 14159 { continue; }
-            if i == 14187 { continue; }
-            if i == 14305 { continue; }
-            if i == 14651 { continue; }
-            if i == 14708 { continue; }
-            if i == 14975 { continue; }
-            if i == 15488 { continue; }
-            if i == 15930 { continue; }
-            if i == 15967 { continue; }
-            if i == 16278 { continue; }
-            if i == 16353 { continue; }
-            if i == 16745 { continue; }
-            if i == 17060 { continue; }
-            if i == 17421 { continue; }
-            if i == 17713 { continue; }
-            if i == 18346 { continue; }
-            if i == 18728 { continue; }
-            if i == 18938 { continue; }
-            if i == 18957 { continue; }
-            if i == 18975 { continue; }
-            if i == 18976 { continue; }
-            if i == 18977 { continue; }
-            if i == 18991 { continue; }
-            if i == 18992 { continue; }
-            if i == 18993 { continue; }
-            if i == 18994 { continue; }
-            if i == 18995 { continue; }
-            if i == 19028 { continue; }
-            if i == 19035 { continue; }
-            if i == 19088 { continue; }
-            if i == 19096 { continue; }
-            if i == 19112 { continue; }
-            if i == 19162 { continue; }
-            if i == 19240 { continue; }
-            if i == 19299 { continue; }
-            if i == 19305 { continue; }
-            if i == 19309 { continue; }
-            if i == 19326 { continue; }
-            if i == 19355 { continue; }
-            if i == 19398 { continue; }
-            if i == 19424 { continue; }
-            if i == 19439 { continue; }
-            if i == 19454 { continue; }
-            if i == 19504 { continue; }
-            if i == 19553 { continue; }
-            if i == 19554 { continue; }
-            if i == 19557 { continue; }
-            if i == 19611 { continue; }
-            if i == 19643 { continue; }
-            if i == 19672 { continue; }
-            if i == 19697 { continue; }
-            if i == 19720 { continue; }
-            if i == 19748 { continue; }
-            let j = forward(i);
-            if j != 0xffff { assert_eq!(backward(j), i); }
-        }
-    }
-}
+multi_byte_tests!(
+    dups = [
+        1133, 1135, 1164, 1166, 2673, 3437, 4369, 4748, 4828, 4898, 4902, 4981,
+        4982, 4997, 5206, 5207, 5208, 5209, 5214, 5512, 5599, 6410, 6422, 6543,
+        6732, 7300, 7410, 7915, 8240, 8281, 8870, 9081, 9103, 9741, 9802, 9810,
+        9840, 9909, 10024, 10696, 10825, 10950, 10957, 11332, 11345, 11458,
+        11479, 12065, 12497, 12739, 13142, 14159, 14187, 14305, 14651, 14708,
+        14975, 15488, 15930, 15967, 16278, 16353, 16745, 17060, 17421, 17713,
+        18346, 18728, 18938, 18957, 18975, 18976, 18977, 18991, 18992, 18993,
+        18994, 18995, 19028, 19035, 19088, 19096, 19112, 19162, 19240, 19299,
+        19305, 19309, 19326, 19355, 19398, 19424, 19439, 19454, 19504, 19553,
+        19554, 19557, 19611, 19643, 19672, 19697, 19720, 19748,
+    ]
+)

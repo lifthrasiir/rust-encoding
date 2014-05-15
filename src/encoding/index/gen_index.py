@@ -61,18 +61,7 @@ def generate_single_byte_index(name):
         print >>f, '}'
         print >>f
         print >>f, '#[cfg(test)]'
-        print >>f, 'mod tests {'
-        print >>f, '    use super::{forward, backward};'
-        print >>f
-        print >>f, '    #[test]'
-        print >>f, '    fn test_correct_table() {'
-        print >>f, '        for i in range(128, 256) {'
-        print >>f, '            let i = i as u8;'
-        print >>f, '            let j = forward(i);'
-        print >>f, '            if j != 0xffff { assert_eq!(backward(j), i); }'
-        print >>f, '        }'
-        print >>f, '    }'
-        print >>f, '}'
+        print >>f, 'single_byte_tests!()'
 
     return 2 * len(data)
 
@@ -131,15 +120,15 @@ def generate_multi_byte_index(name):
     remap = None
     if name == 'jis0208':
         REMAP_MIN = 8272
-        REMAP_MAX = 8836
+        REMAP_MAX = 8835
 
         invdataminusremap = {}
         for key, value in data.items():
-            if value not in invdataminusremap and not REMAP_MIN <= key < REMAP_MAX:
+            if value not in invdataminusremap and not REMAP_MIN <= key <= REMAP_MAX:
                 invdataminusremap[value] = key
 
         remap = []
-        for i in xrange(REMAP_MIN, REMAP_MAX):
+        for i in xrange(REMAP_MIN, REMAP_MAX+1):
             if i in data:
                 assert data[i] in invdataminusremap
                 value = invdataminusremap[data[i]]
@@ -214,7 +203,7 @@ def generate_multi_byte_index(name):
             print >>f, '#[inline]'
             print >>f, 'pub fn backward_remapped(code: u32) -> u16 {'
             print >>f, '    let value = backward(code);'
-            print >>f, '    if %d <= value && value < %d {' % (REMAP_MIN, REMAP_MAX)
+            print >>f, '    if %d <= value && value <= %d {' % (REMAP_MIN, REMAP_MAX)
             print >>f, '        BACKWARD_TABLE_REMAPPED[(value - %d) as uint]' % REMAP_MIN
             print >>f, '    } else {'
             print >>f, '        value'
@@ -222,37 +211,16 @@ def generate_multi_byte_index(name):
             print >>f, '}'
         print >>f
         print >>f, '#[cfg(test)]'
-        print >>f, 'mod tests {'
+        print >>f, 'multi_byte_tests!('
         if remap:
-            print >>f, '    use super::{forward, backward, backward_remapped};'
+            print >>f, '    remap = %d .. %d,' % (REMAP_MIN, REMAP_MAX)
+        if dups:
+            print >>f, '    dups = ['
+            write_comma_separated(f, '        ', ['%d, ' % v for v in sorted(dups)])
+            print >>f, '    ]'
         else:
-            print >>f, '    use super::{forward, backward};'
-        print >>f
-        print >>f, '    #[test]'
-        print >>f, '    fn test_correct_table() {'
-        print >>f, '        for i in range(0u32, 0x10000) {'
-        print >>f, '            let i = i as u16;'
-        for i in sorted(dups):
-            print >>f, '            if i == %d { continue; }' % i
-        print >>f, '            let j = forward(i);'
-        print >>f, '            if j != 0xffff { assert_eq!(backward(j), i); }'
-        print >>f, '        }'
-        print >>f, '    }'
-        if remap:
-            print >>f
-            print >>f, '    #[test]'
-            print >>f, '    fn test_correct_remapping() {'
-            print >>f, '        for i in range(%du16, %d) {' % (REMAP_MIN, REMAP_MAX)
-            print >>f, '            let j = forward(i);'
-            print >>f, '            if j != 0xffff {'
-            print >>f, '                let ii = backward_remapped(j);'
-            print >>f, '                assert!(ii != i && ii != 0xffff);'
-            print >>f, '                let jj = forward(ii);'
-            print >>f, '                assert_eq!(j, jj);'
-            print >>f, '            }'
-            print >>f, '        }'
-            print >>f, '    }'
-        print >>f, '}'
+            print >>f, '    dups = []'
+        print >>f, ')'
 
     tablesz = 2 * (maxkey - minkey) + 2 * len(lower) + 2 * len(upper)
     if morebits: tablesz += 4 * ((maxkey - minkey + 31) // 32)
@@ -315,30 +283,10 @@ def generate_multi_byte_range_lbound_index(name):
         print >>f, '}'
         print >>f
         print >>f, '#[cfg(test)]'
-        print >>f, 'mod tests {'
-        print >>f, '    use super::{forward, backward};'
-        print >>f
-        print >>f, '    #[test]'
-        print >>f, '    fn test_no_failure() {'
-        print >>f, '        for i in range(%du32, %d) {' % (max(0,minkey-1), maxkey+2)
-        print >>f, '            forward(i);'
-        print >>f, '        }'
-        print >>f, '        for j in range(%du32, %d) {' % (max(0,minvalue-1), maxvalue+2)
-        print >>f, '            backward(j);'
-        print >>f, '        }'
-        print >>f, '    }'
-        print >>f
-        print >>f, '    #[test]'
-        print >>f, '    fn test_correct_table() {'
-        print >>f, '        for i in range(%du32, %d) {' % (minkey, maxkey+2)
-        print >>f, '            let j = forward(i);'
-        print >>f, '            if j == 0xffffffff { continue; }'
-        print >>f, '            let i_ = backward(j);'
-        print >>f, '            if i_ == 0xffffffff { continue; }'
-        print >>f, '            assert!(i_ == i, "backward(forward({})) = backward({}) = {} != {}", i, j, i_, i);'
-        print >>f, '        }'
-        print >>f, '    }'
-        print >>f, '}'
+        print >>f, 'multi_byte_range_tests!('
+        print >>f, '    key = %d .. %d,' % (minkey, maxkey)
+        print >>f, '    value = %d .. %d' % (minvalue, maxvalue)
+        print >>f, ')'
 
     return 8 * len(data)
 

@@ -4970,16 +4970,8 @@ pub fn backward(code: u32) -> u16 {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::{forward, backward};
-
-    #[test]
-    fn test_correct_table() {
-        for i in range(0u32, 0x10000) {
-            let i = i as u16;
-            if i == 6555 { continue; }
-            let j = forward(i);
-            if j != 0xffff { assert_eq!(backward(j), i); }
-        }
-    }
-}
+multi_byte_tests!(
+    dups = [
+        6555,
+    ]
+)
