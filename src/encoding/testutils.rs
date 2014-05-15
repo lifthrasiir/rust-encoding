@@ -178,6 +178,7 @@ macro_rules! single_byte_tests(
     () => (
         mod tests {
             use super::{forward, backward};
+            use test;
 
             #[test]
             fn test_correct_table() {
@@ -187,13 +188,33 @@ macro_rules! single_byte_tests(
                     if j != 0xffff { assert_eq!(backward(j), i); }
                 }
             }
+
+            #[bench]
+            fn bench_forward_sequential_128(bencher: &mut test::Bencher) {
+                bencher.iter(|| {
+                    for i in range(0x80, 0x100) {
+                        test::black_box(forward(i as u8));
+                    }
+                })
+            }
+
+            #[bench]
+            fn bench_backward_sequential_128(bencher: &mut test::Bencher) {
+                let mut start: u32 = 0;
+                bencher.iter(|| {
+                    for i in range(start, start + 0x80) {
+                        test::black_box(backward(i as u16));
+                    }
+                    start += 0x80;
+                })
+            }
         }
     );
 )
 
 /// Makes a common test suite for multi-byte indices.
 macro_rules! multi_byte_tests(
-    (make shared tests with dups = $dups:expr) => ( // internal macro
+    (make shared tests and benches with dups = $dups:expr) => ( // internal macro
         #[test]
         fn test_correct_table() {
             static DUPS: &'static [u16] = &$dups;
@@ -204,6 +225,29 @@ macro_rules! multi_byte_tests(
                 if j != 0xffff { assert_eq!(backward(j), i); }
             }
         }
+
+        #[bench]
+        fn bench_forward_sequential_128(bencher: &mut test::Bencher) {
+            let mut start: u32 = 0;
+            bencher.iter(|| {
+                for i in range(start, start + 0x80) {
+                    test::black_box(forward(i as u16));
+                }
+                start += 0x80;
+            })
+        }
+
+        #[bench]
+        fn bench_backward_sequential_128(bencher: &mut test::Bencher) {
+            let mut start: u32 = 0;
+            bencher.iter(|| {
+                for i in range(start, start + 0x80) {
+                    test::black_box(backward(i));
+                }
+                start += 0x80;
+                if start >= 0x110000 { start = 0; }
+            })
+        }
     );
 
     (
@@ -211,8 +255,9 @@ macro_rules! multi_byte_tests(
     ) => (
         mod tests {
             use super::{forward, backward};
+            use test;
 
-            multi_byte_tests!(make shared tests with dups = $dups)
+            multi_byte_tests!(make shared tests and benches with dups = $dups)
         }
     );
 
@@ -222,8 +267,9 @@ macro_rules! multi_byte_tests(
     ) => (
         mod tests {
             use super::{forward, backward, backward_remapped};
+            use test;
 
-            multi_byte_tests!(make shared tests with dups = $dups)
+            multi_byte_tests!(make shared tests and benches with dups = $dups)
 
             #[test]
             fn test_correct_remapping() {
@@ -237,6 +283,18 @@ macro_rules! multi_byte_tests(
                     }
                 }
             }
+
+            #[bench]
+            fn bench_backward_remapped_sequential_128(bencher: &mut test::Bencher) {
+                let mut start: u32 = 0;
+                bencher.iter(|| {
+                    for i in range(start, start + 0x80) {
+                        test::black_box(backward_remapped(i));
+                    }
+                    start += 0x80;
+                    if start >= 0x110000 { start = 0; }
+                })
+            }
         }
     );
 )
@@ -244,11 +302,12 @@ macro_rules! multi_byte_tests(
 /// Makes a common test suite for multi-byte range indices.
 macro_rules! multi_byte_range_tests(
     (
-        key = $minkey:expr .. $maxkey:expr,
-        value = $minvalue:expr .. $maxvalue:expr
+        key = $minkey:expr .. $maxkey:expr, key < $keyubound:expr,
+        value = $minvalue:expr .. $maxvalue:expr, value < $valueubound:expr
     ) => (
         mod tests {
             use super::{forward, backward};
+            use test;
 
             #[test]
             fn test_no_failure() {
@@ -269,6 +328,30 @@ macro_rules! multi_byte_range_tests(
                     if i_ == 0xffffffff { continue; }
                     assert!(i_ == i, "backward(forward({})) = backward({}) = {} != {}", i, j, i_, i);
                 }
+            }
+
+            #[bench]
+            fn bench_forward_sequential_128(bencher: &mut test::Bencher) {
+                let mut start: u32 = 0;
+                bencher.iter(|| {
+                    for i in range(start, start + 0x80) {
+                        test::black_box(forward(i));
+                    }
+                    start += 0x80;
+                    if start >= $keyubound { start = 0; }
+                })
+            }
+
+            #[bench]
+            fn bench_backward_sequential_128(bencher: &mut test::Bencher) {
+                let mut start: u32 = 0;
+                bencher.iter(|| {
+                    for i in range(start, start + 0x80) {
+                        test::black_box(backward(i));
+                    }
+                    start += 0x80;
+                    if start >= $valueubound { start = 0; }
+                })
             }
         }
     );

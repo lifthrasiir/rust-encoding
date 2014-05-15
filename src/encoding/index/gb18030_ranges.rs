@@ -80,6 +80,6 @@ pub fn backward(code: u32) -> u32 {
 
 #[cfg(test)]
 multi_byte_range_tests!(
-    key = 0 .. 189000,
-    value = 128 .. 65536
+    key = 0 .. 189000, key < 1114112,
+    value = 128 .. 65536, value < 1587600
 )
