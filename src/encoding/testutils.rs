@@ -185,7 +185,7 @@ macro_rules! single_byte_tests(
                 for i in range(128, 256) {
                     let i = i as u8;
                     let j = forward(i);
-                    if j != 0xffff { assert_eq!(backward(j), i); }
+                    if j != 0xffff { assert_eq!(backward(j as u32), i); }
                 }
             }
 
@@ -203,7 +203,7 @@ macro_rules! single_byte_tests(
                 let mut start: u32 = 0;
                 bencher.iter(|| {
                     for i in range(start, start + 0x80) {
-                        test::black_box(backward(i as u16));
+                        test::black_box(backward(i));
                     }
                     start += 0x80;
                 })

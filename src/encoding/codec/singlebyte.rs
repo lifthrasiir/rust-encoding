@@ -12,7 +12,7 @@ pub struct SingleByteEncoding {
     pub name: &'static str,
     pub whatwg_name: Option<&'static str>,
     pub index_forward: extern "Rust" fn(u8) -> u16,
-    pub index_backward: extern "Rust" fn(u16) -> u8,
+    pub index_backward: extern "Rust" fn(u32) -> u8,
 }
 
 impl Encoding for SingleByteEncoding {
@@ -25,11 +25,11 @@ impl Encoding for SingleByteEncoding {
 /// An encoder for single-byte encodings based on ASCII.
 #[deriving(Clone)]
 pub struct SingleByteEncoder {
-    index_backward: extern "Rust" fn(u16) -> u8,
+    index_backward: extern "Rust" fn(u32) -> u8,
 }
 
 impl SingleByteEncoder {
-    pub fn new(index_backward: extern "Rust" fn(u16) -> u8) -> Box<Encoder> {
+    pub fn new(index_backward: extern "Rust" fn(u32) -> u8) -> Box<Encoder> {
         box SingleByteEncoder { index_backward: index_backward } as Box<Encoder>
     }
 }
@@ -45,17 +45,16 @@ impl Encoder for SingleByteEncoder {
             if ch <= '\u007f' {
                 output.write_byte(ch as u8);
                 continue;
-            }
-            if ch <= '\uffff' {
-                let index = (self.index_backward)(ch as u16);
+            } else {
+                let index = (self.index_backward)(ch as u32);
                 if index != 0 {
                     output.write_byte(index);
-                    continue;
+                } else {
+                    return (i, Some(CodecError {
+                        upto: j, cause: "unrepresentable character".into_maybe_owned()
+                    }));
                 }
             }
-            return (i, Some(CodecError {
-                upto: j, cause: "unrepresentable character".into_maybe_owned()
-            }));
         }
         (input.len(), None)
     }
@@ -112,7 +111,7 @@ impl Decoder for SingleByteDecoder {
 /// Algorithmic mapping for ISO 8859-1.
 pub mod iso_8859_1 {
     #[inline] pub fn forward(code: u8) -> u16 { code as u16 }
-    #[inline] pub fn backward(code: u16) -> u8 { if (code & !0x7f) == 0x80 {code as u8} else {0} }
+    #[inline] pub fn backward(code: u32) -> u8 { if (code & !0x7f) == 0x80 {code as u8} else {0} }
 }
 
 #[cfg(test)]

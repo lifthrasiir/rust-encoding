@@ -27,7 +27,7 @@ pub mod x_user_defined {
     }
 
     #[inline]
-    pub fn backward(code: u16) -> u8 {
+    pub fn backward(code: u32) -> u8 {
         if (code & !0x7f) == 0xf780 {(code & 0xff) as u8} else {0}
     }
 }
