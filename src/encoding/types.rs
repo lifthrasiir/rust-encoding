@@ -177,7 +177,7 @@ pub trait Encoder {
 
     /// Concatenates two input sequences into one. Internal use only.
     #[cfg(test)]
-    fn test_concat(&self, a: &str, b: &str) -> ~str { a + b }
+    fn test_concat(&self, a: &str, b: &str) -> StrBuf { a.to_owned().append(b) }
 }
 
 /// Encoder converting a byte sequence into a Unicode string.
@@ -419,7 +419,9 @@ impl EncoderTrap {
             EncodeIgnore => true,
             EncodeNcrEscape => {
                 let mut escapes = StrBuf::new();
-                for ch in input.chars() { escapes.push_str(format!("&\\#{:d};", ch as int)); }
+                for ch in input.chars() {
+                    escapes.push_str(format!("&\\#{:d};", ch as int).as_slice());
+                }
                 reencode(encoder, escapes.as_slice(), output, "NcrEscape")
             },
             EncoderTrap(func) => func(encoder, input, output),
