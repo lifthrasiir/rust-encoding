@@ -98,20 +98,20 @@ mod tests {
                    Ok(vec!(65,99,109,101,38,35,49,54,57,59))); // Acme&#169;
 
         assert_eq!(all::ISO_8859_1.decode([99,97,102,233], DecodeStrict),
-                   Ok(StrBuf::from_str("caf\xe9")));
+                   Ok(String::from_str("caf\xe9")));
 
         assert!(all::ISO_8859_6.decode([65,99,109,101,169], DecodeStrict).is_err());
         assert_eq!(all::ISO_8859_6.decode([65,99,109,101,169], DecodeReplace),
-                   Ok(StrBuf::from_str("Acme\ufffd")));
+                   Ok(String::from_str("Acme\ufffd")));
         assert_eq!(all::ISO_8859_6.decode([65,99,109,101,169], DecodeIgnore),
-                   Ok(StrBuf::from_str("Acme")));
+                   Ok(String::from_str("Acme")));
     }
 
     #[test]
     fn test_readme_hex_ncr_escape() {
         // hexadecimal numeric character reference replacement
         fn hex_ncr_escape(_encoder: &mut Encoder, input: &str, output: &mut ByteWriter) -> bool {
-            let escapes: Vec<StrBuf> =
+            let escapes: Vec<String> =
                 input.chars().map(|ch| format!("&\\#x{:x};", ch as int)).collect();
             let escapes = escapes.concat();
             output.write_bytes(escapes.as_bytes());
@@ -121,7 +121,7 @@ mod tests {
         let orig = "Hello, 世界!".to_owned();
         let encoded = all::ASCII.encode(orig.as_slice(), HexNcrEscape).unwrap();
         let decoded = all::ASCII.decode(encoded.as_slice(), DecodeStrict).unwrap();
-        assert_eq!(decoded, StrBuf::from_str("Hello, &#x4e16;&#x754c;!"));
+        assert_eq!(decoded, String::from_str("Hello, &#x4e16;&#x754c;!"));
     }
 
     #[test]
@@ -131,11 +131,11 @@ mod tests {
         assert_eq!(euckr.whatwg_name(), Some("euc-kr")); // for the sake of compatibility
         let broken = &[0xbf, 0xec, 0xbf, 0xcd, 0xff, 0xbe, 0xd3];
         assert_eq!(euckr.decode(broken, DecodeReplace),
-                   Ok(StrBuf::from_str("\uc6b0\uc640\ufffd\uc559")));
+                   Ok(String::from_str("\uc6b0\uc640\ufffd\uc559")));
 
         // corresponding rust-encoding native API:
         assert_eq!(all::WINDOWS_949.decode(broken, DecodeReplace),
-                   Ok(StrBuf::from_str("\uc6b0\uc640\ufffd\uc559")));
+                   Ok(String::from_str("\uc6b0\uc640\ufffd\uc559")));
     }
 
 

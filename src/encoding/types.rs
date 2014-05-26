@@ -113,7 +113,7 @@ pub trait StringWriter {
     fn write_str(&mut self, s: &str);
 }
 
-impl StringWriter for StrBuf {
+impl StringWriter for String {
     fn writer_hint(&mut self, expectedlen: uint) {
         let newlen = self.len() + expectedlen;
         self.reserve(newlen);
@@ -177,7 +177,7 @@ pub trait Encoder {
 
     /// Concatenates two input sequences into one. Internal use only.
     #[cfg(test)]
-    fn test_concat(&self, a: &str, b: &str) -> StrBuf { a.to_owned().append(b) }
+    fn test_concat(&self, a: &str, b: &str) -> String { a.to_owned().append(b) }
 }
 
 /// Encoder converting a byte sequence into a Unicode string.
@@ -213,16 +213,16 @@ pub trait Decoder {
 
     /// A test-friendly interface to `raw_feed`. Internal use only.
     #[cfg(test)]
-    fn test_feed(&mut self, input: &[u8]) -> (uint, Option<CodecError>, StrBuf) {
-        let mut buf = StrBuf::new();
+    fn test_feed(&mut self, input: &[u8]) -> (uint, Option<CodecError>, String) {
+        let mut buf = String::new();
         let (nprocessed, err) = self.raw_feed(input, &mut buf);
         (nprocessed, err, buf)
     }
 
     /// A test-friendly interface to `raw_finish`. Internal use only.
     #[cfg(test)]
-    fn test_finish(&mut self) -> (Option<CodecError>, StrBuf) {
-        let mut buf = StrBuf::new();
+    fn test_finish(&mut self) -> (Option<CodecError>, String) {
+        let mut buf = String::new();
         let err = self.raw_finish(&mut buf);
         (err, buf)
     }
@@ -265,7 +265,7 @@ pub trait Encoding {
     fn encode(&'static self, input: &str, trap: EncoderTrap) -> Result<Vec<u8>,SendStr> {
         let mut encoder = self.encoder();
         let mut remaining = input;
-        let mut unprocessed = StrBuf::new();
+        let mut unprocessed = String::new();
         let mut ret = Vec::new();
 
         loop {
@@ -302,11 +302,11 @@ pub trait Encoding {
     /// On the decoder error `trap` is called,
     /// which may return a replacement string to continue processing,
     /// or a failure to return the error.
-    fn decode(&'static self, input: &[u8], trap: DecoderTrap) -> Result<StrBuf,SendStr> {
+    fn decode(&'static self, input: &[u8], trap: DecoderTrap) -> Result<String,SendStr> {
         let mut decoder = self.decoder();
         let mut remaining = input;
         let mut unprocessed = Vec::new();
-        let mut ret = StrBuf::new();
+        let mut ret = String::new();
 
         loop {
             let (offset, err) = decoder.raw_feed(remaining, &mut ret);
@@ -418,7 +418,7 @@ impl EncoderTrap {
             EncodeReplace => reencode(encoder, "?", output, "Replace"),
             EncodeIgnore => true,
             EncodeNcrEscape => {
-                let mut escapes = StrBuf::new();
+                let mut escapes = String::new();
                 for ch in input.chars() {
                     escapes.push_str(format!("&\\#{:d};", ch as int).as_slice());
                 }
@@ -434,7 +434,7 @@ impl EncoderTrap {
 /// and decoded a single string in memory.
 /// Return the result and the used encoding.
 pub fn decode(input: &[u8], trap: DecoderTrap, fallback_encoding: EncodingRef)
-           -> (Result<StrBuf,SendStr>, EncodingRef) {
+           -> (Result<String,SendStr>, EncodingRef) {
     use all::{UTF_8, UTF_16LE, UTF_16BE};
     if input.starts_with([0xEF, 0xBB, 0xBF]) {
         (UTF_8.decode(input.slice_from(3), trap), UTF_8 as EncodingRef)

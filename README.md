@@ -39,8 +39,8 @@ To decode a byte sequence with invalid sequences:
 
 ~~~~ {.rust}
 all::ISO_8859_6.decode([65,99,109,101,169], DecodeStrict); // => Err(...)
-all::ISO_8859_6.decode([65,99,109,101,169], DecodeReplace); // => Ok(StrBuf::from_str("Acme\ufffd"))
-all::ISO_8859_6.decode([65,99,109,101,169], DecodeIgnore); // => Ok(StrBuf::from_str("Acme"))
+all::ISO_8859_6.decode([65,99,109,101,169], DecodeReplace); // => Ok(String::from_str("Acme\ufffd"))
+all::ISO_8859_6.decode([65,99,109,101,169], DecodeIgnore); // => Ok(String::from_str("Acme"))
 ~~~~
 
 A practical example of custom encoder traps:
@@ -48,7 +48,7 @@ A practical example of custom encoder traps:
 ~~~~ {.rust}
 // hexadecimal numeric character reference replacement
 fn hex_ncr_escape(_encoder: &mut Encoder, input: &str, output: &mut ByteWriter) -> bool {
-    let escapes: Vec<StrBuf> =
+    let escapes: Vec<String> =
         input.chars().map(|ch| format!("&\\#x{:x};", ch as int)).collect();
     let escapes = escapes.concat();
     output.write_bytes(escapes.as_bytes());
@@ -58,7 +58,7 @@ static HexNcrEscape: EncoderTrap = EncoderTrap(hex_ncr_escape);
 
 let orig = "Hello, 世界!".to_owned();
 let encoded = all::ASCII.encode(orig.as_slice(), HexNcrEscape).unwrap();
-all::ASCII.decode(encoded.as_slice(), DecodeStrict); // => Ok(StrBuf::from_str("Hello, &#x4e16;&#x754c;!"))
+all::ASCII.decode(encoded.as_slice(), DecodeStrict); // => Ok(String::from_str("Hello, &#x4e16;&#x754c;!"))
 ~~~~
 
 Getting the encoding from the string label,
@@ -72,7 +72,7 @@ let broken = &[0xbf, 0xec, 0xbf, 0xcd, 0xff, 0xbe, 0xd3];
 euckr.decode(broken, DecodeReplace); // => Ok(Strbuf::from_str("\uc6b0\uc640\ufffd\uc559"))
 
 // corresponding rust-encoding native API:
-all::WINDOWS_949.decode(broken, DecodeReplace); // => Ok(StrBuf::from_str("\uc6b0\uc640\ufffd\uc559"))
+all::WINDOWS_949.decode(broken, DecodeReplace); // => Ok(String::from_str("\uc6b0\uc640\ufffd\uc559"))
 ~~~~
 
 Supported Encodings
