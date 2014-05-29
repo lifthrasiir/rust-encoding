@@ -18,10 +18,10 @@ macro_rules! assert_feed_ok(
         let (nprocessed, err, buf) = $this.test_feed(input.as_slice());
         let upto = err.map(|e| e.upto);
         assert!(processed.len() == nprocessed && None == upto,
-                "raw_feed should return {:?}, but instead returned {:?}",
+                "raw_feed should return {}, but instead returned {}",
                 (processed.len(), None::<uint>), (nprocessed, upto));
         assert!(output == buf.as_slice(),
-                "raw_feed should push {:?}, but instead pushed {:?}", output, buf.as_slice());
+                "raw_feed should push {}, but instead pushed {}", output, buf.as_slice());
     })
 )
 
@@ -39,10 +39,10 @@ macro_rules! assert_feed_err(
         let (nprocessed, err, buf) = $this.test_feed(input.as_slice());
         let upto = err.map(|e| e.upto);
         assert!(processed.len() == nprocessed && Some(processed.len() + problem.len()) == upto,
-                "raw_feed should return {:?}, but instead returned {:?}",
+                "raw_feed should return {}, but instead returned {}",
                 (processed.len(), Some(processed.len() + problem.len())), (nprocessed, upto));
         assert!(output == buf.as_slice(),
-                "raw_feed should push {:?}, but instead pushed {:?}", output, buf.as_slice());
+                "raw_feed should push {}, but instead pushed {}", output, buf.as_slice());
     })
 )
 
@@ -53,9 +53,9 @@ macro_rules! assert_finish_ok(
         let (err, buf) = $this.test_finish();
         let upto = err.map(|e| e.upto);
         assert!(None == upto,
-                "raw_finish should return {:?}, but instead returned {:?}", None::<uint>, upto);
+                "raw_finish should return {}, but instead returned {}", None::<uint>, upto);
         assert!(output == buf.as_slice(),
-                "raw_finish should push {:?}, but instead pushed {:?}", output, buf.as_slice());
+                "raw_finish should push {}, but instead pushed {}", output, buf.as_slice());
     })
 )
 
@@ -66,9 +66,9 @@ macro_rules! assert_finish_err(
         let (err, buf) = $this.test_finish();
         let upto = err.map(|e| e.upto);
         assert!(Some(0) == upto,
-                "raw_finish should return {:?}, but instead returned {:?}", Some(0), upto);
+                "raw_finish should return {}, but instead returned {}", Some(0), upto);
         assert!(output == buf.as_slice(),
-                "raw_finish should push {:?}, but instead pushed {:?}", output, buf.as_slice());
+                "raw_finish should push {}, but instead pushed {}", output, buf.as_slice());
     })
 )
 

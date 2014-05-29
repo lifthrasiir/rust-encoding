@@ -177,7 +177,7 @@ pub trait Encoder {
 
     /// Concatenates two input sequences into one. Internal use only.
     #[cfg(test)]
-    fn test_concat(&self, a: &str, b: &str) -> String { a.to_owned().append(b) }
+    fn test_concat(&self, a: &str, b: &str) -> String { a.to_string().append(b) }
 }
 
 /// Encoder converting a byte sequence into a Unicode string.

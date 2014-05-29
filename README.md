@@ -56,7 +56,7 @@ fn hex_ncr_escape(_encoder: &mut Encoder, input: &str, output: &mut ByteWriter) 
 }
 static HexNcrEscape: EncoderTrap = EncoderTrap(hex_ncr_escape);
 
-let orig = "Hello, 世界!".to_owned();
+let orig = "Hello, 世界!".to_string();
 let encoded = all::ASCII.encode(orig.as_slice(), HexNcrEscape).unwrap();
 all::ASCII.decode(encoded.as_slice(), DecodeStrict); // => Ok(String::from_str("Hello, &#x4e16;&#x754c;!"))
 ~~~~
