@@ -55,9 +55,9 @@ use encoding::all::ISO_8859_6;
 
 assert!(ISO_8859_6.decode([65,99,109,101,169], DecodeStrict).is_err());
 assert_eq!(ISO_8859_6.decode([65,99,109,101,169], DecodeReplace),
-           Ok(String::from_str("Acme\ufffd")));
+           Ok("Acme\ufffd".to_string()));
 assert_eq!(ISO_8859_6.decode([65,99,109,101,169], DecodeIgnore),
-           Ok(String::from_str("Acme")));
+           Ok("Acme".to_string()));
 ~~~~
 
 A practical example of custom encoder traps:
@@ -82,8 +82,7 @@ assert_eq!(ASCII.decode(encoded.as_slice(), DecodeStrict),
            Ok("Hello, &#x4e16;&#x754c;!".to_string()));
 ~~~~
 
-Getting the encoding from the string label,
-as specified in the WHATWG Encoding standard:
+Getting the encoding from the string label, as specified in WHATWG Encoding standard:
 
 ~~~~ {.rust}
 use encoding::{Encoding, DecodeReplace};
@@ -109,8 +108,8 @@ There are three main entry points to rust-encoding.
 **`Encoding`** is a single character encoding.
 It contains `encode` and `decode` methods for converting `String` to `Vec<u8>` and vice versa.
 For the error handling, they receive **traps** (`EncoderTrap` and `DecoderTrap` respectively)
-which replaces any error with some string (e.g. `U+FFFD`) or sequence (e.g. `?`).
-If you want to be stricter, use `EncodeStrict` and `DecodeStrict` traps to stop on an error.
+which replace any error with some string (e.g. `U+FFFD`) or sequence (e.g. `?`).
+You can also use `EncodeStrict` and `DecodeStrict` traps to stop on an error.
 
 There are two ways to get `Encoding`:
 
@@ -139,7 +138,7 @@ See the additional documents on `encoding::types` module for more information on
 
 ## Supported Encodings
 
-Rust-encoding covers all encodings specified by WHATWG Encoding Standard and some more.
+Rust-encoding covers all encodings specified by WHATWG Encoding Standard and some more:
 
 * 7-bit strict ASCII (`ascii`)
 * UTF-8 (`utf-8`)
