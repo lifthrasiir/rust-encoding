@@ -118,6 +118,7 @@ There are two ways to get `Encoding`:
   You should use them when the encoding would not change or only handful of them are required.
   Combined with link-time optimization, any unused encoding would be discarded from the binary.
 * `encoding::label` has functions to dynamically get an encoding from given string ("label").
+  They will return a static reference to the encoding, which type is also known as `EncodingRef`.
   It is useful when a list of required encodings is not available in advance,
   but it will result in the larger binary and missed optimization opportunities.
 
