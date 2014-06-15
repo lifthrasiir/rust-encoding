@@ -437,7 +437,7 @@ impl EncoderTrap {
             EncodeNcrEscape => {
                 let mut escapes = String::new();
                 for ch in input.chars() {
-                    escapes.push_str(format!("&\\#{:d};", ch as int).as_slice());
+                    escapes.push_str(format!("&#{:d};", ch as int).as_slice());
                 }
                 reencode(encoder, escapes.as_slice(), output, "NcrEscape")
             },

@@ -69,7 +69,7 @@ use encoding::all::ASCII;
 // hexadecimal numeric character reference replacement
 fn hex_ncr_escape(_encoder: &mut Encoder, input: &str, output: &mut ByteWriter) -> bool {
     let escapes: Vec<String> =
-        input.chars().map(|ch| format!("&\\#x{:x};", ch as int)).collect();
+        input.chars().map(|ch| format!("&#x{:x};", ch as int)).collect();
     let escapes = escapes.concat();
     output.write_bytes(escapes.as_bytes());
     true
