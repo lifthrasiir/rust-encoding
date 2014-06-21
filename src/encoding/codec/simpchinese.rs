@@ -298,10 +298,10 @@ impl Encoder for HZEncoder {
 
         let mut escaped = self.escaped;
         macro_rules! ensure_escaped(
-            () => (if !escaped { output.write_bytes(bytes!("~{")); escaped = true; })
+            () => (if !escaped { output.write_bytes(b"~{"); escaped = true; })
         )
         macro_rules! ensure_unescaped(
-            () => (if escaped { output.write_bytes(bytes!("~}")); escaped = false; })
+            () => (if escaped { output.write_bytes(b"~}"); escaped = false; })
         )
 
         for ((i,j), ch) in input.index_iter() {
@@ -423,14 +423,13 @@ mod hz_tests {
     #[test]
     fn test_encoder_valid() {
         let mut e = HZEncoding.encoder();
-        assert_feed_ok!(e, "A", "", bytes!("A"));
-        assert_feed_ok!(e, "BC", "", bytes!("BC"));
-        assert_feed_ok!(e, "", "", bytes!(""));
-        assert_feed_ok!(e, "\u4e2d\u534e\u4eba\u6c11\u5171\u548c\u56fd", "",
-                        bytes!("~{VP;*HKCq92:M9z"));
-        assert_feed_ok!(e, "\uff21\uff22\uff23", "", bytes!("#A#B#C"));
-        assert_feed_ok!(e, "1\u20ac/m", "", bytes!("~}1~{\"c~}/m"));
-        assert_feed_ok!(e, "~<\u00a4~\u00a4>~", "", bytes!("~~<~{!h~}~~~{!h~}>~~"));
+        assert_feed_ok!(e, "A", "", b"A");
+        assert_feed_ok!(e, "BC", "", b"BC");
+        assert_feed_ok!(e, "", "", b"");
+        assert_feed_ok!(e, "\u4e2d\u534e\u4eba\u6c11\u5171\u548c\u56fd", "", b"~{VP;*HKCq92:M9z");
+        assert_feed_ok!(e, "\uff21\uff22\uff23", "", b"#A#B#C");
+        assert_feed_ok!(e, "1\u20ac/m", "", b"~}1~{\"c~}/m");
+        assert_feed_ok!(e, "~<\u00a4~\u00a4>~", "", b"~~<~{!h~}~~~{!h~}>~~");
         assert_finish_ok!(e, []);
     }
 
@@ -447,20 +446,20 @@ mod hz_tests {
     #[test]
     fn test_decoder_valid() {
         let mut d = HZEncoding.decoder();
-        assert_feed_ok!(d, bytes!("A"), bytes!(""), "A");
-        assert_feed_ok!(d, bytes!("BC"), bytes!(""), "BC");
-        assert_feed_ok!(d, bytes!("D~~E"), bytes!("~"), "D~E");
-        assert_feed_ok!(d, bytes!("~F~\nG"), bytes!("~"), "~FG");
-        assert_feed_ok!(d, bytes!(""), bytes!(""), "");
-        assert_feed_ok!(d, bytes!("\nH"), bytes!("~"), "H");
-        assert_feed_ok!(d, bytes!("{VP~}~{;*HKCq92:M9z"), bytes!(""),
+        assert_feed_ok!(d, b"A", b"", "A");
+        assert_feed_ok!(d, b"BC", b"", "BC");
+        assert_feed_ok!(d, b"D~~E", b"~", "D~E");
+        assert_feed_ok!(d, b"~F~\nG", b"~", "~FG");
+        assert_feed_ok!(d, b"", b"", "");
+        assert_feed_ok!(d, b"\nH", b"~", "H");
+        assert_feed_ok!(d, b"{VP~}~{;*HKCq92:M9z", b"",
                         "\u4e2d\u534e\u4eba\u6c11\u5171\u548c\u56fd");
-        assert_feed_ok!(d, bytes!(""), bytes!("#"), "");
-        assert_feed_ok!(d, bytes!("A"), bytes!("~"), "\uff21");
-        assert_feed_ok!(d, bytes!("~#B~~#C"), bytes!("~"), "~\uff22~\uff23");
-        assert_feed_ok!(d, bytes!(""), bytes!(""), "");
-        assert_feed_ok!(d, bytes!("\n#D~{#E~\n#F~{#G"), bytes!("~"), "#D\uff25#F\uff27");
-        assert_feed_ok!(d, bytes!("}X~}YZ"), bytes!(""), "XYZ");
+        assert_feed_ok!(d, b"", b"#", "");
+        assert_feed_ok!(d, b"A", b"~", "\uff21");
+        assert_feed_ok!(d, b"~#B~~#C", b"~", "~\uff22~\uff23");
+        assert_feed_ok!(d, b"", b"", "");
+        assert_feed_ok!(d, b"\n#D~{#E~\n#F~{#G", b"~", "#D\uff25#F\uff27");
+        assert_feed_ok!(d, b"}X~}YZ", b"", "XYZ");
         assert_finish_ok!(d, "");
     }
 
@@ -469,9 +468,9 @@ mod hz_tests {
     #[test]
     fn test_decoder_feed_after_finish() {
         let mut d = HZEncoding.decoder();
-        assert_feed_ok!(d, bytes!("R;~{R;"), bytes!("R"), "R;\u4e00");
+        assert_feed_ok!(d, b"R;~{R;", b"R", "R;\u4e00");
         assert_finish_err!(d, "");
-        assert_feed_ok!(d, bytes!("R;~{R;"), bytes!(""), "R;\u4e00");
+        assert_feed_ok!(d, b"R;~{R;", b"", "R;\u4e00");
         assert_finish_ok!(d, "");
     }
 

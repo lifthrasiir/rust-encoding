@@ -512,13 +512,13 @@ impl Encoder for ISO2022JPEncoder {
 
         let mut st = self.st;
         macro_rules! ensure_ASCII(
-            () => (if st != ASCII { output.write_bytes(bytes!("\x1b(B")); st = ASCII; })
+            () => (if st != ASCII { output.write_bytes(b"\x1b(B"); st = ASCII; })
         )
         macro_rules! ensure_Katakana(
-            () => (if st != Katakana { output.write_bytes(bytes!("\x1b(I")); st = Katakana; })
+            () => (if st != Katakana { output.write_bytes(b"\x1b(I"); st = Katakana; })
         )
         macro_rules! ensure_Lead(
-            () => (if st != Lead { output.write_bytes(bytes!("\x1b$B")); st = Lead; })
+            () => (if st != Lead { output.write_bytes(b"\x1b$B"); st = Lead; })
         )
 
         for ((i,j), ch) in input.index_iter() {

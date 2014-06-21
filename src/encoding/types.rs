@@ -521,9 +521,9 @@ mod tests {
             &MyEncoding { flag: false, prohibit: '\u0080', prepend: "" };
 
         assert_eq!(COMPAT.encode("Hello\u203d I'm fine.", EncodeNcrEscape),
-                   Ok(Vec::from_slice(bytes!("Hello&#8253; I'm fine."))));
+                   Ok(Vec::from_slice(b"Hello&#8253; I'm fine.")));
         assert_eq!(INCOMPAT.encode("Hello\u203d I'm fine.", EncodeNcrEscape),
-                   Ok(Vec::from_slice(bytes!("Hello&#8253; I'm fine."))));
+                   Ok(Vec::from_slice(b"Hello&#8253; I'm fine.")));
     }
 
     #[test]
@@ -535,9 +535,9 @@ mod tests {
 
         // this should behave incorrectly as the encoding broke the assumption.
         assert_eq!(COMPAT.encode("Hello\u203d I'm fine.", EncodeNcrEscape),
-                   Ok(Vec::from_slice(bytes!("He*l*l*o&#8253;* *I*'*m* *f*i*n*e."))));
+                   Ok(Vec::from_slice(b"He*l*l*o&#8253;* *I*'*m* *f*i*n*e.")));
         assert_eq!(INCOMPAT.encode("Hello\u203d I'm fine.", EncodeNcrEscape),
-                   Ok(Vec::from_slice(bytes!("He*l*l*o*&*#*8*2*5*3*;* *I*'*m* *f*i*n*e."))));
+                   Ok(Vec::from_slice(b"He*l*l*o*&*#*8*2*5*3*;* *I*'*m* *f*i*n*e.")));
     }
 
     #[test]
