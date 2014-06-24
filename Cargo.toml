@@ -1,0 +1,9 @@
+[package]
+
+name = "encoding"
+version = "0.0.1"
+authors = ["Kang Seonghoon"]
+
+[[lib]]
+
+name = "encoding"
