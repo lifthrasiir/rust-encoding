@@ -65,8 +65,8 @@ macro_rules! assert_finish_err(
         let output = $this.test_norm_output(output);
         let (err, buf) = $this.test_finish();
         let upto = err.map(|e| e.upto);
-        assert!(Some(0) == upto,
-                "raw_finish should return {}, but instead returned {}", Some(0), upto);
+        assert!(Some(0u) == upto,
+                "raw_finish should return {}, but instead returned {}", Some(0u), upto);
         assert!(output == buf.as_slice(),
                 "raw_finish should push {}, but instead pushed {}", output, buf.as_slice());
     })
@@ -178,12 +178,12 @@ macro_rules! single_byte_tests(
     () => (
         mod tests {
             use super::{forward, backward};
+            use std::iter::range_inclusive;
             use test;
 
             #[test]
             fn test_correct_table() {
-                for i in range(128, 256) {
-                    let i = i as u8;
+                for i in range_inclusive(0x80u8, 0xff) {
                     let j = forward(i);
                     if j != 0xffff { assert_eq!(backward(j as u32), i); }
                 }
@@ -192,8 +192,8 @@ macro_rules! single_byte_tests(
             #[bench]
             fn bench_forward_sequential_128(bencher: &mut test::Bencher) {
                 bencher.iter(|| {
-                    for i in range(0x80, 0x100) {
-                        test::black_box(forward(i as u8));
+                    for i in range_inclusive(0x80u8, 0xff) {
+                        test::black_box(forward(i));
                     }
                 })
             }
@@ -217,9 +217,9 @@ macro_rules! multi_byte_tests(
     (make shared tests and benches with dups = $dups:expr) => ( // internal macro
         #[test]
         fn test_correct_table() {
+            use std::iter::range_inclusive;
             static DUPS: &'static [u16] = &$dups;
-            for i in range(0u32, 0x10000) {
-                let i = i as u16;
+            for i in range_inclusive(0u16, 0xffff) {
                 if DUPS.contains(&i) { continue; }
                 let j = forward(i);
                 if j != 0xffff { assert_eq!(backward(j), i); }
