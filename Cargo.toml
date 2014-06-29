@@ -1,0 +1,10 @@
+[package]
+
+name = "encoding"
+version = "0.1.0"
+authors = ["Kang Seonghoon <public+rust@mearie.org>"]
+
+[[lib]]
+
+name = "encoding"
+path = "src/encoding/lib.rs"
