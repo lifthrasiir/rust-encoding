@@ -271,9 +271,12 @@ macro_rules! multi_byte_tests(
 
             multi_byte_tests!(make shared tests and benches with dups = $dups)
 
+            static REMAP_MIN: u16 = $remap_min;
+            static REMAP_MAX: u16 = $remap_max;
+
             #[test]
             fn test_correct_remapping() {
-                for i in range::<u16>($remap_min, $remap_max+1) {
+                for i in range::<u16>(REMAP_MIN, REMAP_MAX+1) {
                     let j = forward(i);
                     if j != 0xffff {
                         let ii = backward_remapped(j);
@@ -309,24 +312,33 @@ macro_rules! multi_byte_range_tests(
             use super::{forward, backward};
             use test;
 
+            static MIN_KEY: u32 = $minkey;
+            static MAX_KEY: u32 = $maxkey;
+            static KEY_UBOUND: u32 = $keyubound;
+            static MIN_VALUE: u32 = $minvalue;
+            static MAX_VALUE: u32 = $maxvalue;
+            static VALUE_UBOUND: u32 = $valueubound;
+
             #[test]
+            #[allow(type_limits)]
             fn test_no_failure() {
-                for i in range::<u32>(if $minkey>0 {$minkey-1} else {0}, $maxkey+2) {
+                for i in range::<u32>(if MIN_KEY>0 {MIN_KEY-1} else {0}, MAX_KEY+2) {
                     forward(i);
                 }
-                for j in range::<u32>(if $minvalue>0 {$minvalue-1} else {0}, $maxvalue+2) {
+                for j in range::<u32>(if MIN_VALUE>0 {MIN_VALUE-1} else {0}, MAX_VALUE+2) {
                     backward(j);
                 }
             }
 
             #[test]
             fn test_correct_table() {
-                for i in range::<u32>($minkey, $maxkey+2) {
+                for i in range::<u32>(MIN_KEY, MAX_KEY+2) {
                     let j = forward(i);
                     if j == 0xffffffff { continue; }
                     let i_ = backward(j);
                     if i_ == 0xffffffff { continue; }
-                    assert!(i_ == i, "backward(forward({})) = backward({}) = {} != {}", i, j, i_, i);
+                    assert!(i_ == i,
+                            "backward(forward({})) = backward({}) = {} != {}", i, j, i_, i);
                 }
             }
 
@@ -338,7 +350,7 @@ macro_rules! multi_byte_range_tests(
                         test::black_box(forward(i));
                     }
                     start += 0x80;
-                    if start >= $keyubound { start = 0; }
+                    if start >= KEY_UBOUND { start = 0; }
                 })
             }
 
@@ -350,7 +362,7 @@ macro_rules! multi_byte_range_tests(
                         test::black_box(backward(i));
                     }
                     start += 0x80;
-                    if start >= $valueubound { start = 0; }
+                    if start >= VALUE_UBOUND { start = 0; }
                 })
             }
         }
