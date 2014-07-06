@@ -10,7 +10,6 @@ install:
   - (cd rust-nightly-x86_64-unknown-linux-gnu/ && sudo ./install.sh)
 #  - sudo apt-get install rust-nightly
 script:
-  - ./configure
   - make check RUSTFLAGS=
   - make doc
 branches:
