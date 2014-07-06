@@ -16,10 +16,10 @@ RUST_SRC = $(shell find src/encoding/. -type f -name '*.rs')
 all:	$(LIB)
 
 $(LIB): $(LIB_RS) $(RUST_SRC) $(EXT_DEPS)
-	$(RUSTC) $(RUSTFLAGS) $< -o $@
+	$(RUSTC) $(RUSTFLAGS) $< --out-dir $(dir $@)
 
 $(TEST_BIN): $(LIB_RS) $(RUST_SRC)
-	$(RUSTC) $(RUSTFLAGS) $< -o $@ --test
+	$(RUSTC) $(RUSTFLAGS) $< --out-dir $(dir $@) --test
 
 .PHONY: doctest
 doctest: $(LIB_RS) $(LIB)
