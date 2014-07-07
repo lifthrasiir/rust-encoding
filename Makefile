@@ -19,7 +19,7 @@ $(LIB): $(LIB_RS) $(RUST_SRC) $(EXT_DEPS)
 	$(RUSTC) $(RUSTFLAGS) $< --out-dir $(dir $@)
 
 $(TEST_BIN): $(LIB_RS) $(RUST_SRC)
-	$(RUSTC) $(RUSTFLAGS) $< --out-dir $(dir $@) --test
+	$(RUSTC) $(RUSTFLAGS) $< -o $@ --test
 
 .PHONY: doctest
 doctest: $(LIB_RS) $(LIB)
