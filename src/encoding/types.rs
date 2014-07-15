@@ -245,7 +245,7 @@ pub trait Decoder {
 /// A trait object using dynamic dispatch which is a sendable reference to the encoding,
 /// for code where the encoding is not known at compile-time.
 #[stable]
-pub type EncodingRef = &'static Encoding+Send;
+pub type EncodingRef = &'static Encoding+Send+Share;
 
 /// Character encoding.
 #[stable]
