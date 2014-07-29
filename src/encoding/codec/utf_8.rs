@@ -682,7 +682,7 @@ mod tests {
             let s = testutils::ASCII_TEXT.as_bytes();
             bencher.bytes = s.len() as u64;
             bencher.iter(|| test::black_box({
-                str::from_utf8_lossy(s)
+                String::from_utf8_lossy(s)
             }))
         }
     }
@@ -739,7 +739,7 @@ mod tests {
             let s = testutils::KOREAN_TEXT.as_bytes();
             bencher.bytes = s.len() as u64;
             bencher.iter(|| test::black_box({
-                str::from_utf8_lossy(s)
+                String::from_utf8_lossy(s)
             }))
         }
     }
@@ -784,7 +784,7 @@ mod tests {
             let s = testutils::INVALID_UTF8_TEXT;
             bencher.bytes = s.len() as u64;
             bencher.iter(|| test::black_box({
-                str::from_utf8_lossy(s)
+                String::from_utf8_lossy(s)
             }))
         }
     }
@@ -829,7 +829,7 @@ mod tests {
             let s = testutils::get_external_bench_data();
             bencher.bytes = s.len() as u64;
             bencher.iter(|| test::black_box({
-                str::from_utf8_lossy(s.as_slice())
+                String::from_utf8_lossy(s.as_slice())
             }))
         }
     }
