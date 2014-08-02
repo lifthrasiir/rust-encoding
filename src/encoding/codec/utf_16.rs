@@ -421,6 +421,25 @@ mod tests {
     }
 
     #[test]
+    fn test_decoder_invalid_partial() {
+        let mut d = UTF16BEEncoding.decoder();
+        assert_feed_ok!(d, [], [0x12], "");
+        assert_finish_err!(d, "");
+
+        let mut d = UTF16BEEncoding.decoder();
+        assert_feed_ok!(d, [], [0xd8], "");
+        assert_finish_err!(d, "");
+
+        let mut d = UTF16BEEncoding.decoder();
+        assert_feed_ok!(d, [], [0xd8, 0x08], "");
+        assert_finish_err!(d, "");
+
+        let mut d = UTF16BEEncoding.decoder();
+        assert_feed_ok!(d, [], [0xd8, 0x08, 0xdf], "");
+        assert_finish_err!(d, "");
+    }
+
+    #[test]
     fn test_decoder_invalid_lone_upper_surrogate() {
         let mut d = UTF16BEEncoding.decoder();
         assert_feed_ok!(d, [], [0xd8, 0x00], "");
