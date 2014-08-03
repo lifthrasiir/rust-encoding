@@ -161,6 +161,7 @@ ascii_compatible_stateful_decoder! {
 mod eucjp_tests {
     extern crate test;
     use super::EUCJPEncoding;
+    use std::iter::range_inclusive;
     use testutils;
     use types::*;
 
@@ -212,7 +213,163 @@ mod eucjp_tests {
         assert_finish_ok!(d, "");
     }
 
-    // TODO more tests
+    #[test]
+    fn test_decoder_valid_partial() {
+        let mut d = EUCJPEncoding.decoder();
+        assert_feed_ok!(d, [], [0xa4], "");
+        assert_feed_ok!(d, [0xcb], [0xa4], "\u306b");
+        assert_feed_ok!(d, [0xdb], [0xa4], "\u307b");
+        assert_feed_ok!(d, [0xf3], [], "\u3093");
+        assert_feed_ok!(d, [], [0x8e], "");
+        assert_feed_ok!(d, [0xc6], [0x8e], "\uff86");
+        assert_feed_ok!(d, [0xce], [0x8e], "\uff8e");
+        assert_feed_ok!(d, [0xdd], [], "\uff9d");
+        assert_feed_ok!(d, [], [0xc6], "");
+        assert_feed_ok!(d, [0xfc], [0xcb], "\u65e5");
+        assert_feed_ok!(d, [0xdc], [], "\u672c");
+        assert_feed_ok!(d, [], [0x8f], "");
+        assert_feed_ok!(d, [], [0xcb], "");
+        assert_feed_ok!(d, [0xc6], [0xec], "\u736c");
+        assert_feed_ok!(d, [0xb8], [], "\u8c78");
+        assert_feed_ok!(d, [], [0x8f, 0xcb], "");
+        assert_feed_ok!(d, [0xc6, 0xec, 0xb8], [], "\u736c\u8c78");
+        assert_finish_ok!(d, "");
+    }
+
+    #[test]
+    fn test_decoder_invalid_lone_lead_immediate_test_finish() {
+        for i in range_inclusive(0x8eu8, 0x8f) {
+            let mut d = EUCJPEncoding.decoder();
+            assert_feed_ok!(d, [], [i], ""); // wait for a trail
+            assert_finish_err!(d, "");
+        }
+
+        for i in range_inclusive(0xa1u8, 0xfe) {
+            let mut d = EUCJPEncoding.decoder();
+            assert_feed_ok!(d, [], [i], ""); // wait for a trail
+            assert_finish_err!(d, "");
+        }
+
+        // immediate failures
+        let mut d = EUCJPEncoding.decoder();
+        for i in range_inclusive(0x80u8, 0x8d) {
+            assert_feed_err!(d, [], [i], [], "");
+        }
+        for i in range_inclusive(0x90u8, 0xa0) {
+            assert_feed_err!(d, [], [i], [], "");
+        }
+        assert_feed_err!(d, [], [0xff], [], "");
+        assert_finish_ok!(d, "");
+    }
+
+    #[test]
+    fn test_decoder_invalid_lone_lead_followed_by_space() {
+        for i in range_inclusive(0x80u8, 0xff) {
+            let mut d = EUCJPEncoding.decoder();
+            assert_feed_err!(d, [], [i], [0x20], "");
+            assert_finish_ok!(d, "");
+        }
+    }
+
+    #[test]
+    fn test_decoder_invalid_lead_followed_by_invalid_trail() {
+        for i in range_inclusive(0x80u8, 0xff) {
+            let mut d = EUCJPEncoding.decoder();
+            assert_feed_err!(d, [], [i], [0x80], "");
+            assert_feed_err!(d, [], [i], [0xff], "");
+            assert_finish_ok!(d, "");
+        }
+    }
+
+    #[test]
+    fn test_decoder_invalid_lone_lead_for_0212_immediate_test_finish() {
+        for i in range_inclusive(0xa1u8, 0xfe) {
+            let mut d = EUCJPEncoding.decoder();
+            assert_feed_ok!(d, [], [0x8f, i], ""); // wait for a trail
+            assert_finish_err!(d, "");
+        }
+    }
+
+    #[test]
+    fn test_decoder_invalid_lone_lead_for_0212_immediate_test_finish_partial() {
+        for i in range_inclusive(0xa1u8, 0xfe) {
+            let mut d = EUCJPEncoding.decoder();
+            assert_feed_ok!(d, [], [0x8f], "");
+            assert_feed_ok!(d, [], [i], ""); // wait for a trail
+            assert_finish_err!(d, "");
+        }
+    }
+
+    #[test]
+    fn test_decoder_invalid_trail_for_0201() {
+        for i in range_inclusive(0u8, 0xa0) {
+            let mut d = EUCJPEncoding.decoder();
+            assert_feed_err!(d, [], [0x8e], [i], "");
+            assert_finish_ok!(d, "");
+        }
+
+        for i in range_inclusive(0xe0u8, 0xfe) {
+            let mut d = EUCJPEncoding.decoder();
+            assert_feed_err!(d, [], [0x8e, i], [], "");
+            assert_finish_ok!(d, "");
+        }
+    }
+
+    #[test]
+    fn test_decoder_invalid_trail_for_0201_partial() {
+        for i in range_inclusive(0u8, 0xa0) {
+            let mut d = EUCJPEncoding.decoder();
+            assert_feed_ok!(d, [], [0x8e], "");
+            assert_feed_err!(d, [], [], [i], "");
+            assert_finish_ok!(d, "");
+        }
+
+        for i in range_inclusive(0xe0u8, 0xfe) {
+            let mut d = EUCJPEncoding.decoder();
+            assert_feed_ok!(d, [], [0x8e], "");
+            assert_feed_err!(d, [], [i], [], "");
+            assert_finish_ok!(d, "");
+        }
+    }
+
+    #[test]
+    fn test_decoder_invalid_middle_for_0212() {
+        for i in range_inclusive(0u8, 0xa0) {
+            let mut d = EUCJPEncoding.decoder();
+            assert_feed_err!(d, [], [0x8f], [i], "");
+            assert_finish_ok!(d, "");
+        }
+    }
+
+    #[test]
+    fn test_decoder_invalid_middle_for_0212_partial() {
+        for i in range_inclusive(0u8, 0xa0) {
+            let mut d = EUCJPEncoding.decoder();
+            assert_feed_ok!(d, [], [0x8f], "");
+            assert_feed_err!(d, [], [], [i], "");
+            assert_finish_ok!(d, "");
+        }
+    }
+
+    #[test]
+    fn test_decoder_invalid_trail_for_0212() {
+        for i in range_inclusive(0u8, 0xa0) {
+            let mut d = EUCJPEncoding.decoder();
+            assert_feed_err!(d, [], [0x8f, 0xa1], [i], "");
+            assert_finish_ok!(d, "");
+        }
+    }
+
+    #[test]
+    fn test_decoder_invalid_trail_for_0212_partial() {
+        for i in range_inclusive(0u8, 0xa0) {
+            let mut d = EUCJPEncoding.decoder();
+            assert_feed_ok!(d, [], [0x8f], "");
+            assert_feed_ok!(d, [], [0xa1], "");
+            assert_feed_err!(d, [], [], [i], "");
+            assert_finish_ok!(d, "");
+        }
+    }
 
     #[test]
     fn test_decoder_feed_after_finish() {
@@ -343,7 +500,7 @@ ascii_compatible_stateful_decoder! {
 
     // shift_jis lead = 0x00
     initial state S0(ctx) {
-        case b @ 0x00..0x7f => ctx.emit(b as u32);
+        case b @ 0x00..0x80 => ctx.emit(b as u32);
         case b @ 0xa1..0xdf => ctx.emit(0xff61 + b as u32 - 0xa1);
         case b @ 0x81..0x9f | b @ 0xe0..0xfc => S1(ctx, b);
         case _ => ctx.err("invalid sequence");
@@ -362,6 +519,7 @@ ascii_compatible_stateful_decoder! {
 mod windows31j_tests {
     extern crate test;
     use super::Windows31JEncoding;
+    use std::iter::range_inclusive;
     use testutils;
     use types::*;
 
@@ -414,6 +572,7 @@ mod windows31j_tests {
         assert_feed_ok!(d, [], [], "");
         assert_feed_ok!(d, [0x5c], [], "\\");
         assert_feed_ok!(d, [0x7e], [], "~");
+        assert_feed_ok!(d, [0x80], [], "\u0080"); // compatibility
         assert_feed_ok!(d, [0x82, 0xc9, 0x82, 0xd9, 0x82, 0xf1], [], "\u306b\u307b\u3093");
         assert_feed_ok!(d, [0xc6, 0xce, 0xdd], [], "\uff86\uff8e\uff9d");
         assert_feed_ok!(d, [0x93, 0xfa, 0x96, 0x7b], [], "\u65e5\u672c");
@@ -431,7 +590,83 @@ mod windows31j_tests {
         assert_finish_ok!(d, "");
     }
 
-    // TODO more tests
+    #[test]
+    fn test_decoder_invalid_lone_lead_immediate_test_finish() {
+        for i in range_inclusive(0x81u8, 0x9f) {
+            let mut d = Windows31JEncoding.decoder();
+            assert_feed_ok!(d, [], [i], ""); // wait for a trail
+            assert_finish_err!(d, "");
+        }
+
+        for i in range_inclusive(0xe0u8, 0xfc) {
+            let mut d = Windows31JEncoding.decoder();
+            assert_feed_ok!(d, [], [i], ""); // wait for a trail
+            assert_finish_err!(d, "");
+        }
+
+        // A0/FD/FE/FF: immediate failure
+        let mut d = Windows31JEncoding.decoder();
+        assert_feed_err!(d, [], [0xa0], [], "");
+        assert_feed_err!(d, [], [0xfd], [], "");
+        assert_feed_err!(d, [], [0xfe], [], "");
+        assert_feed_err!(d, [], [0xff], [], "");
+        assert_finish_ok!(d, "");
+    }
+
+    #[test]
+    fn test_decoder_invalid_lone_lead_followed_by_space() {
+        for i in range_inclusive(0x81u8, 0x9f) {
+            let mut d = Windows31JEncoding.decoder();
+            assert_feed_err!(d, [], [i], [0x20], "");
+            assert_finish_ok!(d, "");
+        }
+
+        for i in range_inclusive(0xe0u8, 0xfc) {
+            let mut d = Windows31JEncoding.decoder();
+            assert_feed_err!(d, [], [i], [0x20], "");
+            assert_finish_ok!(d, "");
+        }
+    }
+
+    #[test]
+    fn test_decoder_invalid_lead_followed_by_invalid_trail() {
+        for i in range_inclusive(0x81u8, 0x9f) {
+            let mut d = Windows31JEncoding.decoder();
+            assert_feed_err!(d, [], [i], [0x3f], "");
+            assert_feed_err!(d, [], [i], [0x7f], "");
+            assert_feed_err!(d, [], [i], [0xfd], "");
+            assert_feed_err!(d, [], [i], [0xfe], "");
+            assert_feed_err!(d, [], [i], [0xff], "");
+            assert_finish_ok!(d, "");
+        }
+
+        for i in range_inclusive(0xe0u8, 0xfc) {
+            let mut d = Windows31JEncoding.decoder();
+            assert_feed_err!(d, [], [i], [0x3f], "");
+            assert_feed_err!(d, [], [i], [0x7f], "");
+            assert_feed_err!(d, [], [i], [0xfd], "");
+            assert_feed_err!(d, [], [i], [0xfe], "");
+            assert_feed_err!(d, [], [i], [0xff], "");
+            assert_finish_ok!(d, "");
+        }
+    }
+
+    #[test]
+    fn test_decoder_invalid_lead_followed_by_invalid_trail_partial() {
+        for i in range_inclusive(0x81u8, 0x9f) {
+            let mut d = Windows31JEncoding.decoder();
+            assert_feed_ok!(d, [], [i], "");
+            assert_feed_err!(d, [], [], [0xff], "");
+            assert_finish_ok!(d, "");
+        }
+
+        for i in range_inclusive(0xe0u8, 0xfc) {
+            let mut d = Windows31JEncoding.decoder();
+            assert_feed_ok!(d, [], [i], "");
+            assert_feed_err!(d, [], [], [0xff], "");
+            assert_finish_ok!(d, "");
+        }
+    }
 
     #[test]
     fn test_decoder_feed_after_finish() {
@@ -692,6 +927,7 @@ mod iso2022jp_tests {
         let mut e = ISO2022JPEncoding.encoder();
         assert_feed_ok!(e, "A", "", [0x41]);
         assert_feed_ok!(e, "BC", "", [0x42, 0x43]);
+        assert_feed_ok!(e, "\x1b\x24\x42", "", [0x1b, 0x24, 0x42]); // no round-trip guarantee
         assert_feed_ok!(e, "", "", []);
         assert_feed_ok!(e, "\u00a5", "", [0x5c]);
         assert_feed_ok!(e, "\u203e", "", [0x7e]);
@@ -794,7 +1030,190 @@ mod iso2022jp_tests {
         assert_finish_ok!(d, "");
     }
 
-    // TODO more tests
+    #[test]
+    fn test_decoder_valid_partial() {
+        let mut d = ISO2022JPEncoding.decoder();
+
+        assert_feed_ok!(d, [], [0x1b], "");
+        assert_feed_ok!(d, [], [0x28], "");
+        assert_feed_ok!(d, [0x4a, 0x41], [], "A");
+        assert_feed_ok!(d, [], [0x1b, 0x28], "");
+        assert_feed_ok!(d, [0x4a, 0x42], [0x1b], "B");
+        assert_feed_ok!(d, [0x28, 0x4a, 0x43], [], "C");
+
+        assert_feed_ok!(d, [], [0x1b], "");
+        assert_feed_ok!(d, [], [0x24], "");
+        assert_feed_ok!(d, [0x42], [0x24], "");
+        assert_feed_ok!(d, [0x4b], [0x1b, 0x24], "\u306b");
+        assert_feed_ok!(d, [0x42, 0x24, 0x5b], [], "\u307b");
+        assert_feed_ok!(d, [], [0x1b], "");
+        assert_feed_ok!(d, [0x24, 0x42, 0x24, 0x73], [], "\u3093");
+
+        assert_feed_ok!(d, [], [0x1b], "");
+        assert_feed_ok!(d, [], [0x28], "");
+        assert_feed_ok!(d, [0x49, 0x46], [], "\uff86");
+        assert_feed_ok!(d, [], [0x1b, 0x28], "");
+        assert_feed_ok!(d, [0x49, 0x4e], [0x1b], "\uff8e");
+        assert_feed_ok!(d, [0x28, 0x49, 0x5d], [], "\uff9d");
+
+        assert_feed_ok!(d, [], [0x1b, 0x24], "");
+        assert_feed_ok!(d, [], [0x28], "");
+        assert_feed_ok!(d, [0x44], [0x4b], "");
+        assert_feed_ok!(d, [0x46], [0x1b, 0x24, 0x28], "\u736c");
+        assert_feed_ok!(d, [0x44, 0x4b, 0x46], [], "\u736c");
+
+        assert_finish_ok!(d, "");
+    }
+
+    #[test]
+    fn test_decoder_carriage_return() {
+        // CR in Lead state "resets to ASCII"
+        let mut d = ISO2022JPEncoding.decoder();
+        assert_feed_ok!(d, [0x1b, 0x24, 0x42,
+                            0x25, 0x4d,
+                            0x0a,
+                            0x25, 0x4d], [], "\u30cd\n\x25\x4d");
+        assert_feed_ok!(d, [0x1b, 0x24, 0x28, 0x44,
+                            0x50, 0x4b,
+                            0x0a,
+                            0x50, 0x4b], [], "\u793b\n\x50\x4b");
+        assert_finish_ok!(d, "");
+
+        // other states don't allow CR
+        let mut d = ISO2022JPEncoding.decoder();
+        assert_feed_err!(d, [0x1b, 0x28, 0x49, 0x48], [0x0a], [], "\uff88"); // Katakana
+        assert_feed_err!(d, [0x1b, 0x24, 0x42], [0x25, 0x0a], [], ""); // Trail
+        assert_finish_ok!(d, "");
+    }
+
+    #[test]
+    fn test_decoder_invalid_partial() {
+        let mut d = ISO2022JPEncoding.decoder();
+        assert_feed_ok!(d, [0x1b, 0x24, 0x42, 0x24, 0x4b], [0x24], "\u306b");
+        assert_finish_err!(d, "");
+
+        let mut d = ISO2022JPEncoding.decoder();
+        assert_feed_ok!(d, [0x1b, 0x24, 0x28, 0x44, 0x4b, 0x46], [0x50], "\u736c");
+        assert_finish_err!(d, "");
+    }
+
+    #[test]
+    fn test_decoder_invalid_partial_escape() {
+        let mut d = ISO2022JPEncoding.decoder();
+        assert_feed_ok!(d, [], [0x1b], "");
+        assert_finish_err!(d, "");
+
+        let mut d = ISO2022JPEncoding.decoder();
+        assert_feed_ok!(d, [], [0x1b, 0x24], "");
+        assert_finish_err!(d, "");
+
+        let mut d = ISO2022JPEncoding.decoder();
+        assert_feed_ok!(d, [], [0x1b, 0x24, 0x28], "");
+        assert_finish_err!(d, "");
+
+        let mut d = ISO2022JPEncoding.decoder();
+        assert_feed_ok!(d, [], [0x1b, 0x28], "");
+        assert_finish_err!(d, "");
+    }
+
+    #[test]
+    fn test_decoder_invalid_escape() {
+        // also tests allowed but never used escape codes in ISO 2022
+        let mut d = ISO2022JPEncoding.decoder();
+        macro_rules! reset(() => (
+            assert_feed_ok!(d, [0x41, 0x42, 0x43, 0x1b, 0x24, 0x42, 0x21, 0x21], [], "ABC\u3000")))
+
+        reset!()
+        assert_feed_ok!(d, [], [0x1b], "");
+        assert_feed_err!(d, [], [], [0x00], "");
+        reset!()
+        assert_feed_err!(d, [], [0x1b], [0x0a], "");
+        reset!()
+        assert_feed_err!(d, [], [0x1b], [0x20], "");
+        reset!()
+        assert_feed_err!(d, [], [0x1b], [0x21, 0x5a], ""); // ESC ! Z (CZD)
+        reset!()
+        assert_feed_err!(d, [], [0x1b], [0x22, 0x5a], ""); // ESC " Z (C1D)
+        reset!()
+        assert_feed_err!(d, [], [0x1b], [0x24, 0x5a], ""); // ESC $ Z (GZDM4)
+        reset!()
+        assert_feed_ok!(d, [], [0x1b, 0x24], "");
+        assert_feed_err!(d, [], [], [0x5a], ""); // XXX should include 0x24 as well
+        reset!()
+        assert_feed_err!(d, [], [0x1b], [0x24, 0x28, 0x5a], ""); // ESC $ ( Z (GZDM4)
+        reset!()
+        assert_feed_ok!(d, [], [0x1b, 0x24, 0x28], "");
+        assert_feed_err!(d, [], [], [0x5a], ""); // XXX should include 0x24 and 0x28 as well
+        reset!()
+        assert_feed_err!(d, [], [0x1b], [0x24, 0x29, 0x5a], ""); // ESC $ ) Z (G1DM4)
+        reset!()
+        assert_feed_err!(d, [], [0x1b], [0x24, 0x2a, 0x5a], ""); // ESC $ * Z (G2DM4)
+        reset!()
+        assert_feed_err!(d, [], [0x1b], [0x24, 0x2b, 0x5a], ""); // ESC $ + Z (G3DM4)
+        reset!()
+        assert_feed_err!(d, [], [0x1b], [0x24, 0x2d, 0x5a], ""); // ESC $ - Z (G1DM6)
+        reset!()
+        assert_feed_err!(d, [], [0x1b], [0x24, 0x2e, 0x5a], ""); // ESC $ . Z (G2DM6)
+        reset!()
+        assert_feed_err!(d, [], [0x1b], [0x24, 0x2f, 0x5a], ""); // ESC $ / Z (G3DM6)
+        reset!()
+        assert_feed_err!(d, [], [0x1b], [0x25, 0x5a], ""); // ESC % Z (DOCS)
+        reset!()
+        assert_feed_err!(d, [], [0x1b], [0x25, 0x2f, 0x5a], ""); // ESC % / Z (DOCS)
+        reset!()
+        assert_feed_err!(d, [], [0x1b], [0x28, 0x5a], ""); // ESC ( Z (GZD4)
+        reset!()
+        assert_feed_ok!(d, [], [0x1b, 0x28], "");
+        assert_feed_err!(d, [], [], [0x5a], ""); // XXX should include 0x28 as well
+        reset!()
+        assert_feed_err!(d, [], [0x1b], [0x29, 0x5a], ""); // ESC ) Z (G1D4)
+        reset!()
+        assert_feed_err!(d, [], [0x1b], [0x2a, 0x5a], ""); // ESC * Z (G2D4)
+        reset!()
+        assert_feed_err!(d, [], [0x1b], [0x2b, 0x5a], ""); // ESC + Z (G3D4)
+        reset!()
+        assert_feed_err!(d, [], [0x1b], [0x2d, 0x5a], ""); // ESC - Z (G1D6)
+        reset!()
+        assert_feed_err!(d, [], [0x1b], [0x2e, 0x5a], ""); // ESC . Z (G2D6)
+        reset!()
+        assert_feed_err!(d, [], [0x1b], [0x2f, 0x5a], ""); // ESC / Z (G3D6)
+        reset!()
+        assert_feed_err!(d, [], [0x1b], [0x4e], ""); // ESC N (SS2)
+        reset!()
+        assert_feed_err!(d, [], [0x1b], [0x4f], ""); // ESC O (SS3)
+        reset!()
+        assert_feed_err!(d, [], [0x1b], [0x6e], ""); // ESC n (LS2)
+        reset!()
+        assert_feed_err!(d, [], [0x1b], [0x6f], ""); // ESC o (LS3)
+        reset!()
+        assert_feed_err!(d, [], [0x1b], [0x7c], ""); // ESC | (LS3R)
+        reset!()
+        assert_feed_err!(d, [], [0x1b], [0x7d], ""); // ESC } (LS2R)
+        reset!()
+        assert_feed_err!(d, [], [0x1b], [0x7e], ""); // ESC ~ (LS1R)
+        reset!()
+        assert_feed_err!(d, [], [0x1b], [0xff], "");
+        reset!()
+        assert_finish_ok!(d, "");
+    }
+
+    #[test]
+    fn test_decoder_invalid_out_or_range() {
+        let mut d = ISO2022JPEncoding.decoder();
+        assert_feed_err!(d, [], [0x80], [], "");
+        assert_feed_err!(d, [], [0xff], [], "");
+        assert_feed_err!(d, [0x1b, 0x24, 0x42], [0x80, 0x21], [], "");
+        assert_feed_err!(d, [0x1b, 0x24, 0x42], [0x21, 0x80], [], "");
+        assert_feed_err!(d, [0x1b, 0x24, 0x42], [0x20, 0x21], [], "");
+        assert_feed_err!(d, [0x1b, 0x24, 0x42], [0x21, 0x20], [], "");
+        assert_feed_err!(d, [0x1b, 0x28, 0x49], [0x20], [], "");
+        assert_feed_err!(d, [0x1b, 0x28, 0x49], [0x60], [], "");
+        assert_feed_err!(d, [0x1b, 0x24, 0x28, 0x44], [0x80, 0x21], [], "");
+        assert_feed_err!(d, [0x1b, 0x24, 0x28, 0x44], [0x21, 0x80], [], "");
+        assert_feed_err!(d, [0x1b, 0x24, 0x28, 0x44], [0x20, 0x21], [], "");
+        assert_feed_err!(d, [0x1b, 0x24, 0x28, 0x44], [0x21, 0x20], [], "");
+        assert_finish_ok!(d, "");
+    }
 
     #[test]
     fn test_decoder_feed_after_finish() {
