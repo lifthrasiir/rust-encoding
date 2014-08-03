@@ -201,7 +201,66 @@ mod gb18030_tests {
         assert_finish_ok!(d, "");
     }
 
-    // TODO more tests
+    #[test]
+    fn test_decoder_valid_partial() {
+        let mut d = GB18030Encoding.decoder();
+        assert_feed_ok!(d, [], [0xa1], "");
+        assert_feed_ok!(d, [0xa1], [], "\u3000");
+        assert_feed_ok!(d, [], [0x81], "");
+        assert_feed_ok!(d, [], [0x30], "");
+        assert_feed_ok!(d, [], [0x81], "");
+        assert_feed_ok!(d, [0x30], [], "\u0080");
+        assert_feed_ok!(d, [], [0x81], "");
+        assert_feed_ok!(d, [], [0x30], "");
+        assert_feed_ok!(d, [0x81, 0x31], [], "\u0081");
+        assert_feed_ok!(d, [], [0x81], "");
+        assert_feed_ok!(d, [0x30, 0x81, 0x32], [], "\u0082");
+        assert_feed_ok!(d, [], [0x81], "");
+        assert_feed_ok!(d, [], [0x30, 0x81], "");
+        assert_feed_ok!(d, [0x33], [], "\u0083");
+        assert_feed_ok!(d, [], [0x81, 0x30], "");
+        assert_feed_ok!(d, [], [0x81], "");
+        assert_feed_ok!(d, [0x34], [], "\u0084");
+        assert_feed_ok!(d, [], [0x81, 0x30], "");
+        assert_feed_ok!(d, [0x81, 0x35], [], "\u0085");
+        assert_feed_ok!(d, [], [0x81, 0x30, 0x81], "");
+        assert_feed_ok!(d, [0x36], [], "\u0086");
+        assert_finish_ok!(d, "");
+    }
+
+    fn test_decoder_invalid_partial() {
+        let mut d = GB18030Encoding.decoder();
+        assert_feed_ok!(d, [], [0xa1], "");
+        assert_finish_err!(d, "");
+
+        let mut d = GB18030Encoding.decoder();
+        assert_feed_ok!(d, [], [0x81], "");
+        assert_finish_err!(d, "");
+
+        let mut d = GB18030Encoding.decoder();
+        assert_feed_ok!(d, [], [0x81, 0x30], "");
+        assert_finish_err!(d, "");
+
+        let mut d = GB18030Encoding.decoder();
+        assert_feed_ok!(d, [], [0x81, 0x30, 0x81], "");
+        assert_finish_err!(d, "");
+    }
+
+    fn test_decoder_invalid_out_of_range() {
+        let mut d = GB18030Encoding.decoder();
+        assert_feed_err!(d, [], [0xff], [], "");
+        assert_feed_err!(d, [], [0x81], [0x00], "");
+        assert_feed_err!(d, [], [0x81], [0x7f], "");
+        assert_feed_err!(d, [], [0x81], [0xff], "");
+        assert_feed_err!(d, [], [0x81], [0x31, 0x00], "");
+        assert_feed_err!(d, [], [0x81], [0x31, 0x80], "");
+        assert_feed_err!(d, [], [0x81], [0x31, 0xff], "");
+        assert_feed_err!(d, [], [0x81], [0x31, 0x81, 0x00], "");
+        assert_feed_err!(d, [], [0x81], [0x31, 0x81, 0x2f], "");
+        assert_feed_err!(d, [], [0x81], [0x31, 0x81, 0x3a], "");
+        assert_feed_err!(d, [], [0x81], [0x31, 0x81, 0xff], "");
+        assert_finish_ok!(d, "");
+    }
 
     #[test]
     fn test_decoder_invalid_boundary() {
@@ -375,8 +434,8 @@ stateful_decoder! {
     checkpoint state B0(ctx) {
         case 0x7e => B1(ctx);
         case b @ 0x20..0x7f => B2(ctx, b);
-        case 0x0a => A0(ctx);
-        case _ => ctx.err("invalid sequence");
+        case 0x0a => ctx.err("invalid sequence"); // error *and* reset
+        case _ => ctx.err("invalid sequence"), B0(ctx);
         final => ctx.reset();
     }
 
@@ -396,13 +455,13 @@ stateful_decoder! {
         case 0x7d => A0(ctx);
         case 0x7e => ctx.emit(0x7e), B0(ctx);
         case 0x0a => A0(ctx);
-        case _ => ctx.backup_and_err(1, "invalid sequence");
+        case _ => ctx.backup_and_err(1, "invalid sequence"), B0(ctx);
         final => ctx.err("incomplete sequence");
     }
 
     // hz-gb-2312 flag = set, hz-gb-2312 lead != 0 & != 0x7e
     state B2(ctx, lead: u8) {
-        case 0x0a => ctx.err("invalid sequence"), A0(ctx); // should reset the state!
+        case 0x0a => ctx.err("invalid sequence"); // should reset the state!
         case b =>
             match map_two_bytes(lead, b) {
                 0xffff => ctx.err("invalid sequence"),
@@ -452,7 +511,7 @@ mod hz_tests {
         assert_feed_ok!(d, b"~F~\nG", b"~", "~FG");
         assert_feed_ok!(d, b"", b"", "");
         assert_feed_ok!(d, b"\nH", b"~", "H");
-        assert_feed_ok!(d, b"{VP~}~{;*HKCq92:M9z", b"",
+        assert_feed_ok!(d, b"{VP~}~{;*~{HKCq92:M9z", b"",
                         "\u4e2d\u534e\u4eba\u6c11\u5171\u548c\u56fd");
         assert_feed_ok!(d, b"", b"#", "");
         assert_feed_ok!(d, b"A", b"~", "\uff21");
@@ -463,7 +522,62 @@ mod hz_tests {
         assert_finish_ok!(d, "");
     }
 
-    // TODO more tests
+    #[test]
+    fn test_decoder_invalid_out_or_range() {
+        let mut d = HZEncoding.decoder();
+        assert_feed_ok!(d, b"~{", b"", "");
+        assert_feed_err!(d, b"", b"\x20\x20", b"", "");
+        assert_feed_err!(d, b"", b"\x20\x7f", b"", ""); // do not reset the state (except for CR)
+        assert_feed_err!(d, b"", b"\x21\x7f", b"", "");
+        assert_feed_err!(d, b"", b"\x7f\x20", b"", "");
+        assert_feed_err!(d, b"", b"\x7f\x21", b"", "");
+        assert_feed_err!(d, b"", b"\x7f\x7f", b"", "");
+        assert_finish_ok!(d, "");
+    }
+
+    #[test]
+    fn test_decoder_invalid_carriage_return() {
+        // CR in the multibyte mode is invalid but *also* resets the state
+        let mut d = HZEncoding.decoder();
+        assert_feed_ok!(d, b"~{#A", b"", "\uff21");
+        assert_feed_err!(d, b"", b"\n", b"", "");
+        assert_feed_ok!(d, b"#B~{#C", b"", "#B\uff23");
+        assert_feed_err!(d, b"", b"#\n", b"", "");
+        assert_feed_ok!(d, b"#D", b"", "#D");
+        assert_finish_ok!(d, "");
+    }
+
+    #[test]
+    fn test_decoder_invalid_partial() {
+        let mut d = HZEncoding.decoder();
+        assert_feed_ok!(d, b"", b"~", "");
+        assert_finish_err!(d, "");
+
+        let mut d = HZEncoding.decoder();
+        assert_feed_ok!(d, b"~{", b"#", "");
+        assert_finish_err!(d, "");
+
+        let mut d = HZEncoding.decoder();
+        assert_feed_ok!(d, b"~{#A", b"~", "\uff21");
+        assert_finish_err!(d, "");
+    }
+
+    #[test]
+    fn test_decoder_invalid_escape() {
+        let mut d = HZEncoding.decoder();
+        assert_feed_ok!(d, b"#A", b"", "#A");
+        assert_feed_err!(d, b"", b"~", b"xy", "");
+        assert_feed_ok!(d, b"#B", b"", "#B");
+        assert_feed_ok!(d, b"", b"~", "");
+        assert_feed_err!(d, b"", b"", b"xy", "");
+        assert_feed_ok!(d, b"#C~{#D", b"", "#C\uff24");
+        assert_feed_err!(d, b"", b"~", b"xy", "");
+        assert_feed_ok!(d, b"#E", b"", "\uff25"); // does not reset to ASCII
+        assert_feed_ok!(d, b"", b"~", "");
+        assert_feed_err!(d, b"", b"", b"xy", "");
+        assert_feed_ok!(d, b"#F~}#G", b"", "\uff26#G");
+        assert_finish_ok!(d, "");
+    }
 
     #[test]
     fn test_decoder_feed_after_finish() {
