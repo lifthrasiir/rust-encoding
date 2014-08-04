@@ -9,8 +9,11 @@ use codec;
 
 macro_rules! unique(
     ($(#[$attr:meta])* var=$var:ident, mod=$($module:ident)::+, val=$val:ident) => (
-        $(#[$attr])* pub static $var: &'static $($module)::+::$val = &$($module)::+::$val;
-    )
+        unique!($(#[$attr])* var=$var, mod=$($module)::+, ty=$val, val=$val)
+    );
+    ($(#[$attr:meta])* var=$var:ident, mod=$($module:ident)::+, ty=$ty:ident, val=$val:ident) => (
+        $(#[$attr])* pub static $var: &'static $($module)::+::$ty = &$($module)::+::$val;
+    );
 )
 
 macro_rules! singlebyte(
@@ -65,8 +68,8 @@ singlebyte!(#[stable] var=WINDOWS_1258, mod=index::windows_1258, name|whatwg="wi
 singlebyte!(#[stable] var=MAC_CYRILLIC, mod=index::x_mac_cyrillic,
                       name="mac-cyrillic", whatwg=Some("x-mac-cyrillic"))
 unique!(#[stable] var=UTF_8, mod=codec::utf_8, val=UTF8Encoding)
-unique!(#[stable] var=UTF_16LE, mod=codec::utf_16, val=UTF16LEEncoding)
-unique!(#[stable] var=UTF_16BE, mod=codec::utf_16, val=UTF16BEEncoding)
+unique!(#[stable] var=UTF_16LE, mod=codec::utf_16, ty=UTF16LEEncoding, val=UTF16Encoding)
+unique!(#[stable] var=UTF_16BE, mod=codec::utf_16, ty=UTF16BEEncoding, val=UTF16Encoding)
 unique!(#[stable] var=WINDOWS_949, mod=codec::korean, val=Windows949Encoding)
 unique!(#[unstable] var=EUC_JP, mod=codec::japanese, val=EUCJPEncoding)
 unique!(#[unstable] var=WINDOWS_31J, mod=codec::japanese, val=Windows31JEncoding)
