@@ -228,6 +228,7 @@ mod gb18030_tests {
         assert_finish_ok!(d, "");
     }
 
+    #[test]
     fn test_decoder_invalid_partial() {
         let mut d = GB18030Encoding.decoder();
         assert_feed_ok!(d, [], [0xa1], "");
@@ -246,6 +247,7 @@ mod gb18030_tests {
         assert_finish_err!(d, "");
     }
 
+    #[test]
     fn test_decoder_invalid_out_of_range() {
         let mut d = GB18030Encoding.decoder();
         assert_feed_err!(d, [], [0xff], [], "");

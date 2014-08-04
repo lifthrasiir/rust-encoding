@@ -154,7 +154,8 @@ mod windows949_tests {
         assert_feed_ok!(d, [], [], "");
         assert_feed_ok!(d, [0xb0, 0xa1], [], "\uac00");
         assert_feed_ok!(d, [0xb3, 0xaa, 0xb4, 0xd9], [], "\ub098\ub2e4");
-        assert_feed_ok!(d, [0x94, 0xee, 0xa4, 0xbb, 0xc6, 0x52], [], "\ubdc1\u314b\ud7a3");
+        assert_feed_ok!(d, [0x94, 0xee, 0xa4, 0xbb, 0xc6, 0x52, 0xc1, 0x64], [],
+                        "\ubdc1\u314b\ud7a3\ud58f");
         assert_finish_ok!(d, "");
     }
 
@@ -165,7 +166,8 @@ mod windows949_tests {
         assert_feed_ok!(d, [0xa1], [], "\uac00");
         assert_feed_ok!(d, [0xb3, 0xaa], [0xb4], "\ub098");
         assert_feed_ok!(d, [0xd9], [0x94], "\ub2e4");
-        assert_feed_ok!(d, [0xee, 0xa4, 0xbb, 0xc6, 0x52], [], "\ubdc1\u314b\ud7a3");
+        assert_feed_ok!(d, [0xee, 0xa4, 0xbb], [0xc6], "\ubdc1\u314b");
+        assert_feed_ok!(d, [0x52, 0xc1, 0x64], [], "\ud7a3\ud58f");
         assert_finish_ok!(d, "");
     }
 

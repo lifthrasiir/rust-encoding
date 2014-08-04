@@ -200,6 +200,13 @@ mod bigfive2003_tests {
             assert_feed_err!(d, [], [i, 0x80], [0x20], "");
             assert_feed_err!(d, [], [i, 0xff], [0x20], "");
             assert_finish_ok!(d, "");
+
+            let mut d = BigFive2003Encoding.decoder();
+            assert_feed_ok!(d, [], [i], "");
+            assert_feed_err!(d, [], [0x80], [0x20], "");
+            assert_feed_ok!(d, [], [i], "");
+            assert_feed_err!(d, [], [0xff], [0x20], "");
+            assert_finish_ok!(d, "");
         }
 
         // 80/FF is not a valid lead and the trail is not consumed
