@@ -122,6 +122,7 @@ ascii_compatible_stateful_decoder! {
 mod bigfive2003_tests {
     extern crate test;
     use super::BigFive2003Encoding;
+    use std::iter::range_inclusive;
     use testutils;
     use types::*;
 
@@ -155,23 +156,60 @@ mod bigfive2003_tests {
         assert_feed_ok!(d, [], [], "");
         assert_feed_ok!(d, [0xa4, 0xa4, 0xb5, 0xd8, 0xa5, 0xc1, 0xb0, 0xea], [],
                         "\u4e2d\u83ef\u6c11\u570b");
+        assert_feed_ok!(d, [], [0xa4], "");
+        assert_feed_ok!(d, [0xa4, 0xb5, 0xd8], [0xa5], "\u4e2d\u83ef");
+        assert_feed_ok!(d, [0xc1, 0xb0, 0xea], [], "\u6c11\u570b");
         assert_feed_ok!(d, [0x31, 0xa3, 0xe1, 0x2f, 0x6d], [], "1\u20ac/m");
         assert_feed_ok!(d, [0xf9, 0xfe], [], "\uffed");
         assert_feed_ok!(d, [0x87, 0x7e], [], "\u3eec"); // HKSCS-2008 addition
+        assert_feed_ok!(d, [0x88, 0x62, 0x88, 0x64, 0x88, 0xa3, 0x88, 0xa5], [],
+                        "\xca\u0304\xca\u030c\xea\u0304\xea\u030c"); // two-byte mappings
         assert_finish_ok!(d, "");
     }
 
     #[test]
-    fn test_decoder_invalid_trail() {
-        // unlike most other cases, valid lead + invalid MSB-set trail are entirely consumed.
-        // https://www.w3.org/Bugs/Public/show_bug.cgi?id=16771
+    fn test_decoder_invalid_lone_lead_immediate_test_finish() {
+        for i in range_inclusive(0x81u8, 0xfe) {
+            let mut d = BigFive2003Encoding.decoder();
+            assert_feed_ok!(d, [], [i], ""); // wait for a trail
+            assert_finish_err!(d, "");
+        }
+
+        // 80/FF: immediate failure
         let mut d = BigFive2003Encoding.decoder();
-        assert_feed_err!(d, [], [0xf0], [0x30, 0x30], "");
-        assert_feed_err!(d, [], [0xf0, 0x80], [0x30], "");
+        assert_feed_err!(d, [], [0x80], [], "");
+        assert_feed_err!(d, [], [0xff], [], "");
         assert_finish_ok!(d, "");
     }
 
-    // TODO more tests
+    #[test]
+    fn test_decoder_invalid_lone_lead_followed_by_space() {
+        for i in range_inclusive(0x80u8, 0xff) {
+            let mut d = BigFive2003Encoding.decoder();
+            assert_feed_err!(d, [], [i], [0x20], "");
+            assert_finish_ok!(d, "");
+        }
+    }
+
+    #[test]
+    fn test_decoder_invalid_lead_followed_by_invalid_trail() {
+        // unlike most other cases, valid lead + invalid MSB-set trail are entirely consumed.
+        // https://www.w3.org/Bugs/Public/show_bug.cgi?id=16771
+        for i in range_inclusive(0x81u8, 0xfe) {
+            let mut d = BigFive2003Encoding.decoder();
+            assert_feed_err!(d, [], [i, 0x80], [0x20], "");
+            assert_feed_err!(d, [], [i, 0xff], [0x20], "");
+            assert_finish_ok!(d, "");
+        }
+
+        // 80/FF is not a valid lead and the trail is not consumed
+        let mut d = BigFive2003Encoding.decoder();
+        assert_feed_err!(d, [], [0x80], [0x80], "");
+        assert_feed_err!(d, [], [0x80], [0xff], "");
+        assert_feed_err!(d, [], [0xff], [0x80], "");
+        assert_feed_err!(d, [], [0xff], [0xff], "");
+        assert_finish_ok!(d, "");
+    }
 
     #[test]
     fn test_decoder_feed_after_finish() {
