@@ -276,32 +276,30 @@ pub trait Encoding {
     #[stable]
     fn encode(&'static self, input: &str, trap: EncoderTrap) -> Result<Vec<u8>,SendStr> {
         let mut encoder = self.encoder();
-        let mut remaining = input;
-        let mut unprocessed = String::new();
+        let mut remaining = 0;
+        let mut unprocessed = 0;
         let mut ret = Vec::new();
 
         loop {
-            let (offset, err) = encoder.raw_feed(remaining, &mut ret);
-            if offset > 0 { unprocessed.truncate(0); }
+            let (offset, err) = encoder.raw_feed(input.slice_from(remaining), &mut ret);
+            if offset > 0 { unprocessed = remaining + offset; }
             match err {
                 Some(err) => {
-                    unprocessed.push_str(remaining.slice(offset, err.upto));
-                    if !trap.trap(encoder, unprocessed.as_slice(), &mut ret) {
+                    remaining += err.upto;
+                    if !trap.trap(encoder, input.slice(unprocessed, remaining), &mut ret) {
                         return Err(err.cause);
                     }
-                    unprocessed.truncate(0);
-                    remaining = remaining.slice(err.upto, remaining.len());
+                    unprocessed = remaining;
                 }
                 None => {
-                    unprocessed.push_str(remaining.slice(offset, remaining.len()));
-                    break
+                    break;
                 }
             }
         }
 
         match encoder.raw_finish(&mut ret) {
             Some(err) => {
-                if !trap.trap(encoder, unprocessed.as_slice(), &mut ret) {
+                if !trap.trap(encoder, input.slice_from(unprocessed), &mut ret) {
                     return Err(err.cause);
                 }
             }
@@ -317,32 +315,30 @@ pub trait Encoding {
     #[stable]
     fn decode(&'static self, input: &[u8], trap: DecoderTrap) -> Result<String,SendStr> {
         let mut decoder = self.decoder();
-        let mut remaining = input;
-        let mut unprocessed = Vec::new();
+        let mut remaining = 0;
+        let mut unprocessed = 0;
         let mut ret = String::new();
 
         loop {
-            let (offset, err) = decoder.raw_feed(remaining, &mut ret);
-            if offset > 0 { unprocessed.clear(); }
+            let (offset, err) = decoder.raw_feed(input.slice_from(remaining), &mut ret);
+            if offset > 0 { unprocessed = remaining + offset; }
             match err {
                 Some(err) => {
-                    unprocessed.push_all(remaining.slice(offset, err.upto));
-                    if !trap.trap(decoder, unprocessed.as_slice(), &mut ret) {
+                    remaining += err.upto;
+                    if !trap.trap(decoder, input.slice(unprocessed, remaining), &mut ret) {
                         return Err(err.cause);
                     }
-                    unprocessed.clear();
-                    remaining = remaining.slice(err.upto, remaining.len());
+                    unprocessed = remaining;
                 }
                 None => {
-                    unprocessed.push_all(remaining.slice(offset, remaining.len()));
-                    break
+                    break;
                 }
             }
         }
 
         match decoder.raw_finish(&mut ret) {
             Some(err) => {
-                if !trap.trap(decoder, unprocessed.as_slice(), &mut ret) {
+                if !trap.trap(decoder, input.slice_from(unprocessed), &mut ret) {
                     return Err(err.cause);
                 }
             }
