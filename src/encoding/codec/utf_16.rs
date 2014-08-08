@@ -122,7 +122,7 @@ impl<E:Endian+Clone+'static> Encoder for UTF16Encoder<E> {
                 }
                 _ => {
                     return (i, Some(CodecError {
-                        upto: j, cause: "unrepresentable character".into_maybe_owned()
+                        upto: j as int, cause: "unrepresentable character".into_maybe_owned()
                     }));
                 }
             }
@@ -184,9 +184,7 @@ impl<E:Endian+Clone+'static> Decoder for UTF16Decoder<E> {
                     }
                     _ => {
                         return (processed, Some(CodecError {
-                            // XXX upto should point to the negative offset???
-                            upto: if i<2 {0} else {i-2},
-                            cause: "invalid sequence".into_maybe_owned()
+                            upto: i as int - 2, cause: "invalid sequence".into_maybe_owned()
                         }));
                     }
                 }
@@ -198,7 +196,7 @@ impl<E:Endian+Clone+'static> Decoder for UTF16Decoder<E> {
                     }
                     0xdc00..0xdfff => {
                         return (processed, Some(CodecError {
-                            upto: i, cause: "invalid sequence".into_maybe_owned()
+                            upto: i as int, cause: "invalid sequence".into_maybe_owned()
                         }));
                     }
                     _ => {
@@ -228,9 +226,7 @@ impl<E:Endian+Clone+'static> Decoder for UTF16Decoder<E> {
                     self.leadbyte = 0xffff;
                     self.leadsurrogate = 0xffff;
                     return (processed, Some(CodecError {
-                        // XXX upto should point to the negative offset???
-                        upto: if i<2 {0} else {i-2},
-                        cause: "invalid sequence".into_maybe_owned()
+                        upto: i as int - 2, cause: "invalid sequence".into_maybe_owned()
                     }));
                 }
             }
@@ -262,14 +258,14 @@ impl<E:Endian+Clone+'static> Decoder for UTF16Decoder<E> {
                         }
                         _ => {
                             return (processed, Some(CodecError {
-                                upto: i-1, cause: "invalid sequence".into_maybe_owned()
+                                upto: i as int - 1, cause: "invalid sequence".into_maybe_owned()
                             }));
                         }
                     }
                 }
                 0xdc00..0xdfff => {
                     return (processed, Some(CodecError {
-                        upto: i+1, cause: "invalid sequence".into_maybe_owned()
+                        upto: i as int + 1, cause: "invalid sequence".into_maybe_owned()
                     }));
                 }
                 _ => {
@@ -477,11 +473,11 @@ mod tests {
         assert_feed_ok!(d, [], [0xd8], "");
         assert_feed_err!(d, [], [0x00], [0x12, 0x34], "");
         assert_feed_ok!(d, [], [0xd8, 0x00, 0x56], "");
-        assert_feed_err!(d, [], [], [0x78], ""); // XXX whooops, 56 should not be in problem!
+        assert_feed_err!(d, -1, [], [], [0x56, 0x78], "");
         assert_feed_ok!(d, [], [0xd8], "");
         assert_feed_err!(d, [], [0x00], [0xd8, 0x00], "");
         assert_feed_ok!(d, [], [0xd8, 0x00, 0xdb], "");
-        assert_feed_err!(d, [], [], [0xff], ""); // XXX whooops, DB should not be in problem!
+        assert_feed_err!(d, -1, [], [], [0xdb, 0xff], "");
         assert_feed_ok!(d, [], [0xd8], "");
         assert_finish_err!(d, "");
 
@@ -489,11 +485,11 @@ mod tests {
         assert_feed_ok!(d, [], [0xdb], "");
         assert_feed_err!(d, [], [0xff], [0x12, 0x34], "");
         assert_feed_ok!(d, [], [0xdb, 0xff, 0x56], "");
-        assert_feed_err!(d, [], [], [0x78], ""); // XXX whooops, 56 should not be in problem!
+        assert_feed_err!(d, -1, [], [], [0x56, 0x78], "");
         assert_feed_ok!(d, [], [0xdb], "");
         assert_feed_err!(d, [], [0xff], [0xdb, 0xff], "");
         assert_feed_ok!(d, [], [0xdb, 0xff, 0xd8], "");
-        assert_feed_err!(d, [], [], [0x00], ""); // XXX whooops, D8 should not be in problem!
+        assert_feed_err!(d, -1, [], [], [0xd8, 0x00], "");
         assert_feed_ok!(d, [], [0xdb], "");
         assert_finish_err!(d, "");
     }

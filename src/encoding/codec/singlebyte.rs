@@ -18,8 +18,8 @@ pub struct SingleByteEncoding {
 impl Encoding for SingleByteEncoding {
     fn name(&self) -> &'static str { self.name }
     fn whatwg_name(&self) -> Option<&'static str> { self.whatwg_name }
-    fn encoder(&'static self) -> Box<Encoder> { SingleByteEncoder::new(self.index_backward) }
-    fn decoder(&'static self) -> Box<Decoder> { SingleByteDecoder::new(self.index_forward) }
+    fn encoder(&self) -> Box<Encoder> { SingleByteEncoder::new(self.index_backward) }
+    fn decoder(&self) -> Box<Decoder> { SingleByteDecoder::new(self.index_forward) }
 }
 
 /// An encoder for single-byte encodings based on ASCII.
@@ -51,7 +51,7 @@ impl Encoder for SingleByteEncoder {
                     output.write_byte(index);
                 } else {
                     return (i, Some(CodecError {
-                        upto: j, cause: "unrepresentable character".into_maybe_owned()
+                        upto: j as int, cause: "unrepresentable character".into_maybe_owned()
                     }));
                 }
             }
@@ -94,7 +94,7 @@ impl Decoder for SingleByteDecoder {
                     output.write_char(as_char(ch));
                 } else {
                     return (i, Some(CodecError {
-                        upto: i+1, cause: "invalid sequence".into_maybe_owned()
+                        upto: i as int + 1, cause: "invalid sequence".into_maybe_owned()
                     }));
                 }
             }

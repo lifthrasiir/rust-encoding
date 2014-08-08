@@ -277,7 +277,7 @@ mod gb18030_tests {
         let mut d = GB18030Encoding.decoder();
         assert_feed_ok!(d, [], [0xe3], "");
         assert_feed_ok!(d, [], [0x32, 0x9a], "");
-        assert_feed_err!(d, [], [], [0x36], ""); // XXX whooops, 32 9A should not be in problem!
+        assert_feed_err!(d, -2, [], [], [0x32, 0x9a, 0x36], "");
         assert_finish_ok!(d, "");
     }
 
@@ -375,7 +375,7 @@ impl Encoder for HZEncoder {
                 if ptr == 0xffff {
                     self.escaped = escaped; // do NOT reset the state!
                     return (i, Some(CodecError {
-                        upto: j, cause: "unrepresentable character".into_maybe_owned()
+                        upto: j as int, cause: "unrepresentable character".into_maybe_owned()
                     }));
                 } else {
                     let lead = ptr / 190;
@@ -383,7 +383,7 @@ impl Encoder for HZEncoder {
                     if lead < 0x21 - 1 || trail < 0x21 + 0x3f { // GBK extension, ignored
                         self.escaped = escaped; // do NOT reset the state!
                         return (i, Some(CodecError {
-                            upto: j, cause: "unrepresentable character".into_maybe_owned()
+                            upto: j as int, cause: "unrepresentable character".into_maybe_owned()
                         }));
                     } else {
                         ensure_escaped!();

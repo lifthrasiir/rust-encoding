@@ -55,7 +55,7 @@ impl Encoder for BigFive2003Encoder {
                 if ptr == 0xffff || ptr < (0xa1 - 0x81) * 157 {
                     // no HKSCS extension (XXX doesn't HKSCS include 0xFA40..0xFEFE?)
                     return (i, Some(CodecError {
-                        upto: j, cause: "unrepresentable character".into_maybe_owned()
+                        upto: j as int, cause: "unrepresentable character".into_maybe_owned()
                     }));
                 }
                 let lead = ptr / 157 + 0x81;

@@ -51,7 +51,7 @@ impl Encoder for Windows949Encoder {
                 let ptr = index::euc_kr::backward(ch as u32);
                 if ptr == 0xffff {
                     return (i, Some(CodecError {
-                        upto: j, cause: "unrepresentable character".into_maybe_owned()
+                        upto: j as int, cause: "unrepresentable character".into_maybe_owned()
                     }));
                 } else if ptr < (26 + 26 + 126) * (0xc7 - 0x81) {
                     let lead = ptr / (26 + 26 + 126) + 0x81;

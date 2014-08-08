@@ -61,7 +61,7 @@ impl Encoder for EUCJPEncoder {
                     let ptr = index::jis0208::backward(ch as u32);
                     if ptr == 0xffff {
                         return (i, Some(CodecError {
-                            upto: j, cause: "unrepresentable character".into_maybe_owned()
+                            upto: j as int, cause: "unrepresentable character".into_maybe_owned()
                         }));
                     } else {
                         let lead = ptr / 94 + 0xa1;
@@ -452,7 +452,7 @@ impl Encoder for Windows31JEncoder {
                     let ptr = index::jis0208::backward_remapped(ch as u32);
                     if ptr == 0xffff {
                         return (i, Some(CodecError {
-                            upto: j, cause: "unrepresentable character".into_maybe_owned(),
+                            upto: j as int, cause: "unrepresentable character".into_maybe_owned(),
                         }));
                     } else {
                         let lead = ptr / 188;
@@ -770,7 +770,7 @@ impl Encoder for ISO2022JPEncoder {
                     if ptr == 0xffff {
                         self.st = st; // do NOT reset the state!
                         return (i, Some(CodecError {
-                            upto: j, cause: "unrepresentable character".into_maybe_owned()
+                            upto: j as int, cause: "unrepresentable character".into_maybe_owned()
                         }));
                     } else {
                         ensure_Lead!();
@@ -1105,15 +1105,24 @@ mod iso2022jp_tests {
 
         let mut d = ISO2022JPEncoding.decoder();
         assert_feed_ok!(d, [], [0x1b, 0x24], "");
-        assert_finish_err!(d, "");
+        assert_finish_err!(d, ""); // no backup
 
         let mut d = ISO2022JPEncoding.decoder();
         assert_feed_ok!(d, [], [0x1b, 0x24, 0x28], "");
-        assert_finish_err!(d, "");
+        assert_finish_err!(d, -1, ""); // backup of -1, not -2
 
         let mut d = ISO2022JPEncoding.decoder();
         assert_feed_ok!(d, [], [0x1b, 0x28], "");
-        assert_finish_err!(d, "");
+        assert_finish_err!(d, ""); // no backup
+
+        assert_eq!(ISO2022JPEncoding.decode([0x1b], DecodeReplace),
+                   Ok("\ufffd".to_string()));
+        assert_eq!(ISO2022JPEncoding.decode([0x1b, 0x24], DecodeReplace),
+                   Ok("\ufffd".to_string()));
+        assert_eq!(ISO2022JPEncoding.decode([0x1b, 0x24, 0x28], DecodeReplace),
+                   Ok("\ufffd\x28".to_string()));
+        assert_eq!(ISO2022JPEncoding.decode([0x1b, 0x28], DecodeReplace),
+                   Ok("\ufffd".to_string()));
     }
 
     #[test]
@@ -1138,12 +1147,12 @@ mod iso2022jp_tests {
         assert_feed_err!(d, [], [0x1b], [0x24, 0x5a], ""); // ESC $ Z (GZDM4)
         reset!()
         assert_feed_ok!(d, [], [0x1b, 0x24], "");
-        assert_feed_err!(d, [], [], [0x5a], ""); // XXX should include 0x24 as well
+        assert_feed_err!(d, -1, [], [], [0x24, 0x5a], "");
         reset!()
         assert_feed_err!(d, [], [0x1b], [0x24, 0x28, 0x5a], ""); // ESC $ ( Z (GZDM4)
         reset!()
         assert_feed_ok!(d, [], [0x1b, 0x24, 0x28], "");
-        assert_feed_err!(d, [], [], [0x5a], ""); // XXX should include 0x24 and 0x28 as well
+        assert_feed_err!(d, -2, [], [], [0x24, 0x28, 0x5a], "");
         reset!()
         assert_feed_err!(d, [], [0x1b], [0x24, 0x29, 0x5a], ""); // ESC $ ) Z (G1DM4)
         reset!()
@@ -1164,7 +1173,7 @@ mod iso2022jp_tests {
         assert_feed_err!(d, [], [0x1b], [0x28, 0x5a], ""); // ESC ( Z (GZD4)
         reset!()
         assert_feed_ok!(d, [], [0x1b, 0x28], "");
-        assert_feed_err!(d, [], [], [0x5a], ""); // XXX should include 0x28 as well
+        assert_feed_err!(d, -1, [], [], [0x28, 0x5a], "");
         reset!()
         assert_feed_err!(d, [], [0x1b], [0x29, 0x5a], ""); // ESC ) Z (G1D4)
         reset!()

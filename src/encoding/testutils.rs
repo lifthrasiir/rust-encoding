@@ -19,14 +19,14 @@ macro_rules! assert_feed_ok(
         let upto = err.map(|e| e.upto);
         assert!(processed.len() == nprocessed && None == upto,
                 "raw_feed should return {}, but instead returned {}",
-                (processed.len(), None::<uint>), (nprocessed, upto));
+                (processed.len(), None::<int>), (nprocessed, upto));
         assert!(output == buf.as_slice(),
                 "raw_feed should push {}, but instead pushed {}", output, buf.as_slice());
     })
 )
 
 macro_rules! assert_feed_err(
-    ($this:expr, $processed:expr, $problem:expr, $remaining:expr, $output:expr) => ({
+    ($this:expr, $backup:expr, $processed:expr, $problem:expr, $remaining:expr, $output:expr) => ({
         let processed = $processed;
         let processed = $this.test_norm_input(processed);
         let problem = $problem;
@@ -36,14 +36,19 @@ macro_rules! assert_feed_err(
         let output = $output;
         let output = $this.test_norm_output(output);
         let input = $this.test_concat($this.test_concat(processed, problem).as_slice(), remaining);
-        let (nprocessed, err, buf) = $this.test_feed(input.as_slice());
+        let backup: int = $backup;
+        let (nprocessed, err, buf) = $this.test_feed(input.as_slice().slice_from(-backup as uint));
         let upto = err.map(|e| e.upto);
-        assert!(processed.len() == nprocessed && Some(processed.len() + problem.len()) == upto,
+        let expectedupto = processed.len() as int + problem.len() as int + backup;
+        assert!(processed.len() == nprocessed && Some(expectedupto) == upto,
                 "raw_feed should return {}, but instead returned {}",
-                (processed.len(), Some(processed.len() + problem.len())), (nprocessed, upto));
+                (processed.len(), Some(expectedupto)), (nprocessed, upto));
         assert!(output == buf.as_slice(),
                 "raw_feed should push {}, but instead pushed {}", output, buf.as_slice());
-    })
+    });
+    ($this:expr, $processed:expr, $problem:expr, $remaining:expr, $output:expr) => (
+        assert_feed_err!($this, 0, $processed, $problem, $remaining, $output)
+    )
 )
 
 macro_rules! assert_finish_ok(
@@ -53,23 +58,27 @@ macro_rules! assert_finish_ok(
         let (err, buf) = $this.test_finish();
         let upto = err.map(|e| e.upto);
         assert!(None == upto,
-                "raw_finish should return {}, but instead returned {}", None::<uint>, upto);
+                "raw_finish should return {}, but instead returned {}", None::<int>, upto);
         assert!(output == buf.as_slice(),
                 "raw_finish should push {}, but instead pushed {}", output, buf.as_slice());
     })
 )
 
 macro_rules! assert_finish_err(
-    ($this:expr, $output:expr) => ({
+    ($this:expr, $backup:expr, $output:expr) => ({
         let output = $output;
         let output = $this.test_norm_output(output);
         let (err, buf) = $this.test_finish();
+        let backup: int = $backup;
         let upto = err.map(|e| e.upto);
-        assert!(Some(0u) == upto,
-                "raw_finish should return {}, but instead returned {}", Some(0u), upto);
+        assert!(Some(backup) == upto,
+                "raw_finish should return {}, but instead returned {}", Some(backup), upto);
         assert!(output == buf.as_slice(),
                 "raw_finish should push {}, but instead pushed {}", output, buf.as_slice());
-    })
+    });
+    ($this:expr, $output:expr) => (
+        assert_finish_err!($this, 0, $output)
+    )
 )
 
 /// Some ASCII-only text to test.

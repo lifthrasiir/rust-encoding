@@ -57,11 +57,13 @@ use std::str::SendStr;
 /// Error information from either encoder or decoder.
 #[experimental]
 pub struct CodecError {
-    /// The byte position of the first remaining byte, which is next to the problematic byte.
+    /// The byte position of the first remaining byte, with respect to the *current* input.
+    /// For the `finish` call, this should be no more than zero (since there is no input).
+    /// It can be negative if the remaining byte is in the prior inputs,
+    /// as long as the remaining byte is not yet processed.
     /// The caller should feed the bytes starting from this point again
     /// in order to continue encoding or decoding after an error.
-    /// This value is always set to 0 for `finish`.
-    pub upto: uint,
+    pub upto: int,
     /// A human-readable cause of the error.
     pub cause: SendStr,
 }
@@ -205,7 +207,6 @@ pub trait Decoder {
     /// Finishes the decoder,
     /// pushes the a decoded string at the end of the given output,
     /// and returns optional error information (None means success).
-    /// `upto` value of the error information, if any, is always zero.
     fn raw_finish(&mut self, output: &mut StringWriter) -> Option<CodecError>;
 
     /// Normalizes the input for testing. Internal use only.
@@ -263,49 +264,49 @@ pub trait Encoding {
 
     /// Creates a new encoder.
     #[experimental]
-    fn encoder(&'static self) -> Box<Encoder>;
+    fn encoder(&self) -> Box<Encoder>;
 
     /// Creates a new decoder.
     #[experimental]
-    fn decoder(&'static self) -> Box<Decoder>;
+    fn decoder(&self) -> Box<Decoder>;
 
     /// An easy-to-use interface to `Encoder`.
     /// On the encoder error `trap` is called,
     /// which may return a replacement sequence to continue processing,
     /// or a failure to return the error.
     #[stable]
-    fn encode(&'static self, input: &str, trap: EncoderTrap) -> Result<Vec<u8>,SendStr> {
+    fn encode(&self, input: &str, trap: EncoderTrap) -> Result<Vec<u8>,SendStr> {
+        // we don't need to keep `unprocessed` here;
+        // `raw_feed` should process as much input as possible.
         let mut encoder = self.encoder();
         let mut remaining = 0;
-        let mut unprocessed = 0;
         let mut ret = Vec::new();
 
         loop {
             let (offset, err) = encoder.raw_feed(input.slice_from(remaining), &mut ret);
-            if offset > 0 { unprocessed = remaining + offset; }
+            let unprocessed = remaining + offset;
             match err {
                 Some(err) => {
-                    remaining += err.upto;
+                    remaining = (remaining as int + err.upto) as uint;
                     if !trap.trap(encoder, input.slice(unprocessed, remaining), &mut ret) {
                         return Err(err.cause);
                     }
-                    unprocessed = remaining;
                 }
                 None => {
-                    break;
+                    remaining = input.len();
+                    match encoder.raw_finish(&mut ret) {
+                        Some(err) => {
+                            remaining = (remaining as int + err.upto) as uint;
+                            if !trap.trap(encoder, input.slice(unprocessed, remaining), &mut ret) {
+                                return Err(err.cause);
+                            }
+                        }
+                        None => {}
+                    }
+                    if remaining >= input.len() { return Ok(ret); }
                 }
             }
         }
-
-        match encoder.raw_finish(&mut ret) {
-            Some(err) => {
-                if !trap.trap(encoder, input.slice_from(unprocessed), &mut ret) {
-                    return Err(err.cause);
-                }
-            }
-            None => {}
-        }
-        Ok(ret)
     }
 
     /// An easy-to-use interface to `Decoder`.
@@ -313,38 +314,38 @@ pub trait Encoding {
     /// which may return a replacement string to continue processing,
     /// or a failure to return the error.
     #[stable]
-    fn decode(&'static self, input: &[u8], trap: DecoderTrap) -> Result<String,SendStr> {
+    fn decode(&self, input: &[u8], trap: DecoderTrap) -> Result<String,SendStr> {
+        // we don't need to keep `unprocessed` here;
+        // `raw_feed` should process as much input as possible.
         let mut decoder = self.decoder();
         let mut remaining = 0;
-        let mut unprocessed = 0;
         let mut ret = String::new();
 
         loop {
             let (offset, err) = decoder.raw_feed(input.slice_from(remaining), &mut ret);
-            if offset > 0 { unprocessed = remaining + offset; }
+            let unprocessed = remaining + offset;
             match err {
                 Some(err) => {
-                    remaining += err.upto;
+                    remaining = (remaining as int + err.upto) as uint;
                     if !trap.trap(decoder, input.slice(unprocessed, remaining), &mut ret) {
                         return Err(err.cause);
                     }
-                    unprocessed = remaining;
                 }
                 None => {
-                    break;
+                    remaining = input.len();
+                    match decoder.raw_finish(&mut ret) {
+                        Some(err) => {
+                            remaining = (remaining as int + err.upto) as uint;
+                            if !trap.trap(decoder, input.slice(unprocessed, remaining), &mut ret) {
+                                return Err(err.cause);
+                            }
+                        }
+                        None => {}
+                    }
+                    if remaining >= input.len() { return Ok(ret); }
                 }
             }
         }
-
-        match decoder.raw_finish(&mut ret) {
-            Some(err) => {
-                if !trap.trap(decoder, input.slice_from(unprocessed), &mut ret) {
-                    return Err(err.cause);
-                }
-            }
-            None => {}
-        }
-        Ok(ret)
     }
 }
 
@@ -489,7 +490,8 @@ mod tests {
                         self.toggle = !self.toggle;
                     }
                 } else {
-                    return (i, Some(CodecError { upto: j, cause: "!!!".into_maybe_owned() }));
+                    return (i, Some(CodecError { upto: j as int,
+                                                 cause: "!!!".into_maybe_owned() }));
                 }
             }
             (input.len(), None)
@@ -500,13 +502,13 @@ mod tests {
     struct MyEncoding { flag: bool, prohibit: char, prepend: &'static str }
     impl Encoding for MyEncoding {
         fn name(&self) -> &'static str { "my encoding" }
-        fn encoder(&'static self) -> Box<Encoder> {
+        fn encoder(&self) -> Box<Encoder> {
             box MyEncoder { flag: self.flag,
                             prohibit: self.prohibit,
                             prepend: self.prepend,
                             toggle: false } as Box<Encoder>
         }
-        fn decoder(&'static self) -> Box<Decoder> { fail!("not supported") }
+        fn decoder(&self) -> Box<Decoder> { fail!("not supported") }
     }
 
     #[test]
