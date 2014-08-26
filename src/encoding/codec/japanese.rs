@@ -954,7 +954,8 @@ mod iso2022jp_tests {
         static Ce: &'static [u8] = &[0x1b, 0x28, 0x49, 0x48];
         let mut e = ISO2022JPEncoding.encoder();
         let decoded = [ "\x20", Bd, Cd, Ad, Cd, Bd, Ad].concat();
-        let encoded = [&[0x20], Be, Ce, Ae, Ce, Be, Ae].concat_vec();
+        let tmp: &[&[_]] = &[&[0x20], Be, Ce, Ae, Ce, Be, Ae];
+        let encoded = tmp.concat_vec();
         assert_feed_ok!(e, decoded.as_slice(), "", encoded.as_slice());
         assert_finish_ok!(e, []);
     }
@@ -1025,7 +1026,8 @@ mod iso2022jp_tests {
         static De: &'static [u8] = &[0x1b, 0x24, 0x28, 0x44, 0x50, 0x4b];
         let mut d = ISO2022JPEncoding.decoder();
         let decoded = [ "\x20",Ad,Bd,Bd,Cd,Cd,Ad,Cd,Bd,Ad,Dd,Dd,Bd,Dd,Cd,Dd,Ad].concat();
-        let encoded = [&[0x20],Ae,Be,Be,Ce,Ce,Ae,Ce,Be,Ae,De,De,Be,De,Ce,De,Ae].concat_vec();
+        let tmp: &[&[_]] = &[&[0x20],Ae,Be,Be,Ce,Ce,Ae,Ce,Be,Ae,De,De,Be,De,Ce,De,Ae];
+        let encoded = tmp.concat_vec();
         assert_feed_ok!(d, encoded.as_slice(), [], decoded.as_slice());
         assert_finish_ok!(d, "");
     }
