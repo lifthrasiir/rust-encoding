@@ -1,5 +1,5 @@
-Rust-encoding
-=============
+[Rust-encoding][doc]
+====================
 
 [![Rust-encoding on Travis CI][travis-image]][travis]
 
@@ -9,6 +9,10 @@ Rust-encoding
 Character encoding support for Rust.
 It is based on [WHATWG Encoding Standard](http://encoding.spec.whatwg.org/),
 and also provides an advanced interface for error detection and recovery.
+
+[Complete Documentation][doc]
+
+[doc]: http://www.rust-ci.org/lifthrasiir/rust-encoding/doc/encoding/
 
 ## Simple Usage
 
