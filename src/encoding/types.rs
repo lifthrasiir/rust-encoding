@@ -102,7 +102,7 @@ impl ByteWriter for Vec<u8> {
 
 /// String writer used by `Decoder`s. In most cases this will be an owned string.
 #[unstable]
-pub trait StringWriter: 'static {
+pub trait StringWriter {
     /// Hints an expected lower bound on the length (in bytes) of the output
     /// until the next call to `writer_hint`,
     /// so that the writer can reserve the memory for writing.
@@ -136,7 +136,7 @@ impl StringWriter for String {
 /// Encoder converting a Unicode string into a byte sequence.
 /// This is a lower level interface, and normally `Encoding::encode` should be used instead.
 #[experimental]
-pub trait Encoder: 'static {
+pub trait Encoder {
     /// Creates a fresh `Encoder` instance which parameters are same as `self`.
     fn from_self(&self) -> Box<Encoder>;
 
@@ -189,7 +189,7 @@ pub trait Encoder: 'static {
 /// Encoder converting a byte sequence into a Unicode string.
 /// This is a lower level interface, and normally `Encoding::decode` should be used instead.
 #[experimental]
-pub trait Decoder: 'static {
+pub trait Decoder {
     /// Creates a fresh `Decoder` instance which parameters are same as `self`.
     fn from_self(&self) -> Box<Decoder>;
 
