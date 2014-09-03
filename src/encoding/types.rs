@@ -288,7 +288,7 @@ pub trait Encoding {
             match err {
                 Some(err) => {
                     remaining = (remaining as int + err.upto) as uint;
-                    if !trap.trap(encoder, input.slice(unprocessed, remaining), &mut ret) {
+                    if !trap.trap(&mut *encoder, input.slice(unprocessed, remaining), &mut ret) {
                         return Err(err.cause);
                     }
                 }
@@ -297,7 +297,7 @@ pub trait Encoding {
                     match encoder.raw_finish(&mut ret) {
                         Some(err) => {
                             remaining = (remaining as int + err.upto) as uint;
-                            if !trap.trap(encoder, input.slice(unprocessed, remaining), &mut ret) {
+                            if !trap.trap(&mut *encoder, input.slice(unprocessed, remaining), &mut ret) {
                                 return Err(err.cause);
                             }
                         }
@@ -327,7 +327,7 @@ pub trait Encoding {
             match err {
                 Some(err) => {
                     remaining = (remaining as int + err.upto) as uint;
-                    if !trap.trap(decoder, input.slice(unprocessed, remaining), &mut ret) {
+                    if !trap.trap(&mut *decoder, input.slice(unprocessed, remaining), &mut ret) {
                         return Err(err.cause);
                     }
                 }
@@ -336,7 +336,7 @@ pub trait Encoding {
                     match decoder.raw_finish(&mut ret) {
                         Some(err) => {
                             remaining = (remaining as int + err.upto) as uint;
-                            if !trap.trap(decoder, input.slice(unprocessed, remaining), &mut ret) {
+                            if !trap.trap(&mut *decoder, input.slice(unprocessed, remaining), &mut ret) {
                                 return Err(err.cause);
                             }
                         }
