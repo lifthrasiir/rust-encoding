@@ -373,7 +373,7 @@ pub enum DecoderTrap {
     /// Calls given function to handle decoder errors.
     /// The function is given the current decoder, input and output writer,
     /// and should return true only when it is fine to keep going.
-    #[unstable] DecoderTrap(DecoderTrapFunc),
+    #[unstable] DecoderCall(DecoderTrapFunc),
 }
 
 impl DecoderTrap {
@@ -384,7 +384,7 @@ impl DecoderTrap {
             DecodeStrict => false,
             DecodeReplace => { output.write_char('\ufffd'); true },
             DecodeIgnore => true,
-            DecoderTrap(func) => func(decoder, input, output),
+            DecoderCall(func) => func(decoder, input, output),
         }
     }
 }
@@ -407,7 +407,7 @@ pub enum EncoderTrap {
     /// Calls given function to handle encoder errors.
     /// The function is given the current encoder, input and output writer,
     /// and should return true only when it is fine to keep going.
-    #[unstable] EncoderTrap(EncoderTrapFunc),
+    #[unstable] EncoderCall(EncoderTrapFunc),
 }
 
 impl EncoderTrap {
@@ -438,7 +438,7 @@ impl EncoderTrap {
                 }
                 reencode(encoder, escapes.as_slice(), output, "NcrEscape")
             },
-            EncoderTrap(func) => func(encoder, input, output),
+            EncoderCall(func) => func(encoder, input, output),
         }
     }
 }

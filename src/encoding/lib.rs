@@ -63,7 +63,7 @@ assert_eq!(ISO_8859_6.decode([65,99,109,101,169], DecodeIgnore),
 A practical example of custom encoder traps:
 
 ~~~~ {.rust}
-use encoding::{Encoding, Encoder, ByteWriter, EncoderTrap, DecodeStrict};
+use encoding::{Encoding, Encoder, ByteWriter, EncoderTrap, EncoderCall, DecodeStrict};
 use encoding::all::ASCII;
 
 // hexadecimal numeric character reference replacement
@@ -74,7 +74,7 @@ fn hex_ncr_escape(_encoder: &mut Encoder, input: &str, output: &mut ByteWriter) 
     output.write_bytes(escapes.as_bytes());
     true
 }
-static HexNcrEscape: EncoderTrap = EncoderTrap(hex_ncr_escape);
+static HexNcrEscape: EncoderTrap = EncoderCall(hex_ncr_escape);
 
 let orig = "Hello, 世界!".to_string();
 let encoded = ASCII.encode(orig.as_slice(), HexNcrEscape).unwrap();
@@ -107,7 +107,7 @@ There are three main entry points to rust-encoding.
 
 **`Encoding`** is a single character encoding.
 It contains `encode` and `decode` methods for converting `String` to `Vec<u8>` and vice versa.
-For the error handling, they receive **traps** (`EncoderTrap` and `DecoderTrap` respectively)
+For the error handling, they receive **traps** (`EncoderCall` and `DecoderCall` respectively)
 which replace any error with some string (e.g. `U+FFFD`) or sequence (e.g. `?`).
 You can also use `EncodeStrict` and `DecodeStrict` traps to stop on an error.
 
@@ -188,7 +188,8 @@ pub use self::types::{CodecError, ByteWriter, StringWriter,
                       EncoderTrapFunc, DecoderTrapFunc, DecoderTrap,
                       DecodeStrict, DecodeReplace, DecodeIgnore,
                       EncoderTrap, EncodeStrict, EncodeReplace,
-                      EncodeIgnore, EncodeNcrEscape, decode}; // reexport
+                      EncodeIgnore, EncodeNcrEscape, decode,
+                      EncoderCall, DecoderCall}; // reexport
 
 mod util;
 #[cfg(test)] mod testutils;
