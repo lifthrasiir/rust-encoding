@@ -125,7 +125,7 @@ impl StringWriter for String {
     }
 
     fn write_char(&mut self, c: char) {
-        self.push_char(c);
+        self.push(c);
     }
 
     fn write_str(&mut self, s: &str) {
@@ -183,7 +183,11 @@ pub trait Encoder: 'static {
 
     /// Concatenates two input sequences into one. Internal use only.
     #[cfg(test)]
-    fn test_concat(&self, a: &str, b: &str) -> String { a.to_string().append(b) }
+    fn test_concat(&self, a: &str, b: &str) -> String {
+        let mut s = a.to_string();
+        s.push_str(b);
+        s
+    }
 }
 
 /// Encoder converting a byte sequence into a Unicode string.
@@ -519,9 +523,9 @@ mod tests {
             &MyEncoding { flag: false, prohibit: '\u0080', prepend: "" };
 
         assert_eq!(COMPAT.encode("Hello\u203d I'm fine.", EncodeNcrEscape),
-                   Ok(Vec::from_slice(b"Hello&#8253; I'm fine.")));
+                   Ok(b"Hello&#8253; I'm fine.".to_vec()));
         assert_eq!(INCOMPAT.encode("Hello\u203d I'm fine.", EncodeNcrEscape),
-                   Ok(Vec::from_slice(b"Hello&#8253; I'm fine.")));
+                   Ok(b"Hello&#8253; I'm fine.".to_vec()));
     }
 
     #[test]
@@ -533,9 +537,9 @@ mod tests {
 
         // this should behave incorrectly as the encoding broke the assumption.
         assert_eq!(COMPAT.encode("Hello\u203d I'm fine.", EncodeNcrEscape),
-                   Ok(Vec::from_slice(b"He*l*l*o&#8253;* *I*'*m* *f*i*n*e.")));
+                   Ok(b"He*l*l*o&#8253;* *I*'*m* *f*i*n*e.".to_vec()));
         assert_eq!(INCOMPAT.encode("Hello\u203d I'm fine.", EncodeNcrEscape),
-                   Ok(Vec::from_slice(b"He*l*l*o*&*#*8*2*5*3*;* *I*'*m* *f*i*n*e.")));
+                   Ok(b"He*l*l*o*&*#*8*2*5*3*;* *I*'*m* *f*i*n*e.".to_vec()));
     }
 
     #[test]

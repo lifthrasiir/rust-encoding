@@ -177,7 +177,7 @@ pub fn get_external_bench_data() -> Vec<u8> {
             file.read_to_end().ok().expect("cannot read an external bench data")
         }
         None => {
-            Vec::from_slice(LONGER_TEXT)
+            LONGER_TEXT.to_vec()
         }
     }
 }
