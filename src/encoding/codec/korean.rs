@@ -89,13 +89,13 @@ ascii_compatible_stateful_decoder! {
         let lead = lead as uint;
         let trail = trail as uint;
         let index = match (lead, trail) {
-            (0x81..0xc6, 0x41..0x5a) =>
+            (0x81...0xc6, 0x41...0x5a) =>
                 (26 + 26 + 126) * (lead - 0x81) + trail - 0x41,
-            (0x81..0xc6, 0x61..0x7a) =>
+            (0x81...0xc6, 0x61...0x7a) =>
                 (26 + 26 + 126) * (lead - 0x81) + 26 + trail - 0x61,
-            (0x81..0xc6, 0x81..0xfe) =>
+            (0x81...0xc6, 0x81...0xfe) =>
                 (26 + 26 + 126) * (lead - 0x81) + 26 + 26 + trail - 0x81,
-            (0xc7..0xfe, 0xa1..0xfe) =>
+            (0xc7...0xfe, 0xa1...0xfe) =>
                 (26 + 26 + 126) * (0xc7 - 0x81) + (lead - 0xc7) * 94 + trail - 0xa1,
             (_, _) => 0xffff,
         };
@@ -104,8 +104,8 @@ ascii_compatible_stateful_decoder! {
 
     // euc-kr lead = 0x00
     initial state S0(ctx) {
-        case b @ 0x00..0x7f => ctx.emit(b as u32);
-        case b @ 0x81..0xfe => S1(ctx, b);
+        case b @ 0x00...0x7f => ctx.emit(b as u32);
+        case b @ 0x81...0xfe => S1(ctx, b);
         case _ => ctx.err("invalid sequence");
     }
 

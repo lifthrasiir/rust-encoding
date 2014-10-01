@@ -110,10 +110,10 @@ impl<E:Endian+Clone+'static> Encoder for UTF16Encoder<E> {
         for ((i,j), ch) in input.index_iter() {
             let ch = ch as uint;
             match ch {
-                0x0000..0xd7ff | 0xe000..0xffff => {
+                0x0000...0xd7ff | 0xe000...0xffff => {
                     write_two_bytes(output, (ch >> 8) as u8, (ch & 0xff) as u8);
                 }
-                0x10000..0x10ffff => {
+                0x10000...0x10ffff => {
                     let ch = ch - 0x10000;
                     write_two_bytes(output, (0xd8 | (ch >> 18)) as u8,
                                             ((ch >> 10) & 0xff) as u8);
@@ -177,7 +177,7 @@ impl<E:Endian+Clone+'static> Decoder for UTF16Decoder<E> {
                 let upper = self.leadsurrogate;
                 self.leadsurrogate = 0xffff;
                 match ch {
-                    0xdc00..0xdfff => {
+                    0xdc00...0xdfff => {
                         let ch = ((upper as uint - 0xd800) << 10) + (ch as uint - 0xdc00);
                         output.write_char(as_char(ch + 0x10000));
                         processed = i;
@@ -190,11 +190,11 @@ impl<E:Endian+Clone+'static> Decoder for UTF16Decoder<E> {
                 }
             } else {
                 match ch {
-                    0xd800..0xdbff => {
+                    0xd800...0xdbff => {
                         self.leadsurrogate = ch;
                         // pass through
                     }
-                    0xdc00..0xdfff => {
+                    0xdc00...0xdfff => {
                         return (processed, Some(CodecError {
                             upto: i as int, cause: "invalid sequence".into_maybe_owned()
                         }));
@@ -218,7 +218,7 @@ impl<E:Endian+Clone+'static> Decoder for UTF16Decoder<E> {
             let ch = concat_two_bytes(input[i-1] as u16, input[i]);
             i += 1;
             match ch {
-                0xdc00..0xdfff => {
+                0xdc00...0xdfff => {
                     let ch = ((upper as uint - 0xd800) << 10) + (ch as uint - 0xdc00);
                     output.write_char(as_char(ch + 0x10000));
                 }
@@ -243,7 +243,7 @@ impl<E:Endian+Clone+'static> Decoder for UTF16Decoder<E> {
             }
             let ch = concat_two_bytes(input[i-1] as u16, input[i]);
             match ch {
-                0xd800..0xdbff => {
+                0xd800...0xdbff => {
                     i += 2;
                     if i >= len {
                         self.leadsurrogate = ch;
@@ -252,7 +252,7 @@ impl<E:Endian+Clone+'static> Decoder for UTF16Decoder<E> {
                     }
                     let ch2 = concat_two_bytes(input[i-1] as u16, input[i]);
                     match ch2 {
-                        0xdc00..0xdfff => {
+                        0xdc00...0xdfff => {
                             let ch = ((ch as uint - 0xd800) << 10) + (ch2 as uint - 0xdc00);
                             output.write_char(as_char(ch + 0x10000));
                         }
@@ -263,7 +263,7 @@ impl<E:Endian+Clone+'static> Decoder for UTF16Decoder<E> {
                         }
                     }
                 }
-                0xdc00..0xdfff => {
+                0xdc00...0xdfff => {
                     return (processed, Some(CodecError {
                         upto: i as int + 1, cause: "invalid sequence".into_maybe_owned()
                     }));

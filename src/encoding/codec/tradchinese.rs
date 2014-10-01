@@ -86,7 +86,7 @@ ascii_compatible_stateful_decoder! {
         let lead = lead as uint;
         let trail = trail as uint;
         let index = match (lead, trail) {
-            (0x81..0xfe, 0x40..0x7e) | (0x81..0xfe, 0xa1..0xfe) => {
+            (0x81...0xfe, 0x40...0x7e) | (0x81...0xfe, 0xa1...0xfe) => {
                 let trailoffset = if trail < 0x7f {0x40} else {0x62};
                 (lead - 0x81) * 157 + trail - trailoffset
             }
@@ -97,8 +97,8 @@ ascii_compatible_stateful_decoder! {
 
     // big5 lead = 0x00
     initial state S0(ctx) {
-        case b @ 0x00..0x7f => ctx.emit(b as u32);
-        case b @ 0x81..0xfe => S1(ctx, b);
+        case b @ 0x00...0x7f => ctx.emit(b as u32);
+        case b @ 0x81...0xfe => S1(ctx, b);
         case _ => ctx.err("invalid sequence");
     }
 
