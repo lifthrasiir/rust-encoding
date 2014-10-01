@@ -53,7 +53,7 @@ impl Encoder for BigFive2003Encoder {
             } else {
                 let ptr = index::big5::backward(ch as u32);
                 if ptr == 0xffff || ptr < (0xa1 - 0x81) * 157 {
-                    // no HKSCS extension (XXX doesn't HKSCS include 0xFA40..0xFEFE?)
+                    // no HKSCS extension (XXX doesn't HKSCS include 0xFA40...0xFEFE?)
                     return (i, Some(CodecError {
                         upto: j as int, cause: "unrepresentable character".into_maybe_owned()
                     }));
@@ -86,19 +86,19 @@ ascii_compatible_stateful_decoder! {
         let lead = lead as uint;
         let trail = trail as uint;
         let index = match (lead, trail) {
-            (0x81..0xfe, 0x40..0x7e) | (0x81..0xfe, 0xa1..0xfe) => {
+            (0x81...0xfe, 0x40...0x7e) | (0x81...0xfe, 0xa1...0xfe) => {
                 let trailoffset = if trail < 0x7f {0x40} else {0x62};
                 (lead - 0x81) * 157 + trail - trailoffset
             }
             _ => 0xffff,
         };
-        index::big5::forward(index as u16) // may return two-letter replacements 0..3
+        index::big5::forward(index as u16) // may return two-letter replacements 0...3
     }
 
     // big5 lead = 0x00
     initial state S0(ctx) {
-        case b @ 0x00..0x7f => ctx.emit(b as u32);
-        case b @ 0x81..0xfe => S1(ctx, b);
+        case b @ 0x00...0x7f => ctx.emit(b as u32);
+        case b @ 0x81...0xfe => S1(ctx, b);
         case _ => ctx.err("invalid sequence");
     }
 
