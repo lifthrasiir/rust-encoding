@@ -723,8 +723,8 @@ impl Encoding for ISO2022JPEncoding {
 
 #[deriving(PartialEq,Clone)]
 enum ISO2022JPState {
-    ASCII, // U+0000..007F, U+00A5, U+203E
-    Katakana, // JIS X 0201: U+FF61..FF9F
+    ASCII, // U+0000...007F, U+00A5, U+203E
+    Katakana, // JIS X 0201: U+FF61...FF9F
     Lead, // JIS X 0208
 }
 

@@ -60,7 +60,7 @@ impl Endian for Big {
  * 2 (up to U+FFFF) or 4 bytes (up to U+10FFFF) depending on its value.
  * It uses a "surrogate" mechanism to encode non-BMP codepoints,
  * which are represented as a pair of lower surrogate and upper surrogate characters.
- * In this effect, surrogate characters (U+D800..DFFF) cannot appear alone
+ * In this effect, surrogate characters (U+D800...DFFF) cannot appear alone
  * and cannot be included in a valid Unicode string.
  *
  * ## Specialization
@@ -158,7 +158,7 @@ impl<E:Endian+Clone+'static> Decoder for UTF16Decoder<E> {
     fn from_self(&self) -> Box<Decoder> { UTF16Decoder::new(None::<E>) }
 
     fn raw_feed(&mut self, input: &[u8], output: &mut StringWriter) -> (uint, Option<CodecError>) {
-        output.writer_hint(input.len() / 2); // when every codepoint is U+0000..007F
+        output.writer_hint(input.len() / 2); // when every codepoint is U+0000...007F
 
         let concat_two_bytes = |lead: u16, trail: u8|
             Endian::concat_two_bytes(None::<E>, lead, trail);

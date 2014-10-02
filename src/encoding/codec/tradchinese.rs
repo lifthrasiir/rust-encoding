@@ -53,7 +53,7 @@ impl Encoder for BigFive2003Encoder {
             } else {
                 let ptr = index::big5::backward(ch as u32);
                 if ptr == 0xffff || ptr < (0xa1 - 0x81) * 157 {
-                    // no HKSCS extension (XXX doesn't HKSCS include 0xFA40..0xFEFE?)
+                    // no HKSCS extension (XXX doesn't HKSCS include 0xFA40...0xFEFE?)
                     return (i, Some(CodecError {
                         upto: j as int, cause: "unrepresentable character".into_maybe_owned()
                     }));
@@ -92,7 +92,7 @@ ascii_compatible_stateful_decoder! {
             }
             _ => 0xffff,
         };
-        index::big5::forward(index as u16) // may return two-letter replacements 0..3
+        index::big5::forward(index as u16) // may return two-letter replacements 0...3
     }
 
     // big5 lead = 0x00
