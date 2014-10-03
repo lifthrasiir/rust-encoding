@@ -63,6 +63,7 @@ assert_eq!(ISO_8859_6.decode([65,99,109,101,169], DecodeIgnore),
 A practical example of custom encoder traps:
 
 ~~~~ {.rust}
+# #![feature(slicing_syntax)]
 use encoding::{Encoding, Encoder, ByteWriter, EncoderTrap, EncoderCall, DecodeStrict};
 use encoding::all::ASCII;
 
