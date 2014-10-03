@@ -77,8 +77,8 @@ fn hex_ncr_escape(_encoder: &mut Encoder, input: &str, output: &mut ByteWriter) 
 static HexNcrEscape: EncoderTrap = EncoderCall(hex_ncr_escape);
 
 let orig = "Hello, 世界!".to_string();
-let encoded = ASCII.encode(orig.as_slice(), HexNcrEscape).unwrap();
-assert_eq!(ASCII.decode(encoded.as_slice(), DecodeStrict),
+let encoded = ASCII.encode(orig[], HexNcrEscape).unwrap();
+assert_eq!(ASCII.decode(encoded[], DecodeStrict),
            Ok("Hello, &#x4e16;&#x754c;!".to_string()));
 ~~~~
 
@@ -264,7 +264,7 @@ mod tests {
                 input, DecodeStrict, all::ISO_8859_1 as EncodingRef);
             let result = result.unwrap();
             assert_eq!(used_encoding.name(), expected_encoding);
-            assert_eq!(result.as_slice(), expected_result);
+            assert_eq!(result[], expected_result);
         }
 
         test_one([0xEF, 0xBB, 0xBF, 0xC3, 0xA9], "é", "utf-8");

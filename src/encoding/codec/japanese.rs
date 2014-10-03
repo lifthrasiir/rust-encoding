@@ -386,7 +386,7 @@ mod eucjp_tests {
         let s = testutils::JAPANESE_TEXT;
         bencher.bytes = s.len() as u64;
         bencher.iter(|| test::black_box({
-            Encoding.encode(s.as_slice(), EncodeStrict)
+            Encoding.encode(s[], EncodeStrict)
         }))
     }
 
@@ -396,7 +396,7 @@ mod eucjp_tests {
         let s = Encoding.encode(testutils::JAPANESE_TEXT, EncodeStrict).ok().unwrap();
         bencher.bytes = s.len() as u64;
         bencher.iter(|| test::black_box({
-            Encoding.decode(s.as_slice(), DecodeStrict)
+            Encoding.decode(s[], DecodeStrict)
         }))
     }
 }
@@ -683,7 +683,7 @@ mod windows31j_tests {
         let s = testutils::JAPANESE_TEXT;
         bencher.bytes = s.len() as u64;
         bencher.iter(|| test::black_box({
-            Encoding.encode(s.as_slice(), EncodeStrict)
+            Encoding.encode(s[], EncodeStrict)
         }))
     }
 
@@ -693,7 +693,7 @@ mod windows31j_tests {
         let s = Encoding.encode(testutils::JAPANESE_TEXT, EncodeStrict).ok().unwrap();
         bencher.bytes = s.len() as u64;
         bencher.iter(|| test::black_box({
-            Encoding.decode(s.as_slice(), DecodeStrict)
+            Encoding.decode(s[], DecodeStrict)
         }))
     }
 }
@@ -956,7 +956,7 @@ mod iso2022jp_tests {
         let decoded = [ "\x20", Bd, Cd, Ad, Cd, Bd, Ad].concat();
         let tmp: &[&[_]] = &[&[0x20], Be, Ce, Ae, Ce, Be, Ae];
         let encoded = tmp.concat_vec();
-        assert_feed_ok!(e, decoded.as_slice(), "", encoded.as_slice());
+        assert_feed_ok!(e, decoded[], "", encoded[]);
         assert_finish_ok!(e, []);
     }
 
@@ -1028,7 +1028,7 @@ mod iso2022jp_tests {
         let decoded = [ "\x20",Ad,Bd,Bd,Cd,Cd,Ad,Cd,Bd,Ad,Dd,Dd,Bd,Dd,Cd,Dd,Ad].concat();
         let tmp: &[&[_]] = &[&[0x20],Ae,Be,Be,Ce,Ce,Ae,Ce,Be,Ae,De,De,Be,De,Ce,De,Ae];
         let encoded = tmp.concat_vec();
-        assert_feed_ok!(d, encoded.as_slice(), [], decoded.as_slice());
+        assert_feed_ok!(d, encoded[], [], decoded[]);
         assert_finish_ok!(d, "");
     }
 
@@ -1245,7 +1245,7 @@ mod iso2022jp_tests {
         let s = testutils::JAPANESE_TEXT;
         bencher.bytes = s.len() as u64;
         bencher.iter(|| test::black_box({
-            Encoding.encode(s.as_slice(), EncodeStrict)
+            Encoding.encode(s[], EncodeStrict)
         }))
     }
 
@@ -1255,7 +1255,7 @@ mod iso2022jp_tests {
         let s = Encoding.encode(testutils::JAPANESE_TEXT, EncodeStrict).ok().unwrap();
         bencher.bytes = s.len() as u64;
         bencher.iter(|| test::black_box({
-            Encoding.decode(s.as_slice(), DecodeStrict)
+            Encoding.decode(s[], DecodeStrict)
         }))
     }
 }

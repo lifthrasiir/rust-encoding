@@ -286,12 +286,12 @@ pub trait Encoding {
         let mut ret = Vec::new();
 
         loop {
-            let (offset, err) = encoder.raw_feed(input.slice_from(remaining), &mut ret);
+            let (offset, err) = encoder.raw_feed(input[remaining..], &mut ret);
             let unprocessed = remaining + offset;
             match err {
                 Some(err) => {
                     remaining = (remaining as int + err.upto) as uint;
-                    if !trap.trap(&mut *encoder, input.slice(unprocessed, remaining), &mut ret) {
+                    if !trap.trap(&mut *encoder, input[unprocessed..remaining], &mut ret) {
                         return Err(err.cause);
                     }
                 }
@@ -300,7 +300,7 @@ pub trait Encoding {
                     match encoder.raw_finish(&mut ret) {
                         Some(err) => {
                             remaining = (remaining as int + err.upto) as uint;
-                            if !trap.trap(&mut *encoder, input.slice(unprocessed, remaining), &mut ret) {
+                            if !trap.trap(&mut *encoder, input[unprocessed..remaining], &mut ret) {
                                 return Err(err.cause);
                             }
                         }
@@ -330,7 +330,7 @@ pub trait Encoding {
             match err {
                 Some(err) => {
                     remaining = (remaining as int + err.upto) as uint;
-                    if !trap.trap(&mut *decoder, input[unprocessed..remaining-unprocessed], &mut ret) {
+                    if !trap.trap(&mut *decoder, input[unprocessed..remaining], &mut ret) {
                         return Err(err.cause);
                     }
                 }
@@ -339,7 +339,7 @@ pub trait Encoding {
                     match decoder.raw_finish(&mut ret) {
                         Some(err) => {
                             remaining = (remaining as int + err.upto) as uint;
-                            if !trap.trap(&mut *decoder, input[unprocessed..remaining-unprocessed], &mut ret) {
+                            if !trap.trap(&mut *decoder, input[unprocessed..remaining], &mut ret) {
                                 return Err(err.cause);
                             }
                         }
@@ -437,9 +437,9 @@ impl EncoderTrap {
             EncodeNcrEscape => {
                 let mut escapes = String::new();
                 for ch in input.chars() {
-                    escapes.push_str(format!("&#{:d};", ch as int).as_slice());
+                    escapes.push_str(format!("&#{:d};", ch as int)[]);
                 }
-                reencode(encoder, escapes.as_slice(), output, "NcrEscape")
+                reencode(encoder, escapes[], output, "NcrEscape")
             },
             EncoderCall(func) => func(encoder, input, output),
         }

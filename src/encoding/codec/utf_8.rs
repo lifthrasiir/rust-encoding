@@ -802,7 +802,7 @@ mod tests {
             let s = testutils::get_external_bench_data();
             bencher.bytes = s.len() as u64;
             bencher.iter(|| test::black_box({
-                Encoding.decode(s.as_slice(), DecodeReplace)
+                Encoding.decode(s[], DecodeReplace)
             }))
         }
 
@@ -811,7 +811,7 @@ mod tests {
             let s = testutils::get_external_bench_data();
             bencher.bytes = s.len() as u64;
             bencher.iter(|| test::black_box({
-                from_utf8(s.as_slice())
+                from_utf8(s[])
             }))
         }
 
@@ -820,7 +820,7 @@ mod tests {
             let s = testutils::get_external_bench_data();
             bencher.bytes = s.len() as u64;
             bencher.iter(|| test::black_box({
-                str::from_utf8(s.as_slice())
+                str::from_utf8(s[])
             }))
         }
 
@@ -829,7 +829,7 @@ mod tests {
             let s = testutils::get_external_bench_data();
             bencher.bytes = s.len() as u64;
             bencher.iter(|| test::black_box({
-                String::from_utf8_lossy(s.as_slice())
+                String::from_utf8_lossy(s[])
             }))
         }
     }
