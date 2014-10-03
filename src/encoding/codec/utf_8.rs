@@ -164,7 +164,7 @@ impl Decoder for UTF8Decoder {
             processed += first_msb;
         }
 
-        for (i, &ch) in input.slice_from(offset).iter().enumerate() {
+        for (i, &ch) in input[offset..].iter().enumerate() {
             state = next_state!(state, ch);
             if state == ACCEPT_STATE {
                 processed = i + offset + 1;
@@ -172,10 +172,10 @@ impl Decoder for UTF8Decoder {
                 let upto = if state == REJECT_STATE {i + offset + 1} else {i + offset};
                 self.state = INITIAL_STATE;
                 if processed > 0 && self.queuelen > 0 { // flush `queue` outside the problem
-                    write_bytes(output, self.queue.slice(0, self.queuelen));
+                    write_bytes(output, self.queue[0..self.queuelen]);
                 }
                 self.queuelen = 0;
-                write_bytes(output, input.slice(0, processed));
+                write_bytes(output, input[0..processed]);
                 return (processed, Some(CodecError {
                     upto: upto as int, cause: "invalid sequence".into_maybe_owned()
                 }));
@@ -184,10 +184,10 @@ impl Decoder for UTF8Decoder {
 
         self.state = state;
         if processed > 0 && self.queuelen > 0 { // flush `queue`
-            write_bytes(output, self.queue.slice(0, self.queuelen));
+            write_bytes(output, self.queue[0..self.queuelen]);
             self.queuelen = 0;
         }
-        write_bytes(output, input.slice(0, processed));
+        write_bytes(output, input[0..processed]);
         if processed < input.len() {
             let morequeuelen = input.len() - processed;
             for i in range(0, morequeuelen) {

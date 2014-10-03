@@ -39,7 +39,7 @@ impl Encoder for ASCIIEncoder {
 
         match input.as_bytes().iter().position(|&ch| ch >= 0x80) {
             Some(first_error) => {
-                output.write_bytes(input.as_bytes().slice_to(first_error));
+                output.write_bytes(input.as_bytes()[..first_error]);
                 let str::CharRange {ch: _, next} = input.char_range_at(first_error);
                 (first_error, Some(CodecError {
                     upto: next as int, cause: "unrepresentable character".into_maybe_owned()
@@ -78,7 +78,7 @@ impl Decoder for ASCIIDecoder {
 
         match input.iter().position(|&ch| ch >= 0x80) {
             Some(first_error) => {
-                write_ascii_bytes(output, input.slice_to(first_error));
+                write_ascii_bytes(output, input[..first_error]);
                 (first_error, Some(CodecError {
                     upto: first_error as int + 1, cause: "invalid sequence".into_maybe_owned()
                 }))

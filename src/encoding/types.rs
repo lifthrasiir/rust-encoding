@@ -51,7 +51,6 @@
  * then it can just discard the first sequence and can emit the fixed string on an error.
  * It still has to feed the input bytes starting at the second offset again.
  */
-
 use std::str::SendStr;
 
 /// Error information from either encoder or decoder.
@@ -326,12 +325,12 @@ pub trait Encoding {
         let mut ret = String::new();
 
         loop {
-            let (offset, err) = decoder.raw_feed(input.slice_from(remaining), &mut ret);
+            let (offset, err) = decoder.raw_feed(input[remaining..], &mut ret);
             let unprocessed = remaining + offset;
             match err {
                 Some(err) => {
                     remaining = (remaining as int + err.upto) as uint;
-                    if !trap.trap(&mut *decoder, input.slice(unprocessed, remaining), &mut ret) {
+                    if !trap.trap(&mut *decoder, input[unprocessed..remaining-unprocessed], &mut ret) {
                         return Err(err.cause);
                     }
                 }
@@ -340,7 +339,7 @@ pub trait Encoding {
                     match decoder.raw_finish(&mut ret) {
                         Some(err) => {
                             remaining = (remaining as int + err.upto) as uint;
-                            if !trap.trap(&mut *decoder, input.slice(unprocessed, remaining), &mut ret) {
+                            if !trap.trap(&mut *decoder, input[unprocessed..remaining-unprocessed], &mut ret) {
                                 return Err(err.cause);
                             }
                         }
@@ -455,11 +454,11 @@ pub fn decode(input: &[u8], trap: DecoderTrap, fallback_encoding: EncodingRef)
            -> (Result<String,SendStr>, EncodingRef) {
     use all::{UTF_8, UTF_16LE, UTF_16BE};
     if input.starts_with([0xEF, 0xBB, 0xBF]) {
-        (UTF_8.decode(input.slice_from(3), trap), UTF_8 as EncodingRef)
+        (UTF_8.decode(input[3..], trap), UTF_8 as EncodingRef)
     } else if input.starts_with([0xFE, 0xFF]) {
-        (UTF_16BE.decode(input.slice_from(2), trap), UTF_16BE as EncodingRef)
+        (UTF_16BE.decode(input[2..], trap), UTF_16BE as EncodingRef)
     } else if input.starts_with([0xFF, 0xFE]) {
-        (UTF_16LE.decode(input.slice_from(2), trap), UTF_16LE as EncodingRef)
+        (UTF_16LE.decode(input[2..], trap), UTF_16LE as EncodingRef)
     } else {
         (fallback_encoding.decode(input, trap), fallback_encoding)
     }

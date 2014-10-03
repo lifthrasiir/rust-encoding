@@ -178,6 +178,7 @@ Whenever in doubt, look at the source code and specifications for detailed expla
 
 #![feature(globs, macro_rules)]
 #![feature(import_shadowing)] // XXX Rust issue #16597
+#![feature(slicing_syntax)]
 
 #![allow(experimental)]
 
