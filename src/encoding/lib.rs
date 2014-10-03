@@ -63,7 +63,6 @@ assert_eq!(ISO_8859_6.decode([65,99,109,101,169], DecodeIgnore),
 A practical example of custom encoder traps:
 
 ~~~~ {.rust}
-# #![feature(slicing_syntax)]
 use encoding::{Encoding, Encoder, ByteWriter, EncoderTrap, EncoderCall, DecodeStrict};
 use encoding::all::ASCII;
 
@@ -78,8 +77,8 @@ fn hex_ncr_escape(_encoder: &mut Encoder, input: &str, output: &mut ByteWriter) 
 static HexNcrEscape: EncoderTrap = EncoderCall(hex_ncr_escape);
 
 let orig = "Hello, 世界!".to_string();
-let encoded = ASCII.encode(orig[], HexNcrEscape).unwrap();
-assert_eq!(ASCII.decode(encoded[], DecodeStrict),
+let encoded = ASCII.encode(orig.as_slice(), HexNcrEscape).unwrap();
+assert_eq!(ASCII.decode(encoded.as_slice(), DecodeStrict),
            Ok("Hello, &#x4e16;&#x754c;!".to_string()));
 ~~~~
 

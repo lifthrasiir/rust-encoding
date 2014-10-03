@@ -81,8 +81,8 @@ fn hex_ncr_escape(_encoder: &mut Encoder, input: &str, output: &mut ByteWriter) 
 static HexNcrEscape: EncoderTrap = EncoderTrap(hex_ncr_escape);
 
 let orig = "Hello, 世界!".to_string();
-let encoded = ASCII.encode(orig[], HexNcrEscape).unwrap();
-assert_eq!(ASCII.decode(encoded[], DecodeStrict),
+let encoded = ASCII.encode(orig.as_slice(), HexNcrEscape).unwrap();
+assert_eq!(ASCII.decode(encoded.as_slice(), DecodeStrict),
            Ok("Hello, &#x4e16;&#x754c;!".to_string()));
 ~~~~
 
