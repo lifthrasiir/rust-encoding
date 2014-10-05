@@ -78,7 +78,7 @@ fn hex_ncr_escape(_encoder: &mut Encoder, input: &str, output: &mut ByteWriter) 
     output.write_bytes(escapes.as_bytes());
     true
 }
-static HexNcrEscape: EncoderTrap = EncoderTrap(hex_ncr_escape);
+#[allow(non_uppercase_statics)] static HexNcrEscape: EncoderTrap = EncoderTrap(hex_ncr_escape);
 
 let orig = "Hello, 世界!".to_string();
 let encoded = ASCII.encode(orig.as_slice(), HexNcrEscape).unwrap();

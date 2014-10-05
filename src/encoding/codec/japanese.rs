@@ -382,21 +382,19 @@ mod eucjp_tests {
 
     #[bench]
     fn bench_encode_short_text(bencher: &mut test::Bencher) {
-        static Encoding: EUCJPEncoding = EUCJPEncoding;
         let s = testutils::JAPANESE_TEXT;
         bencher.bytes = s.len() as u64;
         bencher.iter(|| test::black_box({
-            Encoding.encode(s[], EncodeStrict)
+            EUCJPEncoding.encode(s[], EncodeStrict)
         }))
     }
 
     #[bench]
     fn bench_decode_short_text(bencher: &mut test::Bencher) {
-        static Encoding: EUCJPEncoding = EUCJPEncoding;
-        let s = Encoding.encode(testutils::JAPANESE_TEXT, EncodeStrict).ok().unwrap();
+        let s = EUCJPEncoding.encode(testutils::JAPANESE_TEXT, EncodeStrict).ok().unwrap();
         bencher.bytes = s.len() as u64;
         bencher.iter(|| test::black_box({
-            Encoding.decode(s[], DecodeStrict)
+            EUCJPEncoding.decode(s[], DecodeStrict)
         }))
     }
 }
@@ -679,21 +677,19 @@ mod windows31j_tests {
 
     #[bench]
     fn bench_encode_short_text(bencher: &mut test::Bencher) {
-        static Encoding: Windows31JEncoding = Windows31JEncoding;
         let s = testutils::JAPANESE_TEXT;
         bencher.bytes = s.len() as u64;
         bencher.iter(|| test::black_box({
-            Encoding.encode(s[], EncodeStrict)
+            Windows31JEncoding.encode(s[], EncodeStrict)
         }))
     }
 
     #[bench]
     fn bench_decode_short_text(bencher: &mut test::Bencher) {
-        static Encoding: Windows31JEncoding = Windows31JEncoding;
-        let s = Encoding.encode(testutils::JAPANESE_TEXT, EncodeStrict).ok().unwrap();
+        let s = Windows31JEncoding.encode(testutils::JAPANESE_TEXT, EncodeStrict).ok().unwrap();
         bencher.bytes = s.len() as u64;
         bencher.iter(|| test::black_box({
-            Encoding.decode(s[], DecodeStrict)
+            Windows31JEncoding.decode(s[], DecodeStrict)
         }))
     }
 }
@@ -946,16 +942,15 @@ mod iso2022jp_tests {
         // - C: U+FF88 HALFWIDTH KATAKANA LETTER NE (requires Katakana state)
         // - D is omitted as the encoder does not support JIS X 0212.
         // a (3,2) De Bruijn near-sequence "ABCACBA" is used to test all possible cases.
-        static Ad: &'static str = "\x20";
-        static Bd: &'static str = "\u30cd";
-        static Cd: &'static str = "\uff88";
-        static Ae: &'static [u8] = &[0x1b, 0x28, 0x42, 0x20];
-        static Be: &'static [u8] = &[0x1b, 0x24, 0x42, 0x25, 0x4d];
-        static Ce: &'static [u8] = &[0x1b, 0x28, 0x49, 0x48];
+        static AD: &'static str = "\x20";
+        static BD: &'static str = "\u30cd";
+        static CD: &'static str = "\uff88";
+        static AE: &'static [u8] = &[0x1b, 0x28, 0x42, 0x20];
+        static BE: &'static [u8] = &[0x1b, 0x24, 0x42, 0x25, 0x4d];
+        static CE: &'static [u8] = &[0x1b, 0x28, 0x49, 0x48];
         let mut e = ISO2022JPEncoding.encoder();
-        let decoded = [ "\x20", Bd, Cd, Ad, Cd, Bd, Ad].concat();
-        let tmp: &[&[_]] = &[&[0x20], Be, Ce, Ae, Ce, Be, Ae];
-        let encoded = tmp.concat_vec();
+        let decoded = ["\x20",   BD, CD, AD, CD, BD, AD].concat();
+        let encoded = [[0x20][], BE, CE, AE, CE, BE, AE].concat_vec();
         assert_feed_ok!(e, decoded[], "", encoded[]);
         assert_finish_ok!(e, []);
     }
@@ -1016,18 +1011,17 @@ mod iso2022jp_tests {
         // - C: U+FF88 HALFWIDTH KATAKANA LETTER NE (requires Katakana state)
         // - D: U+793B CJK UNIFIED IDEOGRAPH-793B (requires JIS X 0212 Lead state)
         // a (4,2) De Bruijn sequence "AABBCCACBADDBDCDA" is used to test all possible cases.
-        static Ad: &'static str = "\x20";
-        static Bd: &'static str = "\u30cd";
-        static Cd: &'static str = "\uff88";
-        static Dd: &'static str = "\u793b";
-        static Ae: &'static [u8] = &[0x1b, 0x28, 0x42,       0x20];
-        static Be: &'static [u8] = &[0x1b, 0x24, 0x42,       0x25, 0x4d];
-        static Ce: &'static [u8] = &[0x1b, 0x28, 0x49,       0x48];
-        static De: &'static [u8] = &[0x1b, 0x24, 0x28, 0x44, 0x50, 0x4b];
+        static AD: &'static str = "\x20";
+        static BD: &'static str = "\u30cd";
+        static CD: &'static str = "\uff88";
+        static DD: &'static str = "\u793b";
+        static AE: &'static [u8] = &[0x1b, 0x28, 0x42,       0x20];
+        static BE: &'static [u8] = &[0x1b, 0x24, 0x42,       0x25, 0x4d];
+        static CE: &'static [u8] = &[0x1b, 0x28, 0x49,       0x48];
+        static DE: &'static [u8] = &[0x1b, 0x24, 0x28, 0x44, 0x50, 0x4b];
         let mut d = ISO2022JPEncoding.decoder();
-        let decoded = [ "\x20",Ad,Bd,Bd,Cd,Cd,Ad,Cd,Bd,Ad,Dd,Dd,Bd,Dd,Cd,Dd,Ad].concat();
-        let tmp: &[&[_]] = &[&[0x20],Ae,Be,Be,Ce,Ce,Ae,Ce,Be,Ae,De,De,Be,De,Ce,De,Ae];
-        let encoded = tmp.concat_vec();
+        let decoded = ["\x20",  AD,BD,BD,CD,CD,AD,CD,BD,AD,DD,DD,BD,DD,CD,DD,AD].concat();
+        let encoded = [[0x20][],AE,BE,BE,CE,CE,AE,CE,BE,AE,DE,DE,BE,DE,CE,DE,AE].concat_vec();
         assert_feed_ok!(d, encoded[], [], decoded[]);
         assert_finish_ok!(d, "");
     }
@@ -1241,21 +1235,19 @@ mod iso2022jp_tests {
 
     #[bench]
     fn bench_encode_short_text(bencher: &mut test::Bencher) {
-        static Encoding: ISO2022JPEncoding = ISO2022JPEncoding;
         let s = testutils::JAPANESE_TEXT;
         bencher.bytes = s.len() as u64;
         bencher.iter(|| test::black_box({
-            Encoding.encode(s[], EncodeStrict)
+            ISO2022JPEncoding.encode(s[], EncodeStrict)
         }))
     }
 
     #[bench]
     fn bench_decode_short_text(bencher: &mut test::Bencher) {
-        static Encoding: ISO2022JPEncoding = ISO2022JPEncoding;
-        let s = Encoding.encode(testutils::JAPANESE_TEXT, EncodeStrict).ok().unwrap();
+        let s = ISO2022JPEncoding.encode(testutils::JAPANESE_TEXT, EncodeStrict).ok().unwrap();
         bencher.bytes = s.len() as u64;
         bencher.iter(|| test::black_box({
-            Encoding.decode(s[], DecodeStrict)
+            ISO2022JPEncoding.decode(s[], DecodeStrict)
         }))
     }
 }

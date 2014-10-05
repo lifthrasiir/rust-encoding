@@ -641,21 +641,19 @@ mod tests {
 
         #[bench]
         fn bench_encode(bencher: &mut test::Bencher) {
-            static Encoding: UTF8Encoding = UTF8Encoding;
             let s = testutils::ASCII_TEXT;
             bencher.bytes = s.len() as u64;
             bencher.iter(|| test::black_box({
-                Encoding.encode(s, EncodeStrict)
+                UTF8Encoding.encode(s, EncodeStrict)
             }))
         }
 
         #[bench]
         fn bench_decode(bencher: &mut test::Bencher) {
-            static Encoding: UTF8Encoding = UTF8Encoding;
             let s = testutils::ASCII_TEXT.as_bytes();
             bencher.bytes = s.len() as u64;
             bencher.iter(|| test::black_box({
-                Encoding.decode(s, DecodeStrict)
+                UTF8Encoding.decode(s, DecodeStrict)
             }))
         }
 
@@ -698,21 +696,19 @@ mod tests {
 
         #[bench]
         fn bench_encode(bencher: &mut test::Bencher) {
-            static Encoding: UTF8Encoding = UTF8Encoding;
             let s = testutils::KOREAN_TEXT;
             bencher.bytes = s.len() as u64;
             bencher.iter(|| test::black_box({
-                Encoding.encode(s, EncodeStrict)
+                UTF8Encoding.encode(s, EncodeStrict)
             }))
         }
 
         #[bench]
         fn bench_decode(bencher: &mut test::Bencher) {
-            static Encoding: UTF8Encoding = UTF8Encoding;
             let s = testutils::KOREAN_TEXT.as_bytes();
             bencher.bytes = s.len() as u64;
             bencher.iter(|| test::black_box({
-                Encoding.decode(s, DecodeStrict)
+                UTF8Encoding.decode(s, DecodeStrict)
             }))
         }
 
@@ -753,11 +749,10 @@ mod tests {
 
         #[bench]
         fn bench_decode_replace(bencher: &mut test::Bencher) {
-            static Encoding: UTF8Encoding = UTF8Encoding;
             let s = testutils::INVALID_UTF8_TEXT;
             bencher.bytes = s.len() as u64;
             bencher.iter(|| test::black_box({
-                Encoding.decode(s, DecodeReplace)
+                UTF8Encoding.decode(s, DecodeReplace)
             }))
         }
 
@@ -798,11 +793,10 @@ mod tests {
 
         #[bench]
         fn bench_decode_replace(bencher: &mut test::Bencher) {
-            static Encoding: UTF8Encoding = UTF8Encoding;
             let s = testutils::get_external_bench_data();
             bencher.bytes = s.len() as u64;
             bencher.iter(|| test::black_box({
-                Encoding.decode(s[], DecodeReplace)
+                UTF8Encoding.decode(s[], DecodeReplace)
             }))
         }
 

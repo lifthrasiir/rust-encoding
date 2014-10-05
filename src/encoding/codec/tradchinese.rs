@@ -229,21 +229,20 @@ mod bigfive2003_tests {
 
     #[bench]
     fn bench_encode_short_text(bencher: &mut test::Bencher) {
-        static Encoding: BigFive2003Encoding = BigFive2003Encoding;
         let s = testutils::TRADITIONAL_CHINESE_TEXT;
         bencher.bytes = s.len() as u64;
         bencher.iter(|| test::black_box({
-            Encoding.encode(s[], EncodeStrict)
+            BigFive2003Encoding.encode(s[], EncodeStrict)
         }))
     }
 
     #[bench]
     fn bench_decode_short_text(bencher: &mut test::Bencher) {
-        static Encoding: BigFive2003Encoding = BigFive2003Encoding;
-        let s = Encoding.encode(testutils::TRADITIONAL_CHINESE_TEXT, EncodeStrict).ok().unwrap();
+        let s = BigFive2003Encoding.encode(testutils::TRADITIONAL_CHINESE_TEXT,
+                                           EncodeStrict).ok().unwrap();
         bencher.bytes = s.len() as u64;
         bencher.iter(|| test::black_box({
-            Encoding.decode(s[], DecodeStrict)
+            BigFive2003Encoding.decode(s[], DecodeStrict)
         }))
     }
 }

@@ -227,21 +227,19 @@ mod windows949_tests {
 
     #[bench]
     fn bench_encode_short_text(bencher: &mut test::Bencher) {
-        static Encoding: Windows949Encoding = Windows949Encoding;
         let s = testutils::KOREAN_TEXT;
         bencher.bytes = s.len() as u64;
         bencher.iter(|| test::black_box({
-            Encoding.encode(s[], EncodeStrict)
+            Windows949Encoding.encode(s[], EncodeStrict)
         }))
     }
 
     #[bench]
     fn bench_decode_short_text(bencher: &mut test::Bencher) {
-        static Encoding: Windows949Encoding = Windows949Encoding;
-        let s = Encoding.encode(testutils::KOREAN_TEXT, EncodeStrict).ok().unwrap();
+        let s = Windows949Encoding.encode(testutils::KOREAN_TEXT, EncodeStrict).ok().unwrap();
         bencher.bytes = s.len() as u64;
         bencher.iter(|| test::black_box({
-            Encoding.decode(s[], DecodeStrict)
+            Windows949Encoding.decode(s[], DecodeStrict)
         }))
     }
 }

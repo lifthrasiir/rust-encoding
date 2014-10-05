@@ -126,41 +126,37 @@ mod tests {
 
     #[bench]
     fn bench_encode(bencher: &mut test::Bencher) {
-        static Encoding: ASCIIEncoding = ASCIIEncoding;
         let s = testutils::ASCII_TEXT;
         bencher.bytes = s.len() as u64;
         bencher.iter(|| test::black_box({
-            Encoding.encode(s, EncodeStrict)
+            ASCIIEncoding.encode(s, EncodeStrict)
         }))
     }
 
     #[bench]
     fn bench_decode(bencher: &mut test::Bencher) {
-        static Encoding: ASCIIEncoding = ASCIIEncoding;
         let s = testutils::ASCII_TEXT.as_bytes();
         bencher.bytes = s.len() as u64;
         bencher.iter(|| test::black_box({
-            Encoding.decode(s, DecodeStrict)
+            ASCIIEncoding.decode(s, DecodeStrict)
         }))
     }
 
     #[bench]
     fn bench_encode_replace(bencher: &mut test::Bencher) {
-        static Encoding: ASCIIEncoding = ASCIIEncoding;
         let s = testutils::KOREAN_TEXT;
         bencher.bytes = s.len() as u64;
         bencher.iter(|| test::black_box({
-            Encoding.encode(s, EncodeReplace)
+            ASCIIEncoding.encode(s, EncodeReplace)
         }))
     }
 
     #[bench]
     fn bench_decode_replace(bencher: &mut test::Bencher) {
-        static Encoding: ASCIIEncoding = ASCIIEncoding;
         let s = testutils::KOREAN_TEXT.as_bytes();
         bencher.bytes = s.len() as u64;
         bencher.iter(|| test::black_box({
-            Encoding.decode(s, DecodeReplace)
+            ASCIIEncoding.decode(s, DecodeReplace)
         }))
     }
 }

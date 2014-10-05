@@ -302,21 +302,20 @@ mod gb18030_tests {
 
     #[bench]
     fn bench_encode_short_text(bencher: &mut test::Bencher) {
-        static Encoding: GB18030Encoding = GB18030Encoding;
         let s = testutils::SIMPLIFIED_CHINESE_TEXT;
         bencher.bytes = s.len() as u64;
         bencher.iter(|| test::black_box({
-            Encoding.encode(s[], EncodeStrict)
+            GB18030Encoding.encode(s[], EncodeStrict)
         }))
     }
 
     #[bench]
     fn bench_decode_short_text(bencher: &mut test::Bencher) {
-        static Encoding: GB18030Encoding = GB18030Encoding;
-        let s = Encoding.encode(testutils::SIMPLIFIED_CHINESE_TEXT, EncodeStrict).ok().unwrap();
+        let s = GB18030Encoding.encode(testutils::SIMPLIFIED_CHINESE_TEXT,
+                                       EncodeStrict).ok().unwrap();
         bencher.bytes = s.len() as u64;
         bencher.iter(|| test::black_box({
-            Encoding.decode(s[], DecodeStrict)
+            GB18030Encoding.decode(s[], DecodeStrict)
         }))
     }
 }
@@ -592,21 +591,19 @@ mod hz_tests {
 
     #[bench]
     fn bench_encode_short_text(bencher: &mut test::Bencher) {
-        static Encoding: HZEncoding = HZEncoding;
         let s = testutils::SIMPLIFIED_CHINESE_TEXT;
         bencher.bytes = s.len() as u64;
         bencher.iter(|| test::black_box({
-            Encoding.encode(s[], EncodeStrict)
+            HZEncoding.encode(s[], EncodeStrict)
         }))
     }
 
     #[bench]
     fn bench_decode_short_text(bencher: &mut test::Bencher) {
-        static Encoding: HZEncoding = HZEncoding;
-        let s = Encoding.encode(testutils::SIMPLIFIED_CHINESE_TEXT, EncodeStrict).ok().unwrap();
+        let s = HZEncoding.encode(testutils::SIMPLIFIED_CHINESE_TEXT, EncodeStrict).ok().unwrap();
         bencher.bytes = s.len() as u64;
         bencher.iter(|| test::black_box({
-            Encoding.decode(s[], DecodeStrict)
+            HZEncoding.decode(s[], DecodeStrict)
         }))
     }
 }

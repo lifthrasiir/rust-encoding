@@ -74,7 +74,7 @@ fn hex_ncr_escape(_encoder: &mut Encoder, input: &str, output: &mut ByteWriter) 
     output.write_bytes(escapes.as_bytes());
     true
 }
-static HexNcrEscape: EncoderTrap = EncoderCall(hex_ncr_escape);
+#[allow(non_uppercase_statics)] static HexNcrEscape: EncoderTrap = EncoderCall(hex_ncr_escape);
 
 let orig = "Hello, 世界!".to_string();
 let encoded = ASCII.encode(orig.as_slice(), HexNcrEscape).unwrap();
@@ -179,10 +179,6 @@ Whenever in doubt, look at the source code and specifications for detailed expla
 #![feature(globs, macro_rules)]
 
 #![allow(experimental)]
-
-// XXX temporarily cope with the nightly, see #47
-#![allow(unknown_features)]
-#![feature(slicing_syntax)]
 
 #[cfg(test)] extern crate test;
 
