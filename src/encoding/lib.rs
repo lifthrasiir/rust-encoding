@@ -176,7 +176,7 @@ Whenever in doubt, look at the source code and specifications for detailed expla
 #![comment = "Character encoding support for Rust"]
 #![license = "MIT"]
 
-#![feature(globs, macro_rules)]
+#![feature(globs, macro_rules, slicing_syntax)]
 
 #![allow(experimental)]
 
