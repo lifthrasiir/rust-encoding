@@ -189,7 +189,7 @@ pub trait Encoder: 'static {
     }
 }
 
-/// Encoder converting a byte sequence into a Unicode string.
+/// Decoder converting a byte sequence into a Unicode string.
 /// This is a lower level interface, and normally `Encoding::decode` should be used instead.
 #[experimental]
 pub trait Decoder: 'static {
