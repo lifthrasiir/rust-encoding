@@ -449,7 +449,12 @@ impl EncoderTrap {
 /// Determine the encoding by looking for a Byte Order Mark (BOM)
 /// and decoded a single string in memory.
 /// Return the result and the used encoding.
+///
+/// # Features
+///
+/// This function is only available with a `whatwg` feature, which is enabled by default.
 #[unstable]
+#[cfg(any(feature="default", feature="whatwg"))]
 pub fn decode(input: &[u8], trap: DecoderTrap, fallback_encoding: EncodingRef)
            -> (Result<String,SendStr>, EncodingRef) {
     use all::{UTF_8, UTF_16LE, UTF_16BE};

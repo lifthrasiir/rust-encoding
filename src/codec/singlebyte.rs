@@ -116,12 +116,12 @@ pub mod iso_8859_1 {
 
 #[cfg(test)]
 mod tests {
-    use all::ISO_8859_2;
+    use all::ISO_8859_1;
     use types::*;
 
     #[test]
     fn test_encoder_non_bmp() {
-        let mut e = ISO_8859_2.encoder();
+        let mut e = ISO_8859_1.encoder();
         assert_feed_err!(e, "A", "\uFFFF", "B", [0x41]);
         assert_feed_err!(e, "A", "\U00010000", "B", [0x41]);
     }

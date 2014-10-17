@@ -183,13 +183,15 @@ Whenever in doubt, look at the source code and specifications for detailed expla
 
 #[cfg(test)] extern crate test;
 
-pub use self::types::{CodecError, ByteWriter, StringWriter,
-                      Encoder, Decoder, EncodingRef, Encoding,
-                      EncoderTrapFunc, DecoderTrapFunc, DecoderTrap,
-                      DecodeStrict, DecodeReplace, DecodeIgnore,
-                      EncoderTrap, EncodeStrict, EncodeReplace,
-                      EncodeIgnore, EncodeNcrEscape, decode,
-                      EncoderCall, DecoderCall}; // reexport
+// reexports
+pub use self::types::CodecError;
+pub use self::types::{ByteWriter, StringWriter};
+pub use self::types::{Encoder, Decoder, EncodingRef, Encoding};
+pub use self::types::{DecoderTrap, DecodeStrict, DecodeReplace, DecodeIgnore,
+                      DecoderCall, DecoderTrapFunc};
+pub use self::types::{EncoderTrap, EncodeStrict, EncodeReplace, EncodeIgnore, EncodeNcrEscape,
+                      EncoderCall, EncoderTrapFunc};
+#[cfg(any(feature="default", feature="whatwg"))] pub use self::types::decode;
 
 mod util;
 #[cfg(test)] mod testutils;
@@ -199,39 +201,39 @@ pub mod types;
 /// Indices used for character encoding implementation. Semi-internal.
 #[unstable]
 pub mod index {
-    pub mod ibm866;
-    pub mod iso_8859_2;
-    pub mod iso_8859_3;
-    pub mod iso_8859_4;
-    pub mod iso_8859_5;
-    pub mod iso_8859_6;
-    pub mod iso_8859_7;
-    pub mod iso_8859_8;
-    pub mod iso_8859_10;
-    pub mod iso_8859_13;
-    pub mod iso_8859_14;
-    pub mod iso_8859_15;
-    pub mod iso_8859_16;
-    pub mod koi8_r;
-    pub mod koi8_u;
-    pub mod macintosh;
-    pub mod windows_874;
-    pub mod windows_1250;
-    pub mod windows_1251;
-    pub mod windows_1252;
-    pub mod windows_1253;
-    pub mod windows_1254;
-    pub mod windows_1255;
-    pub mod windows_1256;
-    pub mod windows_1257;
-    pub mod windows_1258;
-    pub mod x_mac_cyrillic;
-    pub mod big5;
-    pub mod euc_kr;
-    pub mod gb18030;
-    pub mod gb18030_ranges;
-    pub mod jis0208;
-    pub mod jis0212;
+    #[cfg(any(feature="default", feature="whatwg", feature="cyrl"))] pub mod ibm866;
+    #[cfg(any(feature="default", feature="whatwg", feature="latn"))] pub mod iso_8859_2;
+    #[cfg(any(feature="default", feature="whatwg", feature="latn"))] pub mod iso_8859_3;
+    #[cfg(any(feature="default", feature="whatwg", feature="latn"))] pub mod iso_8859_4;
+    #[cfg(any(feature="default", feature="whatwg", feature="cyrl"))] pub mod iso_8859_5;
+    #[cfg(any(feature="default", feature="whatwg", feature="arab"))] pub mod iso_8859_6;
+    #[cfg(any(feature="default", feature="whatwg", feature="grek"))] pub mod iso_8859_7;
+    #[cfg(any(feature="default", feature="whatwg", feature="hebr"))] pub mod iso_8859_8;
+    #[cfg(any(feature="default", feature="whatwg", feature="latn"))] pub mod iso_8859_10;
+    #[cfg(any(feature="default", feature="whatwg", feature="latn"))] pub mod iso_8859_13;
+    #[cfg(any(feature="default", feature="whatwg", feature="latn"))] pub mod iso_8859_14;
+    #[cfg(any(feature="default", feature="whatwg", feature="latn"))] pub mod iso_8859_15;
+    #[cfg(any(feature="default", feature="whatwg", feature="latn"))] pub mod iso_8859_16;
+    #[cfg(any(feature="default", feature="whatwg", feature="cyrl"))] pub mod koi8_r;
+    #[cfg(any(feature="default", feature="whatwg", feature="cyrl"))] pub mod koi8_u;
+    #[cfg(any(feature="default", feature="whatwg", feature="latn"))] pub mod macintosh;
+    #[cfg(any(feature="default", feature="whatwg", feature="thai"))] pub mod windows_874;
+    #[cfg(any(feature="default", feature="whatwg", feature="latn"))] pub mod windows_1250;
+    #[cfg(any(feature="default", feature="whatwg", feature="cyrl"))] pub mod windows_1251;
+    #[cfg(any(feature="default", feature="whatwg", feature="latn"))] pub mod windows_1252;
+    #[cfg(any(feature="default", feature="whatwg", feature="grek"))] pub mod windows_1253;
+    #[cfg(any(feature="default", feature="whatwg", feature="latn"))] pub mod windows_1254;
+    #[cfg(any(feature="default", feature="whatwg", feature="hebr"))] pub mod windows_1255;
+    #[cfg(any(feature="default", feature="whatwg", feature="arab"))] pub mod windows_1256;
+    #[cfg(any(feature="default", feature="whatwg", feature="latn"))] pub mod windows_1257;
+    #[cfg(any(feature="default", feature="whatwg", feature="latn"))] pub mod windows_1258;
+    #[cfg(any(feature="default", feature="whatwg", feature="cyrl"))] pub mod x_mac_cyrillic;
+    #[cfg(any(feature="default", feature="whatwg", feature="hant"))] pub mod big5;
+    #[cfg(any(feature="default", feature="whatwg", feature="kore"))] pub mod euc_kr;
+    #[cfg(any(feature="default", feature="whatwg", feature="hans"))] pub mod gb18030;
+    #[cfg(any(feature="default", feature="whatwg", feature="hans"))] pub mod gb18030_ranges;
+    #[cfg(any(feature="default", feature="whatwg", feature="jpan"))] pub mod jis0208;
+    #[cfg(any(feature="default", feature="whatwg", feature="jpan"))] pub mod jis0212;
 }
 
 /// Codec implementations.
@@ -240,13 +242,13 @@ pub mod codec {
     pub mod error;
     pub mod ascii;
     pub mod singlebyte;
-    pub mod utf_8;
-    pub mod utf_16;
-    pub mod korean;
-    pub mod japanese;
-    pub mod simpchinese;
-    pub mod tradchinese;
-    pub mod whatwg;
+    #[cfg(any(feature="default", feature="whatwg", feature="unicode"))] pub mod utf_8;
+    #[cfg(any(feature="default", feature="whatwg", feature="unicode"))] pub mod utf_16;
+    #[cfg(any(feature="default", feature="whatwg", feature="kore"))] pub mod korean;
+    #[cfg(any(feature="default", feature="whatwg", feature="jpan"))] pub mod japanese;
+    #[cfg(any(feature="default", feature="whatwg", feature="hans"))] pub mod simpchinese;
+    #[cfg(any(feature="default", feature="whatwg", feature="hant"))] pub mod tradchinese;
+    #[cfg(any(feature="default", feature="whatwg"))] pub mod whatwg;
 }
 
 pub mod all;
@@ -254,10 +256,11 @@ pub mod label;
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
     #[test]
+    #[cfg(any(feature="default", feature="whatwg"))]
     fn test_decode() {
+        use super::*;
+
         fn test_one(input: &[u8], expected_result: &str, expected_encoding: &str) {
             let (result, used_encoding) = decode(
                 input, DecodeStrict, all::ISO_8859_1 as EncodingRef);

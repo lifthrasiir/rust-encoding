@@ -5,6 +5,7 @@
 //! Macros and utilities for testing.
 
 #![macro_escape]
+#![allow(dead_code)]
 
 macro_rules! assert_feed_ok(
     ($this:expr, $processed:expr, $unprocessed:expr, $output:expr) => ({

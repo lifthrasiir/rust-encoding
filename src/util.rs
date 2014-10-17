@@ -5,6 +5,7 @@
 //! Internal utilities.
 
 #![macro_escape]
+#![allow(dead_code)]
 
 use std::{str, mem};
 use std::default::Default;

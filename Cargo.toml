@@ -1,9 +1,29 @@
 [package]
-
 name = "encoding"
 version = "0.1.0"
 authors = ["Kang Seonghoon <public+rust@mearie.org>"]
 
 [lib]
-
 name = "encoding"
+
+[features]
+default = []
+
+# standardized vs. extra encodings
+# may also give additional interfaces
+unicode = []
+whatwg = []
+extras = []
+
+# encodings by script
+arab = [] # Arabic
+cyrl = [] # Cyrillic
+grek = [] # Greek
+hans = [] # Simplified Chinese
+hant = [] # Traditional Chinese
+hebr = [] # Hebrew
+jpan = [] # Japanese
+kore = [] # Korean
+latn = [] # Latin (extended)
+thai = [] # Thai
+
