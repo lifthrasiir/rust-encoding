@@ -4,7 +4,7 @@
 
 //! An interface for retrieving an encoding (or a set of encodings) from a string/numeric label.
 
-use std::ascii::StrAsciiExt;
+use std::ascii::AsciiExt;
 use all;
 use types::EncodingRef;
 
