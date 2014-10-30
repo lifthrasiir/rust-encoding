@@ -424,7 +424,7 @@ impl EncoderTrap {
             } else {
                 let (_, err) = encoder.raw_feed(input, output);
                 if err.is_some() {
-                    fail!("{:s} cannot reencode a replacement string", trapname);
+                    panic!("{:s} cannot reencode a replacement string", trapname);
                 }
             }
             true
@@ -511,7 +511,7 @@ mod tests {
                             prepend: self.prepend,
                             toggle: false } as Box<Encoder>
         }
-        fn decoder(&self) -> Box<Decoder> { fail!("not supported") }
+        fn decoder(&self) -> Box<Decoder> { panic!("not supported") }
     }
 
     #[test]
