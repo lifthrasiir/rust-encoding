@@ -277,7 +277,7 @@ macro_rules! stateful_decoder(
             }
 
             fn raw_finish(&mut self, output: &mut StringWriter) -> Option<CodecError> {
-                #![allow(unused_mut, unused_variable)]
+                #![allow(unused_mut, unused_variables)]
                 let mut ctx = ::util::StatefulDecoderHelper {
                     buf: &[], pos: 0, output: output, err: None
                 };
