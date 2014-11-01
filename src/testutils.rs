@@ -329,7 +329,7 @@ macro_rules! multi_byte_range_tests(
             static VALUE_UBOUND: u32 = $valueubound;
 
             #[test]
-            #[allow(type_limits)]
+            #[allow(unused_comparisons)]
             fn test_no_failure() {
                 for i in range::<u32>(if MIN_KEY>0 {MIN_KEY-1} else {0}, MAX_KEY+2) {
                     forward(i);
