@@ -163,7 +163,7 @@ mod bigfive2003_tests {
         assert_feed_ok!(d, [0xf9, 0xfe], [], "\uffed");
         assert_feed_ok!(d, [0x87, 0x7e], [], "\u3eec"); // HKSCS-2008 addition
         assert_feed_ok!(d, [0x88, 0x62, 0x88, 0x64, 0x88, 0xa3, 0x88, 0xa5], [],
-                        "\xca\u0304\xca\u030c\xea\u0304\xea\u030c"); // two-byte mappings
+                        "\u00ca\u0304\u00ca\u030c\u00ea\u0304\u00ea\u030c"); // two-byte mappings
         assert_finish_ok!(d, "");
     }
 
@@ -246,4 +246,3 @@ mod bigfive2003_tests {
         }))
     }
 }
-
