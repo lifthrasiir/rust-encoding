@@ -22,7 +22,7 @@ To encode a string:
 use encoding::{Encoding, EncodeStrict};
 use encoding::all::ISO_8859_1;
 
-assert_eq!(ISO_8859_1.encode("caf\xe9", EncodeStrict),
+assert_eq!(ISO_8859_1.encode("caf\u00e9", EncodeStrict),
            Ok(vec!(99,97,102,233)));
 ~~~~
 
@@ -32,12 +32,12 @@ To encode a string with unrepresentable characters:
 use encoding::{Encoding, EncodeStrict, EncodeReplace, EncodeIgnore, EncodeNcrEscape};
 use encoding::all::ISO_8859_2;
 
-assert!(ISO_8859_2.encode("Acme\xa9", EncodeStrict).is_err());
-assert_eq!(ISO_8859_2.encode("Acme\xa9", EncodeReplace),
+assert!(ISO_8859_2.encode("Acme\u00a9", EncodeStrict).is_err());
+assert_eq!(ISO_8859_2.encode("Acme\ua9", EncodeReplace),
            Ok(vec!(65,99,109,101,63)));
-assert_eq!(ISO_8859_2.encode("Acme\xa9", EncodeIgnore),
+assert_eq!(ISO_8859_2.encode("Acme\u00a9", EncodeIgnore),
            Ok(vec!(65,99,109,101)));
-assert_eq!(ISO_8859_2.encode("Acme\xa9", EncodeNcrEscape),
+assert_eq!(ISO_8859_2.encode("Acme\u00a9", EncodeNcrEscape),
            Ok(vec!(65,99,109,101,38,35,49,54,57,59)));
 ~~~~
 
@@ -48,7 +48,7 @@ use encoding::{Encoding, DecodeStrict};
 use encoding::all::ISO_8859_1;
 
 assert_eq!(ISO_8859_1.decode([99,97,102,233], DecodeStrict),
-           Ok("caf\xe9".to_string()));
+           Ok("caf\u00e9".to_string()));
 ~~~~
 
 To decode a byte sequence with invalid sequences:
@@ -172,4 +172,3 @@ Consequently one should be careful when picking a desired character encoding.
 The only standards reliable in this regard are WHATWG Encoding Standard and
 [vendor-provided mappings from the Unicode consortium](http://www.unicode.org/Public/MAPPINGS/).
 Whenever in doubt, look at the source code and specifications for detailed explanations.
-

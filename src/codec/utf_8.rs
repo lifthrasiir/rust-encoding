@@ -263,8 +263,8 @@ mod tests {
 
         // two bytes
         let mut d = UTF8Encoding.decoder();
-        assert_feed_ok!(d, [0xc2, 0xa2], [], "\xa2");
-        assert_feed_ok!(d, [0xc2, 0xac, 0xc2, 0xa9], [], "\xac\xa9");
+        assert_feed_ok!(d, [0xc2, 0xa2], [], "\u00a2");
+        assert_feed_ok!(d, [0xc2, 0xac, 0xc2, 0xa9], [], "\u00ac\u00a9");
         assert_feed_ok!(d, [], [], "");
         assert_feed_ok!(d, [0xd5, 0xa1, 0xd5, 0xb5, 0xd5, 0xa2, 0xd5, 0xb8, 0xd6, 0x82,
                             0xd5, 0xa2, 0xd5, 0xa5, 0xd5, 0xb6], [],
@@ -299,7 +299,7 @@ mod tests {
         assert_finish_ok!(d, "");
 
         let mut d = UTF8Encoding.decoder();
-        assert_feed_ok!(d, [0xc2, 0x80], [], "\x80");
+        assert_feed_ok!(d, [0xc2, 0x80], [], "\u0080");
         assert_finish_ok!(d, "");
 
         let mut d = UTF8Encoding.decoder();
@@ -343,7 +343,7 @@ mod tests {
 
         let mut d = UTF8Encoding.decoder();
         assert_feed_ok!(d, [], [0xc2], "");
-        assert_feed_ok!(d, [0xa9, 0x20], [], "\xa9\x20");
+        assert_feed_ok!(d, [0xa9, 0x20], [], "\u00a9\u0020");
         assert_finish_ok!(d, "");
     }
 
@@ -513,7 +513,7 @@ mod tests {
     #[test]
     fn test_invalid_too_many_cont_bytes() {
         let mut d = UTF8Encoding.decoder();
-        assert_feed_err!(d, [0xc2, 0x80], [0x80], [], "\x80");
+        assert_feed_err!(d, [0xc2, 0x80], [0x80], [], "\u0080");
         assert_finish_ok!(d, "");
 
         let mut d = UTF8Encoding.decoder();
@@ -546,7 +546,7 @@ mod tests {
     fn test_invalid_too_many_cont_bytes_partial() {
         let mut d = UTF8Encoding.decoder();
         assert_feed_ok!(d, [], [0xc2], "");
-        assert_feed_err!(d, [0x80], [0x80], [], "\x80");
+        assert_feed_err!(d, [0x80], [0x80], [], "\u0080");
         assert_finish_ok!(d, "");
 
         let mut d = UTF8Encoding.decoder();
@@ -614,9 +614,9 @@ mod tests {
     #[test]
     fn test_feed_after_finish() {
         let mut d = UTF8Encoding.decoder();
-        assert_feed_ok!(d, [0xc2, 0x80], [0xc2], "\x80");
+        assert_feed_ok!(d, [0xc2, 0x80], [0xc2], "\u0080");
         assert_finish_err!(d, "");
-        assert_feed_ok!(d, [0xc2, 0x80], [], "\x80");
+        assert_feed_ok!(d, [0xc2, 0x80], [], "\u0080");
         assert_finish_ok!(d, "");
     }
 
@@ -828,4 +828,3 @@ mod tests {
         }
     }
 }
-
