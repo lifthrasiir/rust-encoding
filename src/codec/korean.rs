@@ -5,7 +5,7 @@
 //! Legacy Korean encodings based on KS X 1001.
 
 use util::StrCharIndex;
-use index;
+use index_korean as index;
 use types::*;
 
 /**
@@ -84,7 +84,7 @@ ascii_compatible_stateful_decoder! {
     module windows949;
 
     internal pub fn map_two_bytes(lead: u8, trail: u8) -> u32 {
-        use index;
+        use index_korean as index;
 
         let lead = lead as uint;
         let trail = trail as uint;

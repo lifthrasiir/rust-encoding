@@ -1,0 +1,9 @@
+[package]
+name = "encoding-index-korean"
+version = "1.0.20140915"
+authors = ["Kang Seonghoon <public+rust@mearie.org>"]
+
+[lib]
+name = "encoding-index-korean"
+path = "lib.rs"
+

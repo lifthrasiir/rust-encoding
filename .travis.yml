@@ -12,6 +12,11 @@ before_script:
 script:
   - cargo build -v
   - cargo test -v
+  - cargo test -v -p encoding-index-singlebyte
+  - cargo test -v -p encoding-index-korean
+  - cargo test -v -p encoding-index-japanese
+  - cargo test -v -p encoding-index-simpchinese
+  - cargo test -v -p encoding-index-tradchinese
   - cargo doc
 after_script:
   - cd target && curl http://www.rust-ci.org/artifacts/put?t=$RUSTCI_TOKEN | sh

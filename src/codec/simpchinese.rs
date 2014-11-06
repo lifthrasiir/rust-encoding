@@ -5,7 +5,7 @@
 //! Legacy simplified Chinese encodings based on GB 2312 and GB 18030.
 
 use util::StrCharIndex;
-use index;
+use index_simpchinese as index;
 use types::*;
 
 /**
@@ -96,7 +96,7 @@ ascii_compatible_stateful_decoder! {
     module gb18030;
 
     internal pub fn map_two_bytes(lead: u8, trail: u8) -> u32 {
-        use index;
+        use index_simpchinese as index;
 
         let lead = lead as uint;
         let trail = trail as uint;
@@ -111,7 +111,7 @@ ascii_compatible_stateful_decoder! {
     }
 
     internal pub fn map_four_bytes(b1: u8, b2: u8, b3: u8, b4: u8) -> u32 {
-        use index;
+        use index_simpchinese as index;
 
         // no range check here, caller should have done all checks
         let index = (b1 as uint - 0x81) * 12600 + (b2 as uint - 0x30) * 1260 +
@@ -412,7 +412,7 @@ stateful_decoder! {
     ascii_compatible false;
 
     internal pub fn map_two_bytes(lead: u8, trail: u8) -> u32 {
-        use index;
+        use index_simpchinese as index;
 
         let lead = lead as uint;
         let trail = trail as uint;

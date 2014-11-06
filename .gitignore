@@ -1,14 +1,2 @@
-*~
-*#
-*.o
-*.so
-*.dylib
-*.dSYM
-*.dll
-*.rlib
-*.exe
-build
-*-test
-doc
 target
 Cargo.lock

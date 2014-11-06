@@ -4,7 +4,7 @@
 
 //! A list of all supported encodings. Useful for encodings fixed in the compile time.
 
-use index;
+use index_singlebyte as index;
 use codec;
 
 macro_rules! unique(
@@ -79,8 +79,8 @@ unique!(#[unstable] var=HZ, mod=codec::simpchinese, val=HZEncoding)
 unique!(#[unstable] var=BIG5_2003, mod=codec::tradchinese, val=BigFive2003Encoding)
 
 pub mod whatwg {
+    use index_singlebyte as index;
     use codec;
-    use index;
 
     singlebyte!(#[stable] var=X_USER_DEFINED, mod=codec::whatwg::x_user_defined,
                           name="pua-mapped-binary", whatwg=Some("x-user-defined"))

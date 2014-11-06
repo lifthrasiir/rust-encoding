@@ -1,0 +1,9 @@
+[package]
+name = "encoding-index-simpchinese"
+version = "1.0.20140915"
+authors = ["Kang Seonghoon <public+rust@mearie.org>"]
+
+[lib]
+name = "encoding-index-simpchinese"
+path = "lib.rs"
+
