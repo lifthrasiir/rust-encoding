@@ -1,0 +1,9 @@
+[package]
+name = "encoding-index-singlebyte"
+version = "1.0.20140915"
+authors = ["Kang Seonghoon <public+rust@mearie.org>"]
+
+[lib]
+name = "encoding-index-singlebyte"
+path = "lib.rs"
+

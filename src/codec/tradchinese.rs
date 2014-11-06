@@ -5,7 +5,7 @@
 //! Legacy traditional Chinese encodings.
 
 use util::StrCharIndex;
-use index;
+use index_tradchinese as index;
 use types::*;
 
 /**
@@ -81,7 +81,7 @@ ascii_compatible_stateful_decoder! {
     module bigfive2003;
 
     internal pub fn map_two_bytes(lead: u8, trail: u8) -> u32 {
-        use index;
+        use index_tradchinese as index;
 
         let lead = lead as uint;
         let trail = trail as uint;

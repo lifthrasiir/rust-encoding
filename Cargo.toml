@@ -1,9 +1,28 @@
 [package]
-
 name = "encoding"
 version = "0.1.0"
 authors = ["Kang Seonghoon <public+rust@mearie.org>"]
 
 [lib]
-
 name = "encoding"
+
+[dependencies.encoding-index-singlebyte]
+version = "1.0.20140915"
+path = "src/index/singlebyte"
+
+[dependencies.encoding-index-korean]
+version = "1.0.20140915"
+path = "src/index/korean"
+
+[dependencies.encoding-index-japanese]
+version = "1.0.20140915"
+path = "src/index/japanese"
+
+[dependencies.encoding-index-simpchinese]
+version = "1.0.20140915"
+path = "src/index/simpchinese"
+
+[dependencies.encoding-index-tradchinese]
+version = "1.0.20140915"
+path = "src/index/tradchinese"
+

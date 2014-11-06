@@ -5,7 +5,7 @@
 //! Legacy Japanese encodings based on JIS X 0208 and JIS X 0212.
 
 use util::StrCharIndex;
-use index;
+use index_japanese as index;
 use types::*;
 
 /**
@@ -88,7 +88,7 @@ ascii_compatible_stateful_decoder! {
     module eucjp;
 
     internal pub fn map_two_0208_bytes(lead: u8, trail: u8) -> u32 {
-        use index;
+        use index_japanese as index;
 
         let lead = lead as uint;
         let trail = trail as uint;
@@ -100,7 +100,7 @@ ascii_compatible_stateful_decoder! {
     }
 
     internal pub fn map_two_0212_bytes(lead: u8, trail: u8) -> u32 {
-        use index;
+        use index_japanese as index;
 
         let lead = lead as uint;
         let trail = trail as uint;
@@ -479,7 +479,7 @@ ascii_compatible_stateful_decoder! {
     module windows31j;
 
     internal pub fn map_two_0208_bytes(lead: u8, trail: u8) -> u32 {
-        use index;
+        use index_japanese as index;
 
         let lead = lead as uint;
         let trail = trail as uint;
@@ -798,7 +798,7 @@ stateful_decoder! {
     ascii_compatible false;
 
     internal pub fn map_two_0208_bytes(lead: u8, trail: u8) -> u32 {
-        use index;
+        use index_japanese as index;
 
         let lead = lead as uint;
         let trail = trail as uint;
@@ -810,7 +810,7 @@ stateful_decoder! {
     }
 
     internal pub fn map_two_0212_bytes(lead: u8, trail: u8) -> u32 {
-        use index;
+        use index_japanese as index;
 
         let lead = lead as uint;
         let trail = trail as uint;

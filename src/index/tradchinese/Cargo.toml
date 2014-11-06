@@ -1,0 +1,9 @@
+[package]
+name = "encoding-index-tradchinese"
+version = "1.0.20140915"
+authors = ["Kang Seonghoon <public+rust@mearie.org>"]
+
+[lib]
+name = "encoding-index-tradchinese"
+path = "lib.rs"
+

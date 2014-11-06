@@ -171,15 +171,15 @@ Whenever in doubt, look at the source code and specifications for detailed expla
 
 */
 
-#![crate_name = "encoding"]
-#![crate_type = "lib"]
-#![comment = "Character encoding support for Rust"]
-#![license = "MIT"]
-
-#![allow(unknown_features)] // temporary measure for rust-nightly 2014-10-04
 #![feature(globs, macro_rules, slicing_syntax)]
 
 #![allow(experimental)]
+
+extern crate "encoding-index-singlebyte" as index_singlebyte;
+extern crate "encoding-index-korean" as index_korean;
+extern crate "encoding-index-japanese" as index_japanese;
+extern crate "encoding-index-simpchinese" as index_simpchinese;
+extern crate "encoding-index-tradchinese" as index_tradchinese;
 
 #[cfg(test)] extern crate test;
 
@@ -195,44 +195,6 @@ mod util;
 #[cfg(test)] mod testutils;
 
 pub mod types;
-
-/// Indices used for character encoding implementation. Semi-internal.
-#[unstable]
-pub mod index {
-    pub mod ibm866;
-    pub mod iso_8859_2;
-    pub mod iso_8859_3;
-    pub mod iso_8859_4;
-    pub mod iso_8859_5;
-    pub mod iso_8859_6;
-    pub mod iso_8859_7;
-    pub mod iso_8859_8;
-    pub mod iso_8859_10;
-    pub mod iso_8859_13;
-    pub mod iso_8859_14;
-    pub mod iso_8859_15;
-    pub mod iso_8859_16;
-    pub mod koi8_r;
-    pub mod koi8_u;
-    pub mod macintosh;
-    pub mod windows_874;
-    pub mod windows_1250;
-    pub mod windows_1251;
-    pub mod windows_1252;
-    pub mod windows_1253;
-    pub mod windows_1254;
-    pub mod windows_1255;
-    pub mod windows_1256;
-    pub mod windows_1257;
-    pub mod windows_1258;
-    pub mod x_mac_cyrillic;
-    pub mod big5;
-    pub mod euc_kr;
-    pub mod gb18030;
-    pub mod gb18030_ranges;
-    pub mod jis0208;
-    pub mod jis0212;
-}
 
 /// Codec implementations.
 #[unstable]
