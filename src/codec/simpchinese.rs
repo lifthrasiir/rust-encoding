@@ -37,8 +37,8 @@ pub struct GB18030Encoding;
 impl Encoding for GB18030Encoding {
     fn name(&self) -> &'static str { "gb18030" }
     fn whatwg_name(&self) -> Option<&'static str> { Some("gb18030") }
-    fn encoder(&self) -> Box<Encoder> { GB18030Encoder::new() }
-    fn decoder(&self) -> Box<Decoder> { GB18030Decoder::new() }
+    fn raw_encoder(&self) -> Box<RawEncoder> { GB18030Encoder::new() }
+    fn raw_decoder(&self) -> Box<RawDecoder> { GB18030Decoder::new() }
 }
 
 /// An encoder for GB 18030.
@@ -46,11 +46,11 @@ impl Encoding for GB18030Encoding {
 pub struct GB18030Encoder;
 
 impl GB18030Encoder {
-    pub fn new() -> Box<Encoder> { box GB18030Encoder as Box<Encoder> }
+    pub fn new() -> Box<RawEncoder> { box GB18030Encoder as Box<RawEncoder> }
 }
 
-impl Encoder for GB18030Encoder {
-    fn from_self(&self) -> Box<Encoder> { GB18030Encoder::new() }
+impl RawEncoder for GB18030Encoder {
+    fn from_self(&self) -> Box<RawEncoder> { GB18030Encoder::new() }
     fn is_ascii_compatible(&self) -> bool { true }
 
     fn raw_feed(&mut self, input: &str, output: &mut ByteWriter) -> (uint, Option<CodecError>) {
@@ -161,7 +161,7 @@ mod gb18030_tests {
 
     #[test]
     fn test_encoder_valid() {
-        let mut e = GB18030Encoding.encoder();
+        let mut e = GB18030Encoding.raw_encoder();
         assert_feed_ok!(e, "A", "", [0x41]);
         assert_feed_ok!(e, "BC", "", [0x42, 0x43]);
         assert_feed_ok!(e, "", "", []);
@@ -182,7 +182,7 @@ mod gb18030_tests {
 
     #[test]
     fn test_decoder_valid() {
-        let mut d = GB18030Encoding.decoder();
+        let mut d = GB18030Encoding.raw_decoder();
         assert_feed_ok!(d, [0x41], [], "A");
         assert_feed_ok!(d, [0x42, 0x43], [], "BC");
         assert_feed_ok!(d, [], [], "");
@@ -203,7 +203,7 @@ mod gb18030_tests {
 
     #[test]
     fn test_decoder_valid_partial() {
-        let mut d = GB18030Encoding.decoder();
+        let mut d = GB18030Encoding.raw_decoder();
         assert_feed_ok!(d, [], [0xa1], "");
         assert_feed_ok!(d, [0xa1], [], "\u3000");
         assert_feed_ok!(d, [], [0x81], "");
@@ -230,26 +230,26 @@ mod gb18030_tests {
 
     #[test]
     fn test_decoder_invalid_partial() {
-        let mut d = GB18030Encoding.decoder();
+        let mut d = GB18030Encoding.raw_decoder();
         assert_feed_ok!(d, [], [0xa1], "");
         assert_finish_err!(d, "");
 
-        let mut d = GB18030Encoding.decoder();
+        let mut d = GB18030Encoding.raw_decoder();
         assert_feed_ok!(d, [], [0x81], "");
         assert_finish_err!(d, "");
 
-        let mut d = GB18030Encoding.decoder();
+        let mut d = GB18030Encoding.raw_decoder();
         assert_feed_ok!(d, [], [0x81, 0x30], "");
         assert_finish_err!(d, "");
 
-        let mut d = GB18030Encoding.decoder();
+        let mut d = GB18030Encoding.raw_decoder();
         assert_feed_ok!(d, [], [0x81, 0x30, 0x81], "");
         assert_finish_err!(d, "");
     }
 
     #[test]
     fn test_decoder_invalid_out_of_range() {
-        let mut d = GB18030Encoding.decoder();
+        let mut d = GB18030Encoding.raw_decoder();
         assert_feed_err!(d, [], [0xff], [], "");
         assert_feed_err!(d, [], [0x81], [0x00], "");
         assert_feed_err!(d, [], [0x81], [0x7f], "");
@@ -269,12 +269,12 @@ mod gb18030_tests {
         // U+10FFFF (E3 32 9A 35) is the last Unicode codepoint, E3 32 9A 36 is invalid.
         // note that since the 2nd to 4th bytes may coincide with ASCII, bytes 32 9A 36 is
         // not considered to be in the problem. this is compatible to WHATWG Encoding standard.
-        let mut d = GB18030Encoding.decoder();
+        let mut d = GB18030Encoding.raw_decoder();
         assert_feed_ok!(d, [], [0xe3], "");
         assert_feed_err!(d, [], [], [0x32, 0x9a, 0x36], "");
         assert_finish_ok!(d, "");
 
-        let mut d = GB18030Encoding.decoder();
+        let mut d = GB18030Encoding.raw_decoder();
         assert_feed_ok!(d, [], [0xe3], "");
         assert_feed_ok!(d, [], [0x32, 0x9a], "");
         assert_feed_err!(d, -2, [], [], [0x32, 0x9a, 0x36], "");
@@ -283,13 +283,13 @@ mod gb18030_tests {
 
     #[test]
     fn test_decoder_feed_after_finish() {
-        let mut d = GB18030Encoding.decoder();
+        let mut d = GB18030Encoding.raw_decoder();
         assert_feed_ok!(d, [0xd2, 0xbb], [0xd2], "\u4e00");
         assert_finish_err!(d, "");
         assert_feed_ok!(d, [0xd2, 0xbb], [], "\u4e00");
         assert_finish_ok!(d, "");
 
-        let mut d = GB18030Encoding.decoder();
+        let mut d = GB18030Encoding.raw_decoder();
         assert_feed_ok!(d, [0x98, 0x35, 0xee, 0x37], [0x98, 0x35, 0xee], "\U0002a6a5");
         assert_finish_err!(d, "");
         assert_feed_ok!(d, [0x98, 0x35, 0xee, 0x37], [0x98, 0x35], "\U0002a6a5");
@@ -335,8 +335,8 @@ pub struct HZEncoding;
 impl Encoding for HZEncoding {
     fn name(&self) -> &'static str { "hz" }
     fn whatwg_name(&self) -> Option<&'static str> { Some("hz-gb-2312") }
-    fn encoder(&self) -> Box<Encoder> { HZEncoder::new() }
-    fn decoder(&self) -> Box<Decoder> { HZDecoder::new() }
+    fn raw_encoder(&self) -> Box<RawEncoder> { HZEncoder::new() }
+    fn raw_decoder(&self) -> Box<RawDecoder> { HZDecoder::new() }
 }
 
 /// An encoder for HZ.
@@ -346,11 +346,11 @@ pub struct HZEncoder {
 }
 
 impl HZEncoder {
-    pub fn new() -> Box<Encoder> { box HZEncoder { escaped: false } as Box<Encoder> }
+    pub fn new() -> Box<RawEncoder> { box HZEncoder { escaped: false } as Box<RawEncoder> }
 }
 
-impl Encoder for HZEncoder {
-    fn from_self(&self) -> Box<Encoder> { HZEncoder::new() }
+impl RawEncoder for HZEncoder {
+    fn from_self(&self) -> Box<RawEncoder> { HZEncoder::new() }
     fn is_ascii_compatible(&self) -> bool { false }
 
     fn raw_feed(&mut self, input: &str, output: &mut ByteWriter) -> (uint, Option<CodecError>) {
@@ -482,7 +482,7 @@ mod hz_tests {
 
     #[test]
     fn test_encoder_valid() {
-        let mut e = HZEncoding.encoder();
+        let mut e = HZEncoding.raw_encoder();
         assert_feed_ok!(e, "A", "", b"A");
         assert_feed_ok!(e, "BC", "", b"BC");
         assert_feed_ok!(e, "", "", b"");
@@ -495,7 +495,7 @@ mod hz_tests {
 
     #[test]
     fn test_encoder_invalid() {
-        let mut e = HZEncoding.encoder();
+        let mut e = HZEncoding.raw_encoder();
         assert_feed_err!(e, "", "\uffff", "", []);
         assert_feed_err!(e, "?", "\uffff", "!", [0x3f]);
         // no support for GBK extension
@@ -505,7 +505,7 @@ mod hz_tests {
 
     #[test]
     fn test_decoder_valid() {
-        let mut d = HZEncoding.decoder();
+        let mut d = HZEncoding.raw_decoder();
         assert_feed_ok!(d, b"A", b"", "A");
         assert_feed_ok!(d, b"BC", b"", "BC");
         assert_feed_ok!(d, b"D~~E", b"~", "D~E");
@@ -525,7 +525,7 @@ mod hz_tests {
 
     #[test]
     fn test_decoder_invalid_out_or_range() {
-        let mut d = HZEncoding.decoder();
+        let mut d = HZEncoding.raw_decoder();
         assert_feed_ok!(d, b"~{", b"", "");
         assert_feed_err!(d, b"", b"\x20\x20", b"", "");
         assert_feed_err!(d, b"", b"\x20\x7f", b"", ""); // do not reset the state (except for CR)
@@ -539,7 +539,7 @@ mod hz_tests {
     #[test]
     fn test_decoder_invalid_carriage_return() {
         // CR in the multibyte mode is invalid but *also* resets the state
-        let mut d = HZEncoding.decoder();
+        let mut d = HZEncoding.raw_decoder();
         assert_feed_ok!(d, b"~{#A", b"", "\uff21");
         assert_feed_err!(d, b"", b"\n", b"", "");
         assert_feed_ok!(d, b"#B~{#C", b"", "#B\uff23");
@@ -550,22 +550,22 @@ mod hz_tests {
 
     #[test]
     fn test_decoder_invalid_partial() {
-        let mut d = HZEncoding.decoder();
+        let mut d = HZEncoding.raw_decoder();
         assert_feed_ok!(d, b"", b"~", "");
         assert_finish_err!(d, "");
 
-        let mut d = HZEncoding.decoder();
+        let mut d = HZEncoding.raw_decoder();
         assert_feed_ok!(d, b"~{", b"#", "");
         assert_finish_err!(d, "");
 
-        let mut d = HZEncoding.decoder();
+        let mut d = HZEncoding.raw_decoder();
         assert_feed_ok!(d, b"~{#A", b"~", "\uff21");
         assert_finish_err!(d, "");
     }
 
     #[test]
     fn test_decoder_invalid_escape() {
-        let mut d = HZEncoding.decoder();
+        let mut d = HZEncoding.raw_decoder();
         assert_feed_ok!(d, b"#A", b"", "#A");
         assert_feed_err!(d, b"", b"~", b"xy", "");
         assert_feed_ok!(d, b"#B", b"", "#B");
@@ -582,7 +582,7 @@ mod hz_tests {
 
     #[test]
     fn test_decoder_feed_after_finish() {
-        let mut d = HZEncoding.decoder();
+        let mut d = HZEncoding.raw_decoder();
         assert_feed_ok!(d, b"R;~{R;", b"R", "R;\u4e00");
         assert_finish_err!(d, "");
         assert_feed_ok!(d, b"R;~{R;", b"", "R;\u4e00");

@@ -63,11 +63,11 @@ assert_eq!(ISO_8859_6.decode([65,99,109,101,169], DecodeIgnore),
 A practical example of custom encoder traps:
 
 ~~~~ {.rust}
-use encoding::{Encoding, Encoder, ByteWriter, EncoderTrap, EncoderCall, DecodeStrict};
+use encoding::{Encoding, RawEncoder, ByteWriter, EncoderTrap, EncoderCall, DecodeStrict};
 use encoding::all::ASCII;
 
 // hexadecimal numeric character reference replacement
-fn hex_ncr_escape(_encoder: &mut Encoder, input: &str, output: &mut ByteWriter) -> bool {
+fn hex_ncr_escape(_encoder: &mut RawEncoder, input: &str, output: &mut ByteWriter) -> bool {
     let escapes: Vec<String> =
         input.chars().map(|ch| format!("&#x{:x};", ch as int)).collect();
     let escapes = escapes.concat();
@@ -184,12 +184,15 @@ extern crate "encoding-index-tradchinese" as index_tradchinese;
 #[cfg(test)] extern crate test;
 
 pub use self::types::{CodecError, ByteWriter, StringWriter,
-                      Encoder, Decoder, EncodingRef, Encoding,
+                      RawEncoder, RawDecoder, EncodingRef, Encoding,
                       EncoderTrapFunc, DecoderTrapFunc, DecoderTrap,
                       DecodeStrict, DecodeReplace, DecodeIgnore,
                       EncoderTrap, EncodeStrict, EncodeReplace,
                       EncodeIgnore, EncodeNcrEscape, decode,
                       EncoderCall, DecoderCall}; // reexport
+
+#[deprecated = "use encoding::RawEncoder instead"] pub use self::types::RawEncoder as Encoder;
+#[deprecated = "use encoding::RawDecoder instead"] pub use self::types::RawDecoder as Decoder;
 
 mod util;
 #[cfg(test)] mod testutils;

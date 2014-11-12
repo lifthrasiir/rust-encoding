@@ -13,8 +13,8 @@ pub struct ErrorEncoding;
 
 impl Encoding for ErrorEncoding {
     fn name(&self) -> &'static str { "error" }
-    fn encoder(&self) -> Box<Encoder> { ErrorEncoder::new() }
-    fn decoder(&self) -> Box<Decoder> { ErrorDecoder::new() }
+    fn raw_encoder(&self) -> Box<RawEncoder> { ErrorEncoder::new() }
+    fn raw_decoder(&self) -> Box<RawDecoder> { ErrorDecoder::new() }
 }
 
 /// An encoder that always returns error.
@@ -22,11 +22,11 @@ impl Encoding for ErrorEncoding {
 pub struct ErrorEncoder;
 
 impl ErrorEncoder {
-    pub fn new() -> Box<Encoder> { box ErrorEncoder as Box<Encoder> }
+    pub fn new() -> Box<RawEncoder> { box ErrorEncoder as Box<RawEncoder> }
 }
 
-impl Encoder for ErrorEncoder {
-    fn from_self(&self) -> Box<Encoder> { ErrorEncoder::new() }
+impl RawEncoder for ErrorEncoder {
+    fn from_self(&self) -> Box<RawEncoder> { ErrorEncoder::new() }
 
     fn raw_feed(&mut self, input: &str, _output: &mut ByteWriter) -> (uint, Option<CodecError>) {
         if input.len() > 0 {
@@ -48,11 +48,11 @@ impl Encoder for ErrorEncoder {
 pub struct ErrorDecoder;
 
 impl ErrorDecoder {
-    pub fn new() -> Box<Decoder> { box ErrorDecoder as Box<Decoder> }
+    pub fn new() -> Box<RawDecoder> { box ErrorDecoder as Box<RawDecoder> }
 }
 
-impl Decoder for ErrorDecoder {
-    fn from_self(&self) -> Box<Decoder> { ErrorDecoder::new() }
+impl RawDecoder for ErrorDecoder {
+    fn from_self(&self) -> Box<RawDecoder> { ErrorDecoder::new() }
 
     fn raw_feed(&mut self, input: &[u8], _output: &mut StringWriter) -> (uint, Option<CodecError>) {
         if input.len() > 0 {
@@ -74,7 +74,7 @@ mod tests {
 
     #[test]
     fn test_encoder() {
-        let mut e = ErrorEncoding.encoder();
+        let mut e = ErrorEncoding.raw_encoder();
         assert_feed_err!(e, "", "A", "", []);
         assert_feed_err!(e, "", "B", "C", []);
         assert_feed_ok!(e, "", "", []);
@@ -84,7 +84,7 @@ mod tests {
 
     #[test]
     fn test_decoder() {
-        let mut d = ErrorEncoding.decoder();
+        let mut d = ErrorEncoding.raw_decoder();
         assert_feed_err!(d, [], [0x41], [], "");
         assert_feed_err!(d, [], [0x42], [0x43], "");
         assert_feed_ok!(d, [], [], "");

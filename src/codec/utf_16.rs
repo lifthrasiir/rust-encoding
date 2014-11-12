@@ -79,8 +79,8 @@ pub type UTF16BEEncoding = UTF16Encoding<Big>;
 impl<E:Endian+Clone+'static> Encoding for UTF16Encoding<E> {
     fn name(&self) -> &'static str { Endian::name(None::<E>) }
     fn whatwg_name(&self) -> Option<&'static str> { Endian::whatwg_name(None::<E>) }
-    fn encoder(&self) -> Box<Encoder> { UTF16Encoder::new(None::<E>) }
-    fn decoder(&self) -> Box<Decoder> { UTF16Decoder::new(None::<E>) }
+    fn raw_encoder(&self) -> Box<RawEncoder> { UTF16Encoder::new(None::<E>) }
+    fn raw_decoder(&self) -> Box<RawDecoder> { UTF16Decoder::new(None::<E>) }
 }
 
 /**
@@ -95,11 +95,11 @@ impl<E:Endian+Clone+'static> Encoding for UTF16Encoding<E> {
 pub struct UTF16Encoder<E>;
 
 impl<E:Endian+Clone+'static> UTF16Encoder<E> {
-    fn new(_endian: Option<E>) -> Box<Encoder> { box UTF16Encoder::<E> as Box<Encoder> }
+    fn new(_endian: Option<E>) -> Box<RawEncoder> { box UTF16Encoder::<E> as Box<RawEncoder> }
 }
 
-impl<E:Endian+Clone+'static> Encoder for UTF16Encoder<E> {
-    fn from_self(&self) -> Box<Encoder> { UTF16Encoder::new(None::<E>) }
+impl<E:Endian+Clone+'static> RawEncoder for UTF16Encoder<E> {
+    fn from_self(&self) -> Box<RawEncoder> { UTF16Encoder::new(None::<E>) }
 
     fn raw_feed(&mut self, input: &str, output: &mut ByteWriter) -> (uint, Option<CodecError>) {
         output.writer_hint(input.len() * 2);
@@ -149,13 +149,13 @@ pub struct UTF16Decoder<E> {
 }
 
 impl<E:Endian+Clone+'static> UTF16Decoder<E> {
-    pub fn new(_endian: Option<E>) -> Box<Decoder> {
-        box UTF16Decoder::<E> { leadbyte: 0xffff, leadsurrogate: 0xffff } as Box<Decoder>
+    pub fn new(_endian: Option<E>) -> Box<RawDecoder> {
+        box UTF16Decoder::<E> { leadbyte: 0xffff, leadsurrogate: 0xffff } as Box<RawDecoder>
     }
 }
 
-impl<E:Endian+Clone+'static> Decoder for UTF16Decoder<E> {
-    fn from_self(&self) -> Box<Decoder> { UTF16Decoder::new(None::<E>) }
+impl<E:Endian+Clone+'static> RawDecoder for UTF16Decoder<E> {
+    fn from_self(&self) -> Box<RawDecoder> { UTF16Decoder::new(None::<E>) }
 
     fn raw_feed(&mut self, input: &[u8], output: &mut StringWriter) -> (uint, Option<CodecError>) {
         output.writer_hint(input.len() / 2); // when every codepoint is U+0000..007F
@@ -303,7 +303,7 @@ mod tests {
 
     #[test]
     fn test_encoder_valid() {
-        let mut e = UTF_16BE.encoder();
+        let mut e = UTF_16BE.raw_encoder();
         assert_feed_ok!(e, "\u0000\
                             \u0001\u0002\u0004\u0008\
                             \u0010\u0020\u0040\u0080\
@@ -345,7 +345,7 @@ mod tests {
 
     #[test]
     fn test_decoder_valid() {
-        let mut d = UTF_16BE.decoder();
+        let mut d = UTF_16BE.raw_decoder();
         assert_feed_ok!(d, [0x00, 0x00,
                             0x00, 0x01, 0x00, 0x02, 0x00, 0x04, 0x00, 0x08,
                             0x00, 0x10, 0x00, 0x20, 0x00, 0x40, 0x00, 0x80,
@@ -387,14 +387,14 @@ mod tests {
 
     #[test]
     fn test_decoder_valid_partial_bmp() {
-        let mut d = UTF_16BE.decoder();
+        let mut d = UTF_16BE.raw_decoder();
         assert_feed_ok!(d, [], [0x12], "");
         assert_feed_ok!(d, [0x34], [], "\u1234");
         assert_feed_ok!(d, [], [0x56], "");
         assert_feed_ok!(d, [0x78], [], "\u5678");
         assert_finish_ok!(d, "");
 
-        let mut d = UTF_16BE.decoder();
+        let mut d = UTF_16BE.raw_decoder();
         assert_feed_ok!(d, [], [0x12], "");
         assert_feed_ok!(d, [0x34], [0x56], "\u1234");
         assert_feed_ok!(d, [0x78, 0xab, 0xcd], [], "\u5678\uabcd");
@@ -403,7 +403,7 @@ mod tests {
 
     #[test]
     fn test_decoder_valid_partial_non_bmp() {
-        let mut d = UTF_16BE.decoder();
+        let mut d = UTF_16BE.raw_decoder();
         assert_feed_ok!(d, [], [0xd8], "");
         assert_feed_ok!(d, [], [0x08], "");
         assert_feed_ok!(d, [], [0xdf], "");
@@ -413,14 +413,14 @@ mod tests {
         assert_feed_ok!(d, [0x90], [], "\U00067890");
         assert_finish_ok!(d, "");
 
-        let mut d = UTF_16BE.decoder();
+        let mut d = UTF_16BE.raw_decoder();
         assert_feed_ok!(d, [], [0xd8], "");
         assert_feed_ok!(d, [], [0x08, 0xdf], "");
         assert_feed_ok!(d, [0x45], [0xd9, 0x5e], "\U00012345");
         assert_feed_ok!(d, [0xdc, 0x90], [], "\U00067890");
         assert_finish_ok!(d, "");
 
-        let mut d = UTF_16BE.decoder();
+        let mut d = UTF_16BE.raw_decoder();
         assert_feed_ok!(d, [], [0xd8, 0x08, 0xdf], "");
         assert_feed_ok!(d, [0x45], [0xd9, 0x5e, 0xdc], "\U00012345");
         assert_feed_ok!(d, [0x90], [], "\U00067890");
@@ -429,26 +429,26 @@ mod tests {
 
     #[test]
     fn test_decoder_invalid_partial() {
-        let mut d = UTF_16BE.decoder();
+        let mut d = UTF_16BE.raw_decoder();
         assert_feed_ok!(d, [], [0x12], "");
         assert_finish_err!(d, "");
 
-        let mut d = UTF_16BE.decoder();
+        let mut d = UTF_16BE.raw_decoder();
         assert_feed_ok!(d, [], [0xd8], "");
         assert_finish_err!(d, "");
 
-        let mut d = UTF_16BE.decoder();
+        let mut d = UTF_16BE.raw_decoder();
         assert_feed_ok!(d, [], [0xd8, 0x08], "");
         assert_finish_err!(d, "");
 
-        let mut d = UTF_16BE.decoder();
+        let mut d = UTF_16BE.raw_decoder();
         assert_feed_ok!(d, [], [0xd8, 0x08, 0xdf], "");
         assert_finish_err!(d, "");
     }
 
     #[test]
     fn test_decoder_invalid_lone_upper_surrogate() {
-        let mut d = UTF_16BE.decoder();
+        let mut d = UTF_16BE.raw_decoder();
         assert_feed_ok!(d, [], [0xd8, 0x00], "");
         assert_feed_err!(d, [], [], [0x12, 0x34], "");
         assert_feed_err!(d, [], [0xd8, 0x00], [0x56, 0x78], "");
@@ -457,7 +457,7 @@ mod tests {
         assert_feed_ok!(d, [], [0xd8, 0x00], "");
         assert_finish_err!(d, "");
 
-        let mut d = UTF_16BE.decoder();
+        let mut d = UTF_16BE.raw_decoder();
         assert_feed_ok!(d, [], [0xdb, 0xff], "");
         assert_feed_err!(d, [], [], [0x12, 0x34], "");
         assert_feed_err!(d, [], [0xdb, 0xff], [0x56, 0x78], "");
@@ -469,7 +469,7 @@ mod tests {
 
     #[test]
     fn test_decoder_invalid_lone_upper_surrogate_partial() {
-        let mut d = UTF_16BE.decoder();
+        let mut d = UTF_16BE.raw_decoder();
         assert_feed_ok!(d, [], [0xd8], "");
         assert_feed_err!(d, [], [0x00], [0x12, 0x34], "");
         assert_feed_ok!(d, [], [0xd8, 0x00, 0x56], "");
@@ -481,7 +481,7 @@ mod tests {
         assert_feed_ok!(d, [], [0xd8], "");
         assert_finish_err!(d, "");
 
-        let mut d = UTF_16BE.decoder();
+        let mut d = UTF_16BE.raw_decoder();
         assert_feed_ok!(d, [], [0xdb], "");
         assert_feed_err!(d, [], [0xff], [0x12, 0x34], "");
         assert_feed_ok!(d, [], [0xdb, 0xff, 0x56], "");
@@ -496,12 +496,12 @@ mod tests {
 
     #[test]
     fn test_decoder_invalid_lone_lower_surrogate() {
-        let mut d = UTF_16BE.decoder();
+        let mut d = UTF_16BE.raw_decoder();
         assert_feed_err!(d, [], [0xdc, 0x00], [], "");
         assert_feed_err!(d, [0x12, 0x34], [0xdc, 0x00], [0x56, 0x78], "\u1234");
         assert_finish_ok!(d, "");
 
-        let mut d = UTF_16BE.decoder();
+        let mut d = UTF_16BE.raw_decoder();
         assert_feed_err!(d, [], [0xdf, 0xff], [], "");
         assert_feed_err!(d, [0x12, 0x34], [0xdf, 0xff], [0x56, 0x78], "\u1234");
         assert_finish_ok!(d, "");
@@ -509,7 +509,7 @@ mod tests {
 
     #[test]
     fn test_decoder_invalid_lone_lower_surrogate_partial() {
-        let mut d = UTF_16BE.decoder();
+        let mut d = UTF_16BE.raw_decoder();
         assert_feed_ok!(d, [], [0xdc], "");
         assert_feed_err!(d, [], [0x00], [], "");
         assert_feed_ok!(d, [0x12, 0x34], [0xdc], "\u1234");
@@ -525,40 +525,40 @@ mod tests {
 
     #[test]
     fn test_decoder_invalid_one_byte_before_finish() {
-        let mut d = UTF_16BE.decoder();
+        let mut d = UTF_16BE.raw_decoder();
         assert_feed_ok!(d, [], [0x12], "");
         assert_finish_err!(d, "");
 
-        let mut d = UTF_16BE.decoder();
+        let mut d = UTF_16BE.raw_decoder();
         assert_feed_ok!(d, [0x12, 0x34], [0x56], "\u1234");
         assert_finish_err!(d, "");
     }
 
     #[test]
     fn test_decoder_invalid_three_bytes_before_finish() {
-        let mut d = UTF_16BE.decoder();
+        let mut d = UTF_16BE.raw_decoder();
         assert_feed_ok!(d, [], [0xd8, 0x00, 0xdc], "");
         assert_finish_err!(d, "");
 
-        let mut d = UTF_16BE.decoder();
+        let mut d = UTF_16BE.raw_decoder();
         assert_feed_ok!(d, [0x12, 0x34], [0xd8, 0x00, 0xdc], "\u1234");
         assert_finish_err!(d, "");
     }
 
     #[test]
     fn test_decoder_invalid_three_bytes_before_finish_partial() {
-        let mut d = UTF_16BE.decoder();
+        let mut d = UTF_16BE.raw_decoder();
         assert_feed_ok!(d, [], [0xd8], "");
         assert_feed_ok!(d, [], [0x00], "");
         assert_feed_ok!(d, [], [0xdc], "");
         assert_finish_err!(d, "");
 
-        let mut d = UTF_16BE.decoder();
+        let mut d = UTF_16BE.raw_decoder();
         assert_feed_ok!(d, [0x12, 0x34], [0xd8], "\u1234");
         assert_feed_ok!(d, [], [0x00, 0xdc], "");
         assert_finish_err!(d, "");
 
-        let mut d = UTF_16BE.decoder();
+        let mut d = UTF_16BE.raw_decoder();
         assert_feed_ok!(d, [0x12, 0x34], [0xd8, 0x00], "\u1234");
         assert_feed_ok!(d, [], [0xdc], "");
         assert_finish_err!(d, "");
@@ -566,13 +566,13 @@ mod tests {
 
     #[test]
     fn test_decoder_feed_after_finish() {
-        let mut d = UTF_16BE.decoder();
+        let mut d = UTF_16BE.raw_decoder();
         assert_feed_ok!(d, [0x12, 0x34], [0x12], "\u1234");
         assert_finish_err!(d, "");
         assert_feed_ok!(d, [0x12, 0x34], [], "\u1234");
         assert_finish_ok!(d, "");
 
-        let mut d = UTF_16BE.decoder();
+        let mut d = UTF_16BE.raw_decoder();
         assert_feed_ok!(d, [0xd8, 0x08, 0xdf, 0x45], [0xd8, 0x08, 0xdf], "\U00012345");
         assert_finish_err!(d, "");
         assert_feed_ok!(d, [0xd8, 0x08, 0xdf, 0x45], [0xd8, 0x08], "\U00012345");

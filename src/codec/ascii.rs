@@ -18,20 +18,20 @@ pub struct ASCIIEncoding;
 
 impl Encoding for ASCIIEncoding {
     fn name(&self) -> &'static str { "ascii" }
-    fn encoder(&self) -> Box<Encoder> { ASCIIEncoder::new() }
-    fn decoder(&self) -> Box<Decoder> { ASCIIDecoder::new() }
+    fn raw_encoder(&self) -> Box<RawEncoder> { ASCIIEncoder::new() }
+    fn raw_decoder(&self) -> Box<RawDecoder> { ASCIIDecoder::new() }
 }
 
-/// An encoder for ASCII.
+/// An raw_encoder for ASCII.
 #[deriving(Clone)]
 pub struct ASCIIEncoder;
 
 impl ASCIIEncoder {
-    pub fn new() -> Box<Encoder> { box ASCIIEncoder as Box<Encoder> }
+    pub fn new() -> Box<RawEncoder> { box ASCIIEncoder as Box<RawEncoder> }
 }
 
-impl Encoder for ASCIIEncoder {
-    fn from_self(&self) -> Box<Encoder> { ASCIIEncoder::new() }
+impl RawEncoder for ASCIIEncoder {
+    fn from_self(&self) -> Box<RawEncoder> { ASCIIEncoder::new() }
     fn is_ascii_compatible(&self) -> bool { true }
 
     fn raw_feed(&mut self, input: &str, output: &mut ByteWriter) -> (uint, Option<CodecError>) {
@@ -57,16 +57,16 @@ impl Encoder for ASCIIEncoder {
     }
 }
 
-/// A decoder for ASCII.
+/// A raw_decoder for ASCII.
 #[deriving(Clone)]
 pub struct ASCIIDecoder;
 
 impl ASCIIDecoder {
-    pub fn new() -> Box<Decoder> { box ASCIIDecoder as Box<Decoder> }
+    pub fn new() -> Box<RawDecoder> { box ASCIIDecoder as Box<RawDecoder> }
 }
 
-impl Decoder for ASCIIDecoder {
-    fn from_self(&self) -> Box<Decoder> { ASCIIDecoder::new() }
+impl RawDecoder for ASCIIDecoder {
+    fn from_self(&self) -> Box<RawDecoder> { ASCIIDecoder::new() }
     fn is_ascii_compatible(&self) -> bool { true }
 
     fn raw_feed(&mut self, input: &[u8], output: &mut StringWriter) -> (uint, Option<CodecError>) {
@@ -104,7 +104,7 @@ mod tests {
 
     #[test]
     fn test_encoder() {
-        let mut e = ASCIIEncoding.encoder();
+        let mut e = ASCIIEncoding.raw_encoder();
         assert_feed_ok!(e, "A", "", [0x41]);
         assert_feed_ok!(e, "BC", "", [0x42, 0x43]);
         assert_feed_ok!(e, "", "", []);
@@ -115,7 +115,7 @@ mod tests {
 
     #[test]
     fn test_decoder() {
-        let mut d = ASCIIEncoding.decoder();
+        let mut d = ASCIIEncoding.raw_decoder();
         assert_feed_ok!(d, [0x41], [], "A");
         assert_feed_ok!(d, [0x42, 0x43], [], "BC");
         assert_feed_ok!(d, [], [], "");

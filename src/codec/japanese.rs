@@ -29,8 +29,8 @@ pub struct EUCJPEncoding;
 impl Encoding for EUCJPEncoding {
     fn name(&self) -> &'static str { "euc-jp" }
     fn whatwg_name(&self) -> Option<&'static str> { Some("euc-jp") }
-    fn encoder(&self) -> Box<Encoder> { EUCJPEncoder::new() }
-    fn decoder(&self) -> Box<Decoder> { EUCJP0212Decoder::new() }
+    fn raw_encoder(&self) -> Box<RawEncoder> { EUCJPEncoder::new() }
+    fn raw_decoder(&self) -> Box<RawDecoder> { EUCJP0212Decoder::new() }
 }
 
 /// An encoder for EUC-JP with unused G3 character set.
@@ -38,11 +38,11 @@ impl Encoding for EUCJPEncoding {
 pub struct EUCJPEncoder;
 
 impl EUCJPEncoder {
-    pub fn new() -> Box<Encoder> { box EUCJPEncoder as Box<Encoder> }
+    pub fn new() -> Box<RawEncoder> { box EUCJPEncoder as Box<RawEncoder> }
 }
 
-impl Encoder for EUCJPEncoder {
-    fn from_self(&self) -> Box<Encoder> { EUCJPEncoder::new() }
+impl RawEncoder for EUCJPEncoder {
+    fn from_self(&self) -> Box<RawEncoder> { EUCJPEncoder::new() }
     fn is_ascii_compatible(&self) -> bool { true }
 
     fn raw_feed(&mut self, input: &str, output: &mut ByteWriter) -> (uint, Option<CodecError>) {
@@ -167,7 +167,7 @@ mod eucjp_tests {
 
     #[test]
     fn test_encoder_valid() {
-        let mut e = EUCJPEncoding.encoder();
+        let mut e = EUCJPEncoding.raw_encoder();
         assert_feed_ok!(e, "A", "", [0x41]);
         assert_feed_ok!(e, "BC", "", [0x42, 0x43]);
         assert_feed_ok!(e, "", "", []);
@@ -183,14 +183,14 @@ mod eucjp_tests {
     fn test_encoder_double_mapped() {
         // these characters are double-mapped to both EUDC area and Shift_JIS extension area
         // but only the former should be used. (note that U+FFE2 is triple-mapped!)
-        let mut e = EUCJPEncoding.encoder();
+        let mut e = EUCJPEncoding.raw_encoder();
         assert_feed_ok!(e, "\u9ed1\u2170\uffe2", "", [0xfc, 0xee, 0xfc, 0xf1, 0xa2, 0xcc]);
         assert_finish_ok!(e, []);
     }
 
     #[test]
     fn test_encoder_invalid() {
-        let mut e = EUCJPEncoding.encoder();
+        let mut e = EUCJPEncoding.raw_encoder();
         assert_feed_err!(e, "", "\uffff", "", []);
         assert_feed_err!(e, "?", "\uffff", "!", [0x3f]);
         // JIS X 0212 is not supported in the encoder
@@ -200,7 +200,7 @@ mod eucjp_tests {
 
     #[test]
     fn test_decoder_valid() {
-        let mut d = EUCJPEncoding.decoder();
+        let mut d = EUCJPEncoding.raw_decoder();
         assert_feed_ok!(d, [0x41], [], "A");
         assert_feed_ok!(d, [0x42, 0x43], [], "BC");
         assert_feed_ok!(d, [], [], "");
@@ -215,7 +215,7 @@ mod eucjp_tests {
 
     #[test]
     fn test_decoder_valid_partial() {
-        let mut d = EUCJPEncoding.decoder();
+        let mut d = EUCJPEncoding.raw_decoder();
         assert_feed_ok!(d, [], [0xa4], "");
         assert_feed_ok!(d, [0xcb], [0xa4], "\u306b");
         assert_feed_ok!(d, [0xdb], [0xa4], "\u307b");
@@ -239,19 +239,19 @@ mod eucjp_tests {
     #[test]
     fn test_decoder_invalid_lone_lead_immediate_test_finish() {
         for i in range_inclusive(0x8eu8, 0x8f) {
-            let mut d = EUCJPEncoding.decoder();
+            let mut d = EUCJPEncoding.raw_decoder();
             assert_feed_ok!(d, [], [i], ""); // wait for a trail
             assert_finish_err!(d, "");
         }
 
         for i in range_inclusive(0xa1u8, 0xfe) {
-            let mut d = EUCJPEncoding.decoder();
+            let mut d = EUCJPEncoding.raw_decoder();
             assert_feed_ok!(d, [], [i], ""); // wait for a trail
             assert_finish_err!(d, "");
         }
 
         // immediate failures
-        let mut d = EUCJPEncoding.decoder();
+        let mut d = EUCJPEncoding.raw_decoder();
         for i in range_inclusive(0x80u8, 0x8d) {
             assert_feed_err!(d, [], [i], [], "");
         }
@@ -265,7 +265,7 @@ mod eucjp_tests {
     #[test]
     fn test_decoder_invalid_lone_lead_followed_by_space() {
         for i in range_inclusive(0x80u8, 0xff) {
-            let mut d = EUCJPEncoding.decoder();
+            let mut d = EUCJPEncoding.raw_decoder();
             assert_feed_err!(d, [], [i], [0x20], "");
             assert_finish_ok!(d, "");
         }
@@ -274,7 +274,7 @@ mod eucjp_tests {
     #[test]
     fn test_decoder_invalid_lead_followed_by_invalid_trail() {
         for i in range_inclusive(0x80u8, 0xff) {
-            let mut d = EUCJPEncoding.decoder();
+            let mut d = EUCJPEncoding.raw_decoder();
             assert_feed_err!(d, [], [i], [0x80], "");
             assert_feed_err!(d, [], [i], [0xff], "");
             assert_finish_ok!(d, "");
@@ -284,7 +284,7 @@ mod eucjp_tests {
     #[test]
     fn test_decoder_invalid_lone_lead_for_0212_immediate_test_finish() {
         for i in range_inclusive(0xa1u8, 0xfe) {
-            let mut d = EUCJPEncoding.decoder();
+            let mut d = EUCJPEncoding.raw_decoder();
             assert_feed_ok!(d, [], [0x8f, i], ""); // wait for a trail
             assert_finish_err!(d, "");
         }
@@ -293,7 +293,7 @@ mod eucjp_tests {
     #[test]
     fn test_decoder_invalid_lone_lead_for_0212_immediate_test_finish_partial() {
         for i in range_inclusive(0xa1u8, 0xfe) {
-            let mut d = EUCJPEncoding.decoder();
+            let mut d = EUCJPEncoding.raw_decoder();
             assert_feed_ok!(d, [], [0x8f], "");
             assert_feed_ok!(d, [], [i], ""); // wait for a trail
             assert_finish_err!(d, "");
@@ -303,13 +303,13 @@ mod eucjp_tests {
     #[test]
     fn test_decoder_invalid_trail_for_0201() {
         for i in range_inclusive(0u8, 0xa0) {
-            let mut d = EUCJPEncoding.decoder();
+            let mut d = EUCJPEncoding.raw_decoder();
             assert_feed_err!(d, [], [0x8e], [i], "");
             assert_finish_ok!(d, "");
         }
 
         for i in range_inclusive(0xe0u8, 0xfe) {
-            let mut d = EUCJPEncoding.decoder();
+            let mut d = EUCJPEncoding.raw_decoder();
             assert_feed_err!(d, [], [0x8e, i], [], "");
             assert_finish_ok!(d, "");
         }
@@ -318,14 +318,14 @@ mod eucjp_tests {
     #[test]
     fn test_decoder_invalid_trail_for_0201_partial() {
         for i in range_inclusive(0u8, 0xa0) {
-            let mut d = EUCJPEncoding.decoder();
+            let mut d = EUCJPEncoding.raw_decoder();
             assert_feed_ok!(d, [], [0x8e], "");
             assert_feed_err!(d, [], [], [i], "");
             assert_finish_ok!(d, "");
         }
 
         for i in range_inclusive(0xe0u8, 0xfe) {
-            let mut d = EUCJPEncoding.decoder();
+            let mut d = EUCJPEncoding.raw_decoder();
             assert_feed_ok!(d, [], [0x8e], "");
             assert_feed_err!(d, [], [i], [], "");
             assert_finish_ok!(d, "");
@@ -335,7 +335,7 @@ mod eucjp_tests {
     #[test]
     fn test_decoder_invalid_middle_for_0212() {
         for i in range_inclusive(0u8, 0xa0) {
-            let mut d = EUCJPEncoding.decoder();
+            let mut d = EUCJPEncoding.raw_decoder();
             assert_feed_err!(d, [], [0x8f], [i], "");
             assert_finish_ok!(d, "");
         }
@@ -344,7 +344,7 @@ mod eucjp_tests {
     #[test]
     fn test_decoder_invalid_middle_for_0212_partial() {
         for i in range_inclusive(0u8, 0xa0) {
-            let mut d = EUCJPEncoding.decoder();
+            let mut d = EUCJPEncoding.raw_decoder();
             assert_feed_ok!(d, [], [0x8f], "");
             assert_feed_err!(d, [], [], [i], "");
             assert_finish_ok!(d, "");
@@ -354,7 +354,7 @@ mod eucjp_tests {
     #[test]
     fn test_decoder_invalid_trail_for_0212() {
         for i in range_inclusive(0u8, 0xa0) {
-            let mut d = EUCJPEncoding.decoder();
+            let mut d = EUCJPEncoding.raw_decoder();
             assert_feed_err!(d, [], [0x8f, 0xa1], [i], "");
             assert_finish_ok!(d, "");
         }
@@ -363,7 +363,7 @@ mod eucjp_tests {
     #[test]
     fn test_decoder_invalid_trail_for_0212_partial() {
         for i in range_inclusive(0u8, 0xa0) {
-            let mut d = EUCJPEncoding.decoder();
+            let mut d = EUCJPEncoding.raw_decoder();
             assert_feed_ok!(d, [], [0x8f], "");
             assert_feed_ok!(d, [], [0xa1], "");
             assert_feed_err!(d, [], [], [i], "");
@@ -373,7 +373,7 @@ mod eucjp_tests {
 
     #[test]
     fn test_decoder_feed_after_finish() {
-        let mut d = EUCJPEncoding.decoder();
+        let mut d = EUCJPEncoding.raw_decoder();
         assert_feed_ok!(d, [0xa4, 0xa2], [0xa4], "\u3042");
         assert_finish_err!(d, "");
         assert_feed_ok!(d, [0xa4, 0xa2], [], "\u3042");
@@ -420,8 +420,8 @@ pub struct Windows31JEncoding;
 impl Encoding for Windows31JEncoding {
     fn name(&self) -> &'static str { "windows-31j" }
     fn whatwg_name(&self) -> Option<&'static str> { Some("shift_jis") } // WHATWG compatibility
-    fn encoder(&self) -> Box<Encoder> { Windows31JEncoder::new() }
-    fn decoder(&self) -> Box<Decoder> { Windows31JDecoder::new() }
+    fn raw_encoder(&self) -> Box<RawEncoder> { Windows31JEncoder::new() }
+    fn raw_decoder(&self) -> Box<RawDecoder> { Windows31JDecoder::new() }
 }
 
 /// An encoder for Shift_JIS with IBM/NEC extensions.
@@ -429,11 +429,11 @@ impl Encoding for Windows31JEncoding {
 pub struct Windows31JEncoder;
 
 impl Windows31JEncoder {
-    pub fn new() -> Box<Encoder> { box Windows31JEncoder as Box<Encoder> }
+    pub fn new() -> Box<RawEncoder> { box Windows31JEncoder as Box<RawEncoder> }
 }
 
-impl Encoder for Windows31JEncoder {
-    fn from_self(&self) -> Box<Encoder> { Windows31JEncoder::new() }
+impl RawEncoder for Windows31JEncoder {
+    fn from_self(&self) -> Box<RawEncoder> { Windows31JEncoder::new() }
     fn is_ascii_compatible(&self) -> bool { true }
 
     fn raw_feed(&mut self, input: &str, output: &mut ByteWriter) -> (uint, Option<CodecError>) {
@@ -523,7 +523,7 @@ mod windows31j_tests {
 
     #[test]
     fn test_encoder_valid() {
-        let mut e = Windows31JEncoding.encoder();
+        let mut e = Windows31JEncoding.raw_encoder();
         assert_feed_ok!(e, "A", "", [0x41]);
         assert_feed_ok!(e, "BC", "", [0x42, 0x43]);
         assert_feed_ok!(e, "", "", []);
@@ -537,7 +537,7 @@ mod windows31j_tests {
 
     #[test]
     fn test_encoder_no_eudc() {
-        let mut e = Windows31JEncoding.encoder();
+        let mut e = Windows31JEncoding.raw_encoder();
         assert_feed_err!(e, "", "\ue000", "", []);
         assert_feed_err!(e, "", "\ue757", "", []);
         assert_feed_err!(e, "", "\ue758", "", []);
@@ -548,14 +548,14 @@ mod windows31j_tests {
     fn test_encoder_double_mapped() {
         // these characters are double-mapped to both EUDC area and Shift_JIS extension area
         // but only the latter should be used. (note that U+FFE2 is triple-mapped!)
-        let mut e = Windows31JEncoding.encoder();
+        let mut e = Windows31JEncoding.raw_encoder();
         assert_feed_ok!(e, "\u9ed1\u2170\uffe2", "", [0xfc, 0x4b, 0xfa, 0x40, 0x81, 0xca]);
         assert_finish_ok!(e, []);
     }
 
     #[test]
     fn test_encoder_invalid() {
-        let mut e = Windows31JEncoding.encoder();
+        let mut e = Windows31JEncoding.raw_encoder();
         assert_feed_err!(e, "", "\uffff", "", []);
         assert_feed_err!(e, "?", "\uffff", "!", [0x3f]);
         assert_feed_err!(e, "", "\u736c", "\u8c78", []);
@@ -564,7 +564,7 @@ mod windows31j_tests {
 
     #[test]
     fn test_decoder_valid() {
-        let mut d = Windows31JEncoding.decoder();
+        let mut d = Windows31JEncoding.raw_decoder();
         assert_feed_ok!(d, [0x41], [], "A");
         assert_feed_ok!(d, [0x42, 0x43], [], "BC");
         assert_feed_ok!(d, [], [], "");
@@ -579,7 +579,7 @@ mod windows31j_tests {
 
     #[test]
     fn test_decoder_eudc() {
-        let mut d = Windows31JEncoding.decoder();
+        let mut d = Windows31JEncoding.raw_decoder();
         assert_feed_ok!(d, [], [0xf0], "");
         assert_feed_ok!(d, [0x40], [], "\ue000");
         assert_feed_ok!(d, [0xf9, 0xfc], [], "\ue757");
@@ -591,19 +591,19 @@ mod windows31j_tests {
     #[test]
     fn test_decoder_invalid_lone_lead_immediate_test_finish() {
         for i in range_inclusive(0x81u8, 0x9f) {
-            let mut d = Windows31JEncoding.decoder();
+            let mut d = Windows31JEncoding.raw_decoder();
             assert_feed_ok!(d, [], [i], ""); // wait for a trail
             assert_finish_err!(d, "");
         }
 
         for i in range_inclusive(0xe0u8, 0xfc) {
-            let mut d = Windows31JEncoding.decoder();
+            let mut d = Windows31JEncoding.raw_decoder();
             assert_feed_ok!(d, [], [i], ""); // wait for a trail
             assert_finish_err!(d, "");
         }
 
         // A0/FD/FE/FF: immediate failure
-        let mut d = Windows31JEncoding.decoder();
+        let mut d = Windows31JEncoding.raw_decoder();
         assert_feed_err!(d, [], [0xa0], [], "");
         assert_feed_err!(d, [], [0xfd], [], "");
         assert_feed_err!(d, [], [0xfe], [], "");
@@ -614,13 +614,13 @@ mod windows31j_tests {
     #[test]
     fn test_decoder_invalid_lone_lead_followed_by_space() {
         for i in range_inclusive(0x81u8, 0x9f) {
-            let mut d = Windows31JEncoding.decoder();
+            let mut d = Windows31JEncoding.raw_decoder();
             assert_feed_err!(d, [], [i], [0x20], "");
             assert_finish_ok!(d, "");
         }
 
         for i in range_inclusive(0xe0u8, 0xfc) {
-            let mut d = Windows31JEncoding.decoder();
+            let mut d = Windows31JEncoding.raw_decoder();
             assert_feed_err!(d, [], [i], [0x20], "");
             assert_finish_ok!(d, "");
         }
@@ -629,7 +629,7 @@ mod windows31j_tests {
     #[test]
     fn test_decoder_invalid_lead_followed_by_invalid_trail() {
         for i in range_inclusive(0x81u8, 0x9f) {
-            let mut d = Windows31JEncoding.decoder();
+            let mut d = Windows31JEncoding.raw_decoder();
             assert_feed_err!(d, [], [i], [0x3f], "");
             assert_feed_err!(d, [], [i], [0x7f], "");
             assert_feed_err!(d, [], [i], [0xfd], "");
@@ -639,7 +639,7 @@ mod windows31j_tests {
         }
 
         for i in range_inclusive(0xe0u8, 0xfc) {
-            let mut d = Windows31JEncoding.decoder();
+            let mut d = Windows31JEncoding.raw_decoder();
             assert_feed_err!(d, [], [i], [0x3f], "");
             assert_feed_err!(d, [], [i], [0x7f], "");
             assert_feed_err!(d, [], [i], [0xfd], "");
@@ -652,14 +652,14 @@ mod windows31j_tests {
     #[test]
     fn test_decoder_invalid_lead_followed_by_invalid_trail_partial() {
         for i in range_inclusive(0x81u8, 0x9f) {
-            let mut d = Windows31JEncoding.decoder();
+            let mut d = Windows31JEncoding.raw_decoder();
             assert_feed_ok!(d, [], [i], "");
             assert_feed_err!(d, [], [], [0xff], "");
             assert_finish_ok!(d, "");
         }
 
         for i in range_inclusive(0xe0u8, 0xfc) {
-            let mut d = Windows31JEncoding.decoder();
+            let mut d = Windows31JEncoding.raw_decoder();
             assert_feed_ok!(d, [], [i], "");
             assert_feed_err!(d, [], [], [0xff], "");
             assert_finish_ok!(d, "");
@@ -668,7 +668,7 @@ mod windows31j_tests {
 
     #[test]
     fn test_decoder_feed_after_finish() {
-        let mut d = Windows31JEncoding.decoder();
+        let mut d = Windows31JEncoding.raw_decoder();
         assert_feed_ok!(d, [0x82, 0xa0], [0x82], "\u3042");
         assert_finish_err!(d, "");
         assert_feed_ok!(d, [0x82, 0xa0], [], "\u3042");
@@ -713,8 +713,8 @@ pub struct ISO2022JPEncoding;
 impl Encoding for ISO2022JPEncoding {
     fn name(&self) -> &'static str { "iso-2022-jp" }
     fn whatwg_name(&self) -> Option<&'static str> { Some("iso-2022-jp") }
-    fn encoder(&self) -> Box<Encoder> { ISO2022JPEncoder::new() }
-    fn decoder(&self) -> Box<Decoder> { ISO2022JPDecoder::new() }
+    fn raw_encoder(&self) -> Box<RawEncoder> { ISO2022JPEncoder::new() }
+    fn raw_decoder(&self) -> Box<RawDecoder> { ISO2022JPDecoder::new() }
 }
 
 #[deriving(PartialEq,Clone)]
@@ -731,11 +731,11 @@ pub struct ISO2022JPEncoder {
 }
 
 impl ISO2022JPEncoder {
-    pub fn new() -> Box<Encoder> { box ISO2022JPEncoder { st: ASCII } as Box<Encoder> }
+    pub fn new() -> Box<RawEncoder> { box ISO2022JPEncoder { st: ASCII } as Box<RawEncoder> }
 }
 
-impl Encoder for ISO2022JPEncoder {
-    fn from_self(&self) -> Box<Encoder> { ISO2022JPEncoder::new() }
+impl RawEncoder for ISO2022JPEncoder {
+    fn from_self(&self) -> Box<RawEncoder> { ISO2022JPEncoder::new() }
     fn is_ascii_compatible(&self) -> bool { true }
 
     fn raw_feed(&mut self, input: &str, output: &mut ByteWriter) -> (uint, Option<CodecError>) {
@@ -920,7 +920,7 @@ mod iso2022jp_tests {
 
     #[test]
     fn test_encoder_valid() {
-        let mut e = ISO2022JPEncoding.encoder();
+        let mut e = ISO2022JPEncoding.raw_encoder();
         assert_feed_ok!(e, "A", "", [0x41]);
         assert_feed_ok!(e, "BC", "", [0x42, 0x43]);
         assert_feed_ok!(e, "\x1b\x24\x42", "", [0x1b, 0x24, 0x42]); // no round-trip guarantee
@@ -948,7 +948,7 @@ mod iso2022jp_tests {
         static AE: &'static [u8] = &[0x1b, 0x28, 0x42, 0x20];
         static BE: &'static [u8] = &[0x1b, 0x24, 0x42, 0x25, 0x4d];
         static CE: &'static [u8] = &[0x1b, 0x28, 0x49, 0x48];
-        let mut e = ISO2022JPEncoding.encoder();
+        let mut e = ISO2022JPEncoding.raw_encoder();
         let decoded = ["\x20",   BD, CD, AD, CD, BD, AD].concat();
         let encoded = [[0x20][], BE, CE, AE, CE, BE, AE].concat_vec();
         assert_feed_ok!(e, decoded[], "", encoded[]);
@@ -957,7 +957,7 @@ mod iso2022jp_tests {
 
     #[test]
     fn test_encoder_invalid() {
-        let mut e = ISO2022JPEncoding.encoder();
+        let mut e = ISO2022JPEncoding.raw_encoder();
         assert_feed_err!(e, "", "\uffff", "", []);
         assert_feed_err!(e, "?", "\uffff", "!", [0x3f]);
         // JIS X 0212 is not supported in the encoder
@@ -967,7 +967,7 @@ mod iso2022jp_tests {
 
     #[test]
     fn test_decoder_valid() {
-        let mut d = ISO2022JPEncoding.decoder();
+        let mut d = ISO2022JPEncoding.raw_decoder();
         assert_feed_ok!(d, [0x41], [], "A");
         assert_feed_ok!(d, [0x42, 0x43], [], "BC");
         assert_feed_ok!(d, [0x1b, 0x28, 0x4a,
@@ -990,17 +990,17 @@ mod iso2022jp_tests {
                             0x58, 0x59, 0x5a], [], "XYZ");
         assert_finish_ok!(d, "");
 
-        let mut d = ISO2022JPEncoding.decoder();
+        let mut d = ISO2022JPEncoding.raw_decoder();
         assert_feed_ok!(d, [0x1b, 0x24, 0x42,
                             0x24, 0x4b, 0x24, 0x5b, 0x24, 0x73], [], "\u306b\u307b\u3093");
         assert_finish_ok!(d, "");
 
-        let mut d = ISO2022JPEncoding.decoder();
+        let mut d = ISO2022JPEncoding.raw_decoder();
         assert_feed_ok!(d, [0x1b, 0x28, 0x49,
                             0x46, 0x4e, 0x5d], [], "\uff86\uff8e\uff9d");
         assert_finish_ok!(d, "");
 
-        let mut d = ISO2022JPEncoding.decoder();
+        let mut d = ISO2022JPEncoding.raw_decoder();
         assert_feed_ok!(d, [0x1b, 0x24, 0x28, 0x44,
                             0x4b, 0x46], [], "\u736c");
         assert_finish_ok!(d, "");
@@ -1019,7 +1019,7 @@ mod iso2022jp_tests {
         static BE: &'static [u8] = &[0x1b, 0x24, 0x42,       0x25, 0x4d];
         static CE: &'static [u8] = &[0x1b, 0x28, 0x49,       0x48];
         static DE: &'static [u8] = &[0x1b, 0x24, 0x28, 0x44, 0x50, 0x4b];
-        let mut d = ISO2022JPEncoding.decoder();
+        let mut d = ISO2022JPEncoding.raw_decoder();
         let decoded = ["\x20",  AD,BD,BD,CD,CD,AD,CD,BD,AD,DD,DD,BD,DD,CD,DD,AD].concat();
         let encoded = [[0x20][],AE,BE,BE,CE,CE,AE,CE,BE,AE,DE,DE,BE,DE,CE,DE,AE].concat_vec();
         assert_feed_ok!(d, encoded[], [], decoded[]);
@@ -1028,7 +1028,7 @@ mod iso2022jp_tests {
 
     #[test]
     fn test_decoder_valid_partial() {
-        let mut d = ISO2022JPEncoding.decoder();
+        let mut d = ISO2022JPEncoding.raw_decoder();
 
         assert_feed_ok!(d, [], [0x1b], "");
         assert_feed_ok!(d, [], [0x28], "");
@@ -1064,7 +1064,7 @@ mod iso2022jp_tests {
     #[test]
     fn test_decoder_carriage_return() {
         // CR in Lead state "resets to ASCII"
-        let mut d = ISO2022JPEncoding.decoder();
+        let mut d = ISO2022JPEncoding.raw_decoder();
         assert_feed_ok!(d, [0x1b, 0x24, 0x42,
                             0x25, 0x4d,
                             0x0a,
@@ -1076,7 +1076,7 @@ mod iso2022jp_tests {
         assert_finish_ok!(d, "");
 
         // other states don't allow CR
-        let mut d = ISO2022JPEncoding.decoder();
+        let mut d = ISO2022JPEncoding.raw_decoder();
         assert_feed_err!(d, [0x1b, 0x28, 0x49, 0x48], [0x0a], [], "\uff88"); // Katakana
         assert_feed_err!(d, [0x1b, 0x24, 0x42], [0x25, 0x0a], [], ""); // Trail
         assert_finish_ok!(d, "");
@@ -1084,30 +1084,30 @@ mod iso2022jp_tests {
 
     #[test]
     fn test_decoder_invalid_partial() {
-        let mut d = ISO2022JPEncoding.decoder();
+        let mut d = ISO2022JPEncoding.raw_decoder();
         assert_feed_ok!(d, [0x1b, 0x24, 0x42, 0x24, 0x4b], [0x24], "\u306b");
         assert_finish_err!(d, "");
 
-        let mut d = ISO2022JPEncoding.decoder();
+        let mut d = ISO2022JPEncoding.raw_decoder();
         assert_feed_ok!(d, [0x1b, 0x24, 0x28, 0x44, 0x4b, 0x46], [0x50], "\u736c");
         assert_finish_err!(d, "");
     }
 
     #[test]
     fn test_decoder_invalid_partial_escape() {
-        let mut d = ISO2022JPEncoding.decoder();
+        let mut d = ISO2022JPEncoding.raw_decoder();
         assert_feed_ok!(d, [], [0x1b], "");
         assert_finish_err!(d, "");
 
-        let mut d = ISO2022JPEncoding.decoder();
+        let mut d = ISO2022JPEncoding.raw_decoder();
         assert_feed_ok!(d, [], [0x1b, 0x24], "");
         assert_finish_err!(d, ""); // no backup
 
-        let mut d = ISO2022JPEncoding.decoder();
+        let mut d = ISO2022JPEncoding.raw_decoder();
         assert_feed_ok!(d, [], [0x1b, 0x24, 0x28], "");
         assert_finish_err!(d, -1, ""); // backup of -1, not -2
 
-        let mut d = ISO2022JPEncoding.decoder();
+        let mut d = ISO2022JPEncoding.raw_decoder();
         assert_feed_ok!(d, [], [0x1b, 0x28], "");
         assert_finish_err!(d, ""); // no backup
 
@@ -1124,7 +1124,7 @@ mod iso2022jp_tests {
     #[test]
     fn test_decoder_invalid_escape() {
         // also tests allowed but never used escape codes in ISO 2022
-        let mut d = ISO2022JPEncoding.decoder();
+        let mut d = ISO2022JPEncoding.raw_decoder();
         macro_rules! reset(() => (
             assert_feed_ok!(d, [0x41, 0x42, 0x43, 0x1b, 0x24, 0x42, 0x21, 0x21], [], "ABC\u3000")))
 
@@ -1204,7 +1204,7 @@ mod iso2022jp_tests {
 
     #[test]
     fn test_decoder_invalid_out_or_range() {
-        let mut d = ISO2022JPEncoding.decoder();
+        let mut d = ISO2022JPEncoding.raw_decoder();
         assert_feed_err!(d, [], [0x80], [], "");
         assert_feed_err!(d, [], [0xff], [], "");
         assert_feed_err!(d, [0x1b, 0x24, 0x42], [0x80, 0x21], [], "");
@@ -1222,7 +1222,7 @@ mod iso2022jp_tests {
 
     #[test]
     fn test_decoder_feed_after_finish() {
-        let mut d = ISO2022JPEncoding.decoder();
+        let mut d = ISO2022JPEncoding.raw_decoder();
         assert_feed_ok!(d, [0x24, 0x22,
                             0x1b, 0x24, 0x42,
                             0x24, 0x22], [0x24], "\x24\x22\u3042");

@@ -67,13 +67,13 @@ pub struct CodecError {
     pub cause: SendStr,
 }
 
-/// Byte writer used by `Encoder`s. In most cases this will be an owned vector of `u8`.
+/// Byte writer used by encoders. In most cases this will be an owned vector of `u8`.
 #[unstable]
 pub trait ByteWriter {
     /// Hints an expected lower bound on the length (in bytes) of the output
     /// until the next call to `writer_hint`,
     /// so that the writer can reserve the memory for writing.
-    /// `Encoder`s are recommended but not required to call this method
+    /// `RawEncoder`s are recommended but not required to call this method
     /// with an appropriate estimate.
     /// By default this method does nothing.
     fn writer_hint(&mut self, _expectedlen: uint) {}
@@ -87,7 +87,7 @@ pub trait ByteWriter {
 
 impl ByteWriter for Vec<u8> {
     fn writer_hint(&mut self, expectedlen: uint) {
-        self.reserve_additional(expectedlen);
+        self.reserve(expectedlen);
     }
 
     fn write_byte(&mut self, b: u8) {
@@ -99,13 +99,13 @@ impl ByteWriter for Vec<u8> {
     }
 }
 
-/// String writer used by `Decoder`s. In most cases this will be an owned string.
+/// String writer used by decoders. In most cases this will be an owned string.
 #[unstable]
-pub trait StringWriter: 'static {
+pub trait StringWriter {
     /// Hints an expected lower bound on the length (in bytes) of the output
     /// until the next call to `writer_hint`,
     /// so that the writer can reserve the memory for writing.
-    /// `Decoder`s are recommended but not required to call this method
+    /// `RawDecoder`s are recommended but not required to call this method
     /// with an appropriate estimate.
     /// By default this method does nothing.
     fn writer_hint(&mut self, _expectedlen: uint) {}
@@ -135,9 +135,9 @@ impl StringWriter for String {
 /// Encoder converting a Unicode string into a byte sequence.
 /// This is a lower level interface, and normally `Encoding::encode` should be used instead.
 #[experimental]
-pub trait Encoder: 'static {
-    /// Creates a fresh `Encoder` instance which parameters are same as `self`.
-    fn from_self(&self) -> Box<Encoder>;
+pub trait RawEncoder: 'static {
+    /// Creates a fresh `RawEncoder` instance which parameters are same as `self`.
+    fn from_self(&self) -> Box<RawEncoder>;
 
     /// Returns true if this encoding is compatible to ASCII,
     /// i.e. U+0000 through U+007F always map to bytes 00 through 7F and nothing else.
@@ -192,9 +192,9 @@ pub trait Encoder: 'static {
 /// Decoder converting a byte sequence into a Unicode string.
 /// This is a lower level interface, and normally `Encoding::decode` should be used instead.
 #[experimental]
-pub trait Decoder: 'static {
-    /// Creates a fresh `Decoder` instance which parameters are same as `self`.
-    fn from_self(&self) -> Box<Decoder>;
+pub trait RawDecoder: 'static {
+    /// Creates a fresh `RawDecoder` instance which parameters are same as `self`.
+    fn from_self(&self) -> Box<RawDecoder>;
 
     /// Returns true if this encoding is compatible to ASCII,
     /// i.e. bytes 00 through 7F always map to U+0000 through U+007F and nothing else.
@@ -267,13 +267,13 @@ pub trait Encoding {
 
     /// Creates a new encoder.
     #[experimental]
-    fn encoder(&self) -> Box<Encoder>;
+    fn raw_encoder(&self) -> Box<RawEncoder>;
 
     /// Creates a new decoder.
     #[experimental]
-    fn decoder(&self) -> Box<Decoder>;
+    fn raw_decoder(&self) -> Box<RawDecoder>;
 
-    /// An easy-to-use interface to `Encoder`.
+    /// An easy-to-use interface to `RawEncoder`.
     /// On the encoder error `trap` is called,
     /// which may return a replacement sequence to continue processing,
     /// or a failure to return the error.
@@ -281,7 +281,7 @@ pub trait Encoding {
     fn encode(&self, input: &str, trap: EncoderTrap) -> Result<Vec<u8>,SendStr> {
         // we don't need to keep `unprocessed` here;
         // `raw_feed` should process as much input as possible.
-        let mut encoder = self.encoder();
+        let mut encoder = self.raw_encoder();
         let mut remaining = 0;
         let mut ret = Vec::new();
 
@@ -312,7 +312,7 @@ pub trait Encoding {
         }
     }
 
-    /// An easy-to-use interface to `Decoder`.
+    /// An easy-to-use interface to `RawDecoder`.
     /// On the decoder error `trap` is called,
     /// which may return a replacement string to continue processing,
     /// or a failure to return the error.
@@ -320,7 +320,7 @@ pub trait Encoding {
     fn decode(&self, input: &[u8], trap: DecoderTrap) -> Result<String,SendStr> {
         // we don't need to keep `unprocessed` here;
         // `raw_feed` should process as much input as possible.
-        let mut decoder = self.decoder();
+        let mut decoder = self.raw_decoder();
         let mut remaining = 0;
         let mut ret = String::new();
 
@@ -355,12 +355,12 @@ pub trait Encoding {
 /// A type of the bare function in `EncoderTrap` values.
 #[unstable]
 pub type EncoderTrapFunc =
-    extern "Rust" fn(encoder: &mut Encoder, input: &str, output: &mut ByteWriter) -> bool;
+    extern "Rust" fn(encoder: &mut RawEncoder, input: &str, output: &mut ByteWriter) -> bool;
 
 /// A type of the bare function in `DecoderTrap` values.
 #[unstable]
 pub type DecoderTrapFunc =
-    extern "Rust" fn(decoder: &mut Decoder, input: &[u8], output: &mut StringWriter) -> bool;
+    extern "Rust" fn(decoder: &mut RawDecoder, input: &[u8], output: &mut StringWriter) -> bool;
 
 /// Trap, which handles decoder errors.
 #[stable]
@@ -382,7 +382,7 @@ pub enum DecoderTrap {
 impl DecoderTrap {
     /// Handles a decoder error. May write to the output writer.
     /// Returns true only when it is fine to keep going.
-    fn trap(&self, decoder: &mut Decoder, input: &[u8], output: &mut StringWriter) -> bool {
+    fn trap(&self, decoder: &mut RawDecoder, input: &[u8], output: &mut StringWriter) -> bool {
         match *self {
             DecodeStrict => false,
             DecodeReplace => { output.write_char('\ufffd'); true },
@@ -416,8 +416,8 @@ pub enum EncoderTrap {
 impl EncoderTrap {
     /// Handles an encoder error. May write to the output writer.
     /// Returns true only when it is fine to keep going.
-    fn trap(&self, encoder: &mut Encoder, input: &str, output: &mut ByteWriter) -> bool {
-        fn reencode(encoder: &mut Encoder, input: &str, output: &mut ByteWriter,
+    fn trap(&self, encoder: &mut RawEncoder, input: &str, output: &mut ByteWriter) -> bool {
+        fn reencode(encoder: &mut RawEncoder, input: &str, output: &mut ByteWriter,
                     trapname: &str) -> bool {
             if encoder.is_ascii_compatible() { // optimization!
                 output.write_bytes(input.as_bytes());
@@ -473,12 +473,12 @@ mod tests {
     // within two "e"s (so that `widespread` becomes `wide*s*p*r*ead` and `eeeeasel` becomes
     // `e*ee*ease*l` where `*` is substituted by `prepend`) and prohibits `prohibit` character.
     struct MyEncoder { flag: bool, prohibit: char, prepend: &'static str, toggle: bool }
-    impl Encoder for MyEncoder {
-        fn from_self(&self) -> Box<Encoder> {
+    impl RawEncoder for MyEncoder {
+        fn from_self(&self) -> Box<RawEncoder> {
             box MyEncoder { flag: self.flag,
                             prohibit: self.prohibit,
                             prepend: self.prepend,
-                            toggle: false } as Box<Encoder>
+                            toggle: false } as Box<RawEncoder>
         }
         fn is_ascii_compatible(&self) -> bool { self.flag }
         fn raw_feed(&mut self, input: &str,
@@ -505,13 +505,13 @@ mod tests {
     struct MyEncoding { flag: bool, prohibit: char, prepend: &'static str }
     impl Encoding for MyEncoding {
         fn name(&self) -> &'static str { "my encoding" }
-        fn encoder(&self) -> Box<Encoder> {
+        fn raw_encoder(&self) -> Box<RawEncoder> {
             box MyEncoder { flag: self.flag,
                             prohibit: self.prohibit,
                             prepend: self.prepend,
-                            toggle: false } as Box<Encoder>
+                            toggle: false } as Box<RawEncoder>
         }
-        fn decoder(&self) -> Box<Decoder> { panic!("not supported") }
+        fn raw_decoder(&self) -> Box<RawDecoder> { panic!("not supported") }
     }
 
     #[test]

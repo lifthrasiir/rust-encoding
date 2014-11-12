@@ -48,8 +48,8 @@ pub struct UTF8Encoding;
 impl Encoding for UTF8Encoding {
     fn name(&self) -> &'static str { "utf-8" }
     fn whatwg_name(&self) -> Option<&'static str> { Some("utf-8") }
-    fn encoder(&self) -> Box<Encoder> { UTF8Encoder::new() }
-    fn decoder(&self) -> Box<Decoder> { UTF8Decoder::new() }
+    fn raw_encoder(&self) -> Box<RawEncoder> { UTF8Encoder::new() }
+    fn raw_decoder(&self) -> Box<RawDecoder> { UTF8Decoder::new() }
 }
 
 /// An encoder for UTF-8.
@@ -57,11 +57,11 @@ impl Encoding for UTF8Encoding {
 pub struct UTF8Encoder;
 
 impl UTF8Encoder {
-    pub fn new() -> Box<Encoder> { box UTF8Encoder as Box<Encoder> }
+    pub fn new() -> Box<RawEncoder> { box UTF8Encoder as Box<RawEncoder> }
 }
 
-impl Encoder for UTF8Encoder {
-    fn from_self(&self) -> Box<Encoder> { UTF8Encoder::new() }
+impl RawEncoder for UTF8Encoder {
+    fn from_self(&self) -> Box<RawEncoder> { UTF8Encoder::new() }
     fn is_ascii_compatible(&self) -> bool { true }
 
     fn raw_feed(&mut self, input: &str, output: &mut ByteWriter) -> (uint, Option<CodecError>) {
@@ -84,8 +84,8 @@ pub struct UTF8Decoder {
 }
 
 impl UTF8Decoder {
-    pub fn new() -> Box<Decoder> {
-        box UTF8Decoder { queuelen: 0, queue: [0, ..4], state: INITIAL_STATE } as Box<Decoder>
+    pub fn new() -> Box<RawDecoder> {
+        box UTF8Decoder { queuelen: 0, queue: [0, ..4], state: INITIAL_STATE } as Box<RawDecoder>
     }
 }
 
@@ -142,8 +142,8 @@ macro_rules! next_state(($state:expr, $ch:expr) => (
     STATE_TRANSITIONS[($state + CHAR_CATEGORY[$ch as uint]) as uint]
 ))
 
-impl Decoder for UTF8Decoder {
-    fn from_self(&self) -> Box<Decoder> { UTF8Decoder::new() }
+impl RawDecoder for UTF8Decoder {
+    fn from_self(&self) -> Box<RawDecoder> { UTF8Decoder::new() }
     fn is_ascii_compatible(&self) -> bool { true }
 
     fn raw_feed(&mut self, input: &[u8], output: &mut StringWriter) -> (uint, Option<CodecError>) {
@@ -254,7 +254,7 @@ mod tests {
     #[test]
     fn test_valid() {
         // one byte
-        let mut d = UTF8Encoding.decoder();
+        let mut d = UTF8Encoding.raw_decoder();
         assert_feed_ok!(d, [0x41], [], "A");
         assert_feed_ok!(d, [0x42, 0x43], [], "BC");
         assert_feed_ok!(d, [], [], "");
@@ -262,7 +262,7 @@ mod tests {
         assert_finish_ok!(d, "");
 
         // two bytes
-        let mut d = UTF8Encoding.decoder();
+        let mut d = UTF8Encoding.raw_decoder();
         assert_feed_ok!(d, [0xc2, 0xa2], [], "\u00a2");
         assert_feed_ok!(d, [0xc2, 0xac, 0xc2, 0xa9], [], "\u00ac\u00a9");
         assert_feed_ok!(d, [], [], "");
@@ -272,7 +272,7 @@ mod tests {
         assert_finish_ok!(d, "");
 
         // three bytes
-        let mut d = UTF8Encoding.decoder();
+        let mut d = UTF8Encoding.raw_decoder();
         assert_feed_ok!(d, [0xed, 0x92, 0x89], [], "\ud489");
         assert_feed_ok!(d, [0xe6, 0xbc, 0xa2, 0xe5, 0xad, 0x97], [], "\u6f22\u5b57");
         assert_feed_ok!(d, [], [], "");
@@ -280,7 +280,7 @@ mod tests {
         assert_finish_ok!(d, "");
 
         // four bytes
-        let mut d = UTF8Encoding.decoder();
+        let mut d = UTF8Encoding.raw_decoder();
         assert_feed_ok!(d, [0xf0, 0x90, 0x82, 0x82], [], "\U00010082");
         assert_feed_ok!(d, [], [], "");
         assert_finish_ok!(d, "");
@@ -290,50 +290,50 @@ mod tests {
 
     #[test]
     fn test_valid_boundary() {
-        let mut d = UTF8Encoding.decoder();
+        let mut d = UTF8Encoding.raw_decoder();
         assert_feed_ok!(d, [0x00], [], "\x00");
         assert_finish_ok!(d, "");
 
-        let mut d = UTF8Encoding.decoder();
+        let mut d = UTF8Encoding.raw_decoder();
         assert_feed_ok!(d, [0x7f], [], "\x7f");
         assert_finish_ok!(d, "");
 
-        let mut d = UTF8Encoding.decoder();
+        let mut d = UTF8Encoding.raw_decoder();
         assert_feed_ok!(d, [0xc2, 0x80], [], "\u0080");
         assert_finish_ok!(d, "");
 
-        let mut d = UTF8Encoding.decoder();
+        let mut d = UTF8Encoding.raw_decoder();
         assert_feed_ok!(d, [0xdf, 0xbf], [], "\u07ff");
         assert_finish_ok!(d, "");
 
-        let mut d = UTF8Encoding.decoder();
+        let mut d = UTF8Encoding.raw_decoder();
         assert_feed_ok!(d, [0xe0, 0xa0, 0x80], [], "\u0800");
         assert_finish_ok!(d, "");
 
-        let mut d = UTF8Encoding.decoder();
+        let mut d = UTF8Encoding.raw_decoder();
         assert_feed_ok!(d, [0xed, 0x9f, 0xbf], [], "\ud7ff");
         assert_finish_ok!(d, "");
 
-        let mut d = UTF8Encoding.decoder();
+        let mut d = UTF8Encoding.raw_decoder();
         assert_feed_ok!(d, [0xee, 0x80, 0x80], [], "\ue000");
         assert_finish_ok!(d, "");
 
-        let mut d = UTF8Encoding.decoder();
+        let mut d = UTF8Encoding.raw_decoder();
         assert_feed_ok!(d, [0xef, 0xbf, 0xbf], [], "\uffff");
         assert_finish_ok!(d, "");
 
-        let mut d = UTF8Encoding.decoder();
+        let mut d = UTF8Encoding.raw_decoder();
         assert_feed_ok!(d, [0xf0, 0x90, 0x80, 0x80], [], "\U00010000");
         assert_finish_ok!(d, "");
 
-        let mut d = UTF8Encoding.decoder();
+        let mut d = UTF8Encoding.raw_decoder();
         assert_feed_ok!(d, [0xf4, 0x8f, 0xbf, 0xbf], [], "\U0010ffff");
         assert_finish_ok!(d, "");
     }
 
     #[test]
     fn test_valid_partial() {
-        let mut d = UTF8Encoding.decoder();
+        let mut d = UTF8Encoding.raw_decoder();
         assert_feed_ok!(d, [], [0xf0], "");
         assert_feed_ok!(d, [], [0x90], "");
         assert_feed_ok!(d, [], [0x82], "");
@@ -341,7 +341,7 @@ mod tests {
         assert_feed_ok!(d, [0x92, 0x89], [], "\ud489");
         assert_finish_ok!(d, "");
 
-        let mut d = UTF8Encoding.decoder();
+        let mut d = UTF8Encoding.raw_decoder();
         assert_feed_ok!(d, [], [0xc2], "");
         assert_feed_ok!(d, [0xa9, 0x20], [], "\u00a9\u0020");
         assert_finish_ok!(d, "");
@@ -350,15 +350,15 @@ mod tests {
     #[test]
     fn test_invalid_continuation() {
         for c in range(0x80u8, 0xc0) {
-            let mut d = UTF8Encoding.decoder();
+            let mut d = UTF8Encoding.raw_decoder();
             assert_feed_err!(d, [], [c], [], "");
             assert_finish_ok!(d, "");
 
-            let mut d = UTF8Encoding.decoder();
+            let mut d = UTF8Encoding.raw_decoder();
             assert_feed_err!(d, [], [c], [c], "");
             assert_finish_ok!(d, "");
 
-            let mut d = UTF8Encoding.decoder();
+            let mut d = UTF8Encoding.raw_decoder();
             assert_feed_err!(d, [], [c], [c, c], "");
             assert_finish_ok!(d, "");
         }
@@ -368,31 +368,31 @@ mod tests {
     fn test_invalid_surrogate() {
         // surrogates should fail at the second byte.
 
-        let mut d = UTF8Encoding.decoder();
+        let mut d = UTF8Encoding.raw_decoder();
         assert_feed_err!(d, [], [0xed], [0xa0, 0x80], "");
         assert_finish_ok!(d, "");
 
-        let mut d = UTF8Encoding.decoder();
+        let mut d = UTF8Encoding.raw_decoder();
         assert_feed_err!(d, [], [0xed], [0xad, 0xbf], "");
         assert_finish_ok!(d, "");
 
-        let mut d = UTF8Encoding.decoder();
+        let mut d = UTF8Encoding.raw_decoder();
         assert_feed_err!(d, [], [0xed], [0xae, 0x80], "");
         assert_finish_ok!(d, "");
 
-        let mut d = UTF8Encoding.decoder();
+        let mut d = UTF8Encoding.raw_decoder();
         assert_feed_err!(d, [], [0xed], [0xaf, 0xbf], "");
         assert_finish_ok!(d, "");
 
-        let mut d = UTF8Encoding.decoder();
+        let mut d = UTF8Encoding.raw_decoder();
         assert_feed_err!(d, [], [0xed], [0xb0, 0x80], "");
         assert_finish_ok!(d, "");
 
-        let mut d = UTF8Encoding.decoder();
+        let mut d = UTF8Encoding.raw_decoder();
         assert_feed_err!(d, [], [0xed], [0xbe, 0x80], "");
         assert_finish_ok!(d, "");
 
-        let mut d = UTF8Encoding.decoder();
+        let mut d = UTF8Encoding.raw_decoder();
         assert_feed_err!(d, [], [0xed], [0xbf, 0xbf], "");
         assert_finish_ok!(d, "");
     }
@@ -400,7 +400,7 @@ mod tests {
     #[test]
     fn test_invalid_boundary() {
         // as with surrogates, should fail at the second byte.
-        let mut d = UTF8Encoding.decoder();
+        let mut d = UTF8Encoding.raw_decoder();
         assert_feed_err!(d, [], [0xf4], [0x90, 0x90, 0x90], ""); // U+110000
         assert_finish_ok!(d, "");
     }
@@ -409,7 +409,7 @@ mod tests {
     fn test_invalid_start_immediate_test_finish() {
         for c in range(0xf5u16, 0x100) {
             let c = c as u8;
-            let mut d = UTF8Encoding.decoder();
+            let mut d = UTF8Encoding.raw_decoder();
             assert_feed_err!(d, [], [c], [], "");
             assert_finish_ok!(d, "");
         }
@@ -420,11 +420,11 @@ mod tests {
         for c in range(0xf5u16, 0x100) {
             let c = c as u8;
 
-            let mut d = UTF8Encoding.decoder();
+            let mut d = UTF8Encoding.raw_decoder();
             assert_feed_err!(d, [], [c], [0x20], "");
             assert_finish_ok!(d, "");
 
-            let mut d = UTF8Encoding.decoder();
+            let mut d = UTF8Encoding.raw_decoder();
             assert_feed_err!(d, [], [c], [], "");
             assert_feed_ok!(d, [0x20], [], "\x20");
             assert_finish_ok!(d, "");
@@ -434,7 +434,7 @@ mod tests {
     #[test]
     fn test_invalid_lone_start_immediate_test_finish() {
         for c in range(0xc2u8, 0xf5) {
-            let mut d = UTF8Encoding.decoder();
+            let mut d = UTF8Encoding.raw_decoder();
             assert_feed_ok!(d, [], [c], ""); // wait for cont. bytes
             assert_finish_err!(d, "");
         }
@@ -443,11 +443,11 @@ mod tests {
     #[test]
     fn test_invalid_lone_start_followed_by_space() {
         for c in range(0xc2u8, 0xf5) {
-            let mut d = UTF8Encoding.decoder();
+            let mut d = UTF8Encoding.raw_decoder();
             assert_feed_err!(d, [], [c], [0x20], "");
             assert_finish_ok!(d, "");
 
-            let mut d = UTF8Encoding.decoder();
+            let mut d = UTF8Encoding.raw_decoder();
             assert_feed_ok!(d, [], [c], ""); // wait for cont. bytes
             assert_feed_err!(d, [], [], [0x20], "");
             assert_finish_ok!(d, "");
@@ -459,21 +459,21 @@ mod tests {
         for b in range(0xe0u8, 0xf5) {
             let c = if b == 0xe0 || b == 0xf0 {0xa0} else {0x80};
 
-            let mut d = UTF8Encoding.decoder();
+            let mut d = UTF8Encoding.raw_decoder();
             assert_feed_err!(d, [], [b, c], [0x20], "");
             assert_finish_ok!(d, "");
 
-            let mut d = UTF8Encoding.decoder();
+            let mut d = UTF8Encoding.raw_decoder();
             assert_feed_ok!(d, [], [b, c], ""); // wait for cont. bytes
             assert_feed_err!(d, [], [], [0x20], "");
             assert_finish_ok!(d, "");
 
-            let mut d = UTF8Encoding.decoder();
+            let mut d = UTF8Encoding.raw_decoder();
             assert_feed_ok!(d, [], [b], ""); // wait for cont. bytes
             assert_feed_err!(d, [], [c], [0x20], "");
             assert_finish_ok!(d, "");
 
-            let mut d = UTF8Encoding.decoder();
+            let mut d = UTF8Encoding.raw_decoder();
             assert_feed_ok!(d, [], [b], ""); // wait for cont. bytes
             assert_feed_ok!(d, [], [c], ""); // wait for cont. bytes
             assert_feed_err!(d, [], [], [0x20], "");
@@ -487,23 +487,23 @@ mod tests {
             let b = if a == 0xf0 {0xa0} else {0x80};
             let c = 0x80;
 
-            let mut d = UTF8Encoding.decoder();
+            let mut d = UTF8Encoding.raw_decoder();
             assert_feed_err!(d, [], [a, b, c], [0x20], "");
             assert_finish_ok!(d, "");
 
-            let mut d = UTF8Encoding.decoder();
+            let mut d = UTF8Encoding.raw_decoder();
             assert_feed_ok!(d, [], [a], ""); // wait for cont. bytes
             assert_feed_ok!(d, [], [b], ""); // wait for cont. bytes
             assert_feed_ok!(d, [], [c], ""); // wait for cont. bytes
             assert_feed_err!(d, [], [], [0x20], "");
             assert_finish_ok!(d, "");
 
-            let mut d = UTF8Encoding.decoder();
+            let mut d = UTF8Encoding.raw_decoder();
             assert_feed_ok!(d, [], [a, b], ""); // wait for cont. bytes
             assert_feed_err!(d, [], [c], [0x20], "");
             assert_finish_ok!(d, "");
 
-            let mut d = UTF8Encoding.decoder();
+            let mut d = UTF8Encoding.raw_decoder();
             assert_feed_ok!(d, [], [a, b, c], ""); // wait for cont. bytes
             assert_feed_err!(d, [], [], [0x20], "");
             assert_finish_ok!(d, "");
@@ -512,70 +512,70 @@ mod tests {
 
     #[test]
     fn test_invalid_too_many_cont_bytes() {
-        let mut d = UTF8Encoding.decoder();
+        let mut d = UTF8Encoding.raw_decoder();
         assert_feed_err!(d, [0xc2, 0x80], [0x80], [], "\u0080");
         assert_finish_ok!(d, "");
 
-        let mut d = UTF8Encoding.decoder();
+        let mut d = UTF8Encoding.raw_decoder();
         assert_feed_err!(d, [0xe0, 0xa0, 0x80], [0x80], [], "\u0800");
         assert_finish_ok!(d, "");
 
-        let mut d = UTF8Encoding.decoder();
+        let mut d = UTF8Encoding.raw_decoder();
         assert_feed_err!(d, [0xf0, 0x90, 0x80, 0x80], [0x80], [], "\U00010000");
         assert_finish_ok!(d, "");
 
         // no continuation byte is consumed after 5/6-byte sequence starters and FE/FF
-        let mut d = UTF8Encoding.decoder();
+        let mut d = UTF8Encoding.raw_decoder();
         assert_feed_err!(d, [], [0xf8], [0x88, 0x80, 0x80, 0x80, 0x80], "");
         assert_finish_ok!(d, "");
 
-        let mut d = UTF8Encoding.decoder();
+        let mut d = UTF8Encoding.raw_decoder();
         assert_feed_err!(d, [], [0xfc], [0x84, 0x80, 0x80, 0x80, 0x80, 0x80], "");
         assert_finish_ok!(d, "");
 
-        let mut d = UTF8Encoding.decoder();
+        let mut d = UTF8Encoding.raw_decoder();
         assert_feed_err!(d, [], [0xfe], [0x80], "");
         assert_finish_ok!(d, "");
 
-        let mut d = UTF8Encoding.decoder();
+        let mut d = UTF8Encoding.raw_decoder();
         assert_feed_err!(d, [], [0xff], [0x80], "");
         assert_finish_ok!(d, "");
     }
 
     #[test]
     fn test_invalid_too_many_cont_bytes_partial() {
-        let mut d = UTF8Encoding.decoder();
+        let mut d = UTF8Encoding.raw_decoder();
         assert_feed_ok!(d, [], [0xc2], "");
         assert_feed_err!(d, [0x80], [0x80], [], "\u0080");
         assert_finish_ok!(d, "");
 
-        let mut d = UTF8Encoding.decoder();
+        let mut d = UTF8Encoding.raw_decoder();
         assert_feed_ok!(d, [], [0xe0, 0xa0], "");
         assert_feed_err!(d, [0x80], [0x80], [], "\u0800");
         assert_finish_ok!(d, "");
 
-        let mut d = UTF8Encoding.decoder();
+        let mut d = UTF8Encoding.raw_decoder();
         assert_feed_ok!(d, [], [0xf0, 0x90, 0x80], "");
         assert_feed_err!(d, [0x80], [0x80], [], "\U00010000");
         assert_finish_ok!(d, "");
 
         // no continuation byte is consumed after 5/6-byte sequence starters and FE/FF
-        let mut d = UTF8Encoding.decoder();
+        let mut d = UTF8Encoding.raw_decoder();
         assert_feed_err!(d, [], [0xf8], [], "");
         assert_feed_err!(d, [], [0x88], [0x80, 0x80, 0x80, 0x80], "");
         assert_finish_ok!(d, "");
 
-        let mut d = UTF8Encoding.decoder();
+        let mut d = UTF8Encoding.raw_decoder();
         assert_feed_err!(d, [], [0xfc], [], "");
         assert_feed_err!(d, [], [0x84], [0x80, 0x80, 0x80, 0x80, 0x80], "");
         assert_finish_ok!(d, "");
 
-        let mut d = UTF8Encoding.decoder();
+        let mut d = UTF8Encoding.raw_decoder();
         assert_feed_err!(d, [], [0xfe], [], "");
         assert_feed_err!(d, [], [0x80], [], "");
         assert_finish_ok!(d, "");
 
-        let mut d = UTF8Encoding.decoder();
+        let mut d = UTF8Encoding.raw_decoder();
         assert_feed_err!(d, [], [0xff], [], "");
         assert_feed_err!(d, [], [0x80], [], "");
         assert_finish_ok!(d, "");
@@ -583,37 +583,37 @@ mod tests {
 
     #[test]
     fn test_invalid_overlong_minimal() {
-        let mut d = UTF8Encoding.decoder();
+        let mut d = UTF8Encoding.raw_decoder();
         assert_feed_err!(d, [], [0xc0], [0x80], "");
         assert_finish_ok!(d, "");
 
-        let mut d = UTF8Encoding.decoder();
+        let mut d = UTF8Encoding.raw_decoder();
         assert_feed_err!(d, [], [0xe0], [0x80, 0x80], "");
         assert_finish_ok!(d, "");
 
-        let mut d = UTF8Encoding.decoder();
+        let mut d = UTF8Encoding.raw_decoder();
         assert_feed_err!(d, [], [0xf0], [0x80, 0x80, 0x80], "");
         assert_finish_ok!(d, "");
     }
 
     #[test]
     fn test_invalid_overlong_maximal() {
-        let mut d = UTF8Encoding.decoder();
+        let mut d = UTF8Encoding.raw_decoder();
         assert_feed_err!(d, [], [0xc1], [0xbf], "");
         assert_finish_ok!(d, "");
 
-        let mut d = UTF8Encoding.decoder();
+        let mut d = UTF8Encoding.raw_decoder();
         assert_feed_err!(d, [], [0xe0], [0x9f, 0xbf], "");
         assert_finish_ok!(d, "");
 
-        let mut d = UTF8Encoding.decoder();
+        let mut d = UTF8Encoding.raw_decoder();
         assert_feed_err!(d, [], [0xf0], [0x8f, 0xbf, 0xbf], "");
         assert_finish_ok!(d, "");
     }
 
     #[test]
     fn test_feed_after_finish() {
-        let mut d = UTF8Encoding.decoder();
+        let mut d = UTF8Encoding.raw_decoder();
         assert_feed_ok!(d, [0xc2, 0x80], [0xc2], "\u0080");
         assert_finish_err!(d, "");
         assert_feed_ok!(d, [0xc2, 0x80], [], "\u0080");

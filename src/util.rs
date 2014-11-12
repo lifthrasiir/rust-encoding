@@ -54,7 +54,7 @@ pub struct StatefulDecoderHelper<'a, St> {
     /// The current index to the buffer.
     pub pos: uint,
     /// The output buffer.
-    pub output: &'a mut types::StringWriter,
+    pub output: &'a mut types::StringWriter + 'a,
     /// The last codec error. The caller will later collect this.
     pub err: Option<types::CodecError>,
 }
@@ -219,11 +219,13 @@ macro_rules! stateful_decoder(
         }
 
         impl $dec {
-            pub fn new() -> Box<Decoder> { box $dec { st: $stmod::$inist } as Box<Decoder> }
+            pub fn new() -> Box<RawDecoder> {
+                box $dec { st: $stmod::$inist } as Box<RawDecoder>
+            }
         }
 
-        impl Decoder for $dec {
-            fn from_self(&self) -> Box<Decoder> { $dec::new() }
+        impl RawDecoder for $dec {
+            fn from_self(&self) -> Box<RawDecoder> { $dec::new() }
             fn is_ascii_compatible(&self) -> bool { $asciicompat }
 
             fn raw_feed(&mut self, input: &[u8],

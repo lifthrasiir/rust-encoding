@@ -25,8 +25,8 @@ pub struct Windows949Encoding;
 impl Encoding for Windows949Encoding {
     fn name(&self) -> &'static str { "windows-949" }
     fn whatwg_name(&self) -> Option<&'static str> { Some("euc-kr") } // WHATWG compatibility
-    fn encoder(&self) -> Box<Encoder> { Windows949Encoder::new() }
-    fn decoder(&self) -> Box<Decoder> { Windows949Decoder::new() }
+    fn raw_encoder(&self) -> Box<RawEncoder> { Windows949Encoder::new() }
+    fn raw_decoder(&self) -> Box<RawDecoder> { Windows949Decoder::new() }
 }
 
 /// An encoder for Windows code page 949.
@@ -34,11 +34,11 @@ impl Encoding for Windows949Encoding {
 pub struct Windows949Encoder;
 
 impl Windows949Encoder {
-    pub fn new() -> Box<Encoder> { box Windows949Encoder as Box<Encoder> }
+    pub fn new() -> Box<RawEncoder> { box Windows949Encoder as Box<RawEncoder> }
 }
 
-impl Encoder for Windows949Encoder {
-    fn from_self(&self) -> Box<Encoder> { Windows949Encoder::new() }
+impl RawEncoder for Windows949Encoder {
+    fn from_self(&self) -> Box<RawEncoder> { Windows949Encoder::new() }
     fn is_ascii_compatible(&self) -> bool { true }
 
     fn raw_feed(&mut self, input: &str, output: &mut ByteWriter) -> (uint, Option<CodecError>) {
@@ -128,7 +128,7 @@ mod windows949_tests {
 
     #[test]
     fn test_encoder_valid() {
-        let mut e = Windows949Encoding.encoder();
+        let mut e = Windows949Encoding.raw_encoder();
         assert_feed_ok!(e, "A", "", [0x41]);
         assert_feed_ok!(e, "BC", "", [0x42, 0x43]);
         assert_feed_ok!(e, "", "", []);
@@ -140,7 +140,7 @@ mod windows949_tests {
 
     #[test]
     fn test_encoder_invalid() {
-        let mut e = Windows949Encoding.encoder();
+        let mut e = Windows949Encoding.raw_encoder();
         assert_feed_err!(e, "", "\uffff", "", []);
         assert_feed_err!(e, "?", "\uffff", "!", [0x3f]);
         assert_finish_ok!(e, []);
@@ -148,7 +148,7 @@ mod windows949_tests {
 
     #[test]
     fn test_decoder_valid() {
-        let mut d = Windows949Encoding.decoder();
+        let mut d = Windows949Encoding.raw_decoder();
         assert_feed_ok!(d, [0x41], [], "A");
         assert_feed_ok!(d, [0x42, 0x43], [], "BC");
         assert_feed_ok!(d, [], [], "");
@@ -161,7 +161,7 @@ mod windows949_tests {
 
     #[test]
     fn test_decoder_valid_partial() {
-        let mut d = Windows949Encoding.decoder();
+        let mut d = Windows949Encoding.raw_decoder();
         assert_feed_ok!(d, [], [0xb0], "");
         assert_feed_ok!(d, [0xa1], [], "\uac00");
         assert_feed_ok!(d, [0xb3, 0xaa], [0xb4], "\ub098");
@@ -174,13 +174,13 @@ mod windows949_tests {
     #[test]
     fn test_decoder_invalid_lone_lead_immediate_test_finish() {
         for i in range_inclusive(0x81u8, 0xfe) {
-            let mut d = Windows949Encoding.decoder();
+            let mut d = Windows949Encoding.raw_decoder();
             assert_feed_ok!(d, [], [i], ""); // wait for a trail
             assert_finish_err!(d, "");
         }
 
         // 80/FF: immediate failure
-        let mut d = Windows949Encoding.decoder();
+        let mut d = Windows949Encoding.raw_decoder();
         assert_feed_err!(d, [], [0x80], [], "");
         assert_feed_err!(d, [], [0xff], [], "");
         assert_finish_ok!(d, "");
@@ -189,7 +189,7 @@ mod windows949_tests {
     #[test]
     fn test_decoder_invalid_lone_lead_followed_by_space() {
         for i in range_inclusive(0x80u8, 0xff) {
-            let mut d = Windows949Encoding.decoder();
+            let mut d = Windows949Encoding.raw_decoder();
             assert_feed_err!(d, [], [i], [0x20], "");
             assert_finish_ok!(d, "");
         }
@@ -198,7 +198,7 @@ mod windows949_tests {
     #[test]
     fn test_decoder_invalid_lead_followed_by_invalid_trail() {
         for i in range_inclusive(0x80u8, 0xff) {
-            let mut d = Windows949Encoding.decoder();
+            let mut d = Windows949Encoding.raw_decoder();
             assert_feed_err!(d, [], [i], [0x80], "");
             assert_feed_err!(d, [], [i], [0xff], "");
             assert_finish_ok!(d, "");
@@ -210,7 +210,7 @@ mod windows949_tests {
         // U+D7A3 (C6 52) is the last Hangul syllable not in KS X 1001, C6 53 is invalid.
         // note that since the trail byte may coincide with ASCII, the trail byte 53 is
         // not considered to be in the problem. this is compatible to WHATWG Encoding standard.
-        let mut d = Windows949Encoding.decoder();
+        let mut d = Windows949Encoding.raw_decoder();
         assert_feed_ok!(d, [], [0xc6], "");
         assert_feed_err!(d, [], [], [0x53], "");
         assert_finish_ok!(d, "");
@@ -218,7 +218,7 @@ mod windows949_tests {
 
     #[test]
     fn test_decoder_feed_after_finish() {
-        let mut d = Windows949Encoding.decoder();
+        let mut d = Windows949Encoding.raw_decoder();
         assert_feed_ok!(d, [0xb0, 0xa1], [0xb0], "\uac00");
         assert_finish_err!(d, "");
         assert_feed_ok!(d, [0xb0, 0xa1], [], "\uac00");

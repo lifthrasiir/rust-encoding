@@ -18,8 +18,8 @@ pub struct SingleByteEncoding {
 impl Encoding for SingleByteEncoding {
     fn name(&self) -> &'static str { self.name }
     fn whatwg_name(&self) -> Option<&'static str> { self.whatwg_name }
-    fn encoder(&self) -> Box<Encoder> { SingleByteEncoder::new(self.index_backward) }
-    fn decoder(&self) -> Box<Decoder> { SingleByteDecoder::new(self.index_forward) }
+    fn raw_encoder(&self) -> Box<RawEncoder> { SingleByteEncoder::new(self.index_backward) }
+    fn raw_decoder(&self) -> Box<RawDecoder> { SingleByteDecoder::new(self.index_forward) }
 }
 
 /// An encoder for single-byte encodings based on ASCII.
@@ -29,13 +29,13 @@ pub struct SingleByteEncoder {
 }
 
 impl SingleByteEncoder {
-    pub fn new(index_backward: extern "Rust" fn(u32) -> u8) -> Box<Encoder> {
-        box SingleByteEncoder { index_backward: index_backward } as Box<Encoder>
+    pub fn new(index_backward: extern "Rust" fn(u32) -> u8) -> Box<RawEncoder> {
+        box SingleByteEncoder { index_backward: index_backward } as Box<RawEncoder>
     }
 }
 
-impl Encoder for SingleByteEncoder {
-    fn from_self(&self) -> Box<Encoder> { SingleByteEncoder::new(self.index_backward) }
+impl RawEncoder for SingleByteEncoder {
+    fn from_self(&self) -> Box<RawEncoder> { SingleByteEncoder::new(self.index_backward) }
     fn is_ascii_compatible(&self) -> bool { true }
 
     fn raw_feed(&mut self, input: &str, output: &mut ByteWriter) -> (uint, Option<CodecError>) {
@@ -71,13 +71,13 @@ pub struct SingleByteDecoder {
 }
 
 impl SingleByteDecoder {
-    pub fn new(index_forward: extern "Rust" fn(u8) -> u16) -> Box<Decoder> {
-        box SingleByteDecoder { index_forward: index_forward } as Box<Decoder>
+    pub fn new(index_forward: extern "Rust" fn(u8) -> u16) -> Box<RawDecoder> {
+        box SingleByteDecoder { index_forward: index_forward } as Box<RawDecoder>
     }
 }
 
-impl Decoder for SingleByteDecoder {
-    fn from_self(&self) -> Box<Decoder> { SingleByteDecoder::new(self.index_forward) }
+impl RawDecoder for SingleByteDecoder {
+    fn from_self(&self) -> Box<RawDecoder> { SingleByteDecoder::new(self.index_forward) }
     fn is_ascii_compatible(&self) -> bool { true }
 
     fn raw_feed(&mut self, input: &[u8], output: &mut StringWriter) -> (uint, Option<CodecError>) {
@@ -121,7 +121,7 @@ mod tests {
 
     #[test]
     fn test_encoder_non_bmp() {
-        let mut e = ISO_8859_2.encoder();
+        let mut e = ISO_8859_2.raw_encoder();
         assert_feed_err!(e, "A", "\uFFFF", "B", [0x41]);
         assert_feed_err!(e, "A", "\U00010000", "B", [0x41]);
     }

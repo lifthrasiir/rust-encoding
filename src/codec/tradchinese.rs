@@ -28,8 +28,8 @@ pub struct BigFive2003Encoding;
 impl Encoding for BigFive2003Encoding {
     fn name(&self) -> &'static str { "big5-2003" }
     fn whatwg_name(&self) -> Option<&'static str> { Some("big5") } // WHATWG compatibility
-    fn encoder(&self) -> Box<Encoder> { BigFive2003Encoder::new() }
-    fn decoder(&self) -> Box<Decoder> { BigFive2003HKSCS2008Decoder::new() }
+    fn raw_encoder(&self) -> Box<RawEncoder> { BigFive2003Encoder::new() }
+    fn raw_decoder(&self) -> Box<RawDecoder> { BigFive2003HKSCS2008Decoder::new() }
 }
 
 /// An encoder for Big5-2003.
@@ -37,11 +37,11 @@ impl Encoding for BigFive2003Encoding {
 pub struct BigFive2003Encoder;
 
 impl BigFive2003Encoder {
-    pub fn new() -> Box<Encoder> { box BigFive2003Encoder as Box<Encoder> }
+    pub fn new() -> Box<RawEncoder> { box BigFive2003Encoder as Box<RawEncoder> }
 }
 
-impl Encoder for BigFive2003Encoder {
-    fn from_self(&self) -> Box<Encoder> { BigFive2003Encoder::new() }
+impl RawEncoder for BigFive2003Encoder {
+    fn from_self(&self) -> Box<RawEncoder> { BigFive2003Encoder::new() }
     fn is_ascii_compatible(&self) -> bool { true }
 
     fn raw_feed(&mut self, input: &str, output: &mut ByteWriter) -> (uint, Option<CodecError>) {
@@ -128,7 +128,7 @@ mod bigfive2003_tests {
 
     #[test]
     fn test_encoder_valid() {
-        let mut e = BigFive2003Encoding.encoder();
+        let mut e = BigFive2003Encoding.raw_encoder();
         assert_feed_ok!(e, "A", "", [0x41]);
         assert_feed_ok!(e, "BC", "", [0x42, 0x43]);
         assert_feed_ok!(e, "", "", []);
@@ -141,7 +141,7 @@ mod bigfive2003_tests {
 
     #[test]
     fn test_encoder_invalid() {
-        let mut e = BigFive2003Encoding.encoder();
+        let mut e = BigFive2003Encoding.raw_encoder();
         assert_feed_err!(e, "", "\uffff", "", []);
         assert_feed_err!(e, "?", "\uffff", "!", [0x3f]);
         assert_feed_err!(e, "", "\u3eec", "\u4e00", []); // HKSCS-2008 addition
@@ -150,7 +150,7 @@ mod bigfive2003_tests {
 
     #[test]
     fn test_decoder_valid() {
-        let mut d = BigFive2003Encoding.decoder();
+        let mut d = BigFive2003Encoding.raw_decoder();
         assert_feed_ok!(d, [0x41], [], "A");
         assert_feed_ok!(d, [0x42, 0x43], [], "BC");
         assert_feed_ok!(d, [], [], "");
@@ -170,13 +170,13 @@ mod bigfive2003_tests {
     #[test]
     fn test_decoder_invalid_lone_lead_immediate_test_finish() {
         for i in range_inclusive(0x81u8, 0xfe) {
-            let mut d = BigFive2003Encoding.decoder();
+            let mut d = BigFive2003Encoding.raw_decoder();
             assert_feed_ok!(d, [], [i], ""); // wait for a trail
             assert_finish_err!(d, "");
         }
 
         // 80/FF: immediate failure
-        let mut d = BigFive2003Encoding.decoder();
+        let mut d = BigFive2003Encoding.raw_decoder();
         assert_feed_err!(d, [], [0x80], [], "");
         assert_feed_err!(d, [], [0xff], [], "");
         assert_finish_ok!(d, "");
@@ -185,7 +185,7 @@ mod bigfive2003_tests {
     #[test]
     fn test_decoder_invalid_lone_lead_followed_by_space() {
         for i in range_inclusive(0x80u8, 0xff) {
-            let mut d = BigFive2003Encoding.decoder();
+            let mut d = BigFive2003Encoding.raw_decoder();
             assert_feed_err!(d, [], [i], [0x20], "");
             assert_finish_ok!(d, "");
         }
@@ -196,12 +196,12 @@ mod bigfive2003_tests {
         // unlike most other cases, valid lead + invalid MSB-set trail are entirely consumed.
         // https://www.w3.org/Bugs/Public/show_bug.cgi?id=16771
         for i in range_inclusive(0x81u8, 0xfe) {
-            let mut d = BigFive2003Encoding.decoder();
+            let mut d = BigFive2003Encoding.raw_decoder();
             assert_feed_err!(d, [], [i, 0x80], [0x20], "");
             assert_feed_err!(d, [], [i, 0xff], [0x20], "");
             assert_finish_ok!(d, "");
 
-            let mut d = BigFive2003Encoding.decoder();
+            let mut d = BigFive2003Encoding.raw_decoder();
             assert_feed_ok!(d, [], [i], "");
             assert_feed_err!(d, [], [0x80], [0x20], "");
             assert_feed_ok!(d, [], [i], "");
@@ -210,7 +210,7 @@ mod bigfive2003_tests {
         }
 
         // 80/FF is not a valid lead and the trail is not consumed
-        let mut d = BigFive2003Encoding.decoder();
+        let mut d = BigFive2003Encoding.raw_decoder();
         assert_feed_err!(d, [], [0x80], [0x80], "");
         assert_feed_err!(d, [], [0x80], [0xff], "");
         assert_feed_err!(d, [], [0xff], [0x80], "");
@@ -220,7 +220,7 @@ mod bigfive2003_tests {
 
     #[test]
     fn test_decoder_feed_after_finish() {
-        let mut d = BigFive2003Encoding.decoder();
+        let mut d = BigFive2003Encoding.raw_decoder();
         assert_feed_ok!(d, [0xa4, 0x40], [0xa4], "\u4e00");
         assert_finish_err!(d, "");
         assert_feed_ok!(d, [0xa4, 0x40], [], "\u4e00");
