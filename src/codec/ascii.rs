@@ -22,7 +22,7 @@ impl Encoding for ASCIIEncoding {
     fn raw_decoder(&self) -> Box<RawDecoder> { ASCIIDecoder::new() }
 }
 
-/// An raw_encoder for ASCII.
+/// An encoder for ASCII.
 #[deriving(Clone)]
 pub struct ASCIIEncoder;
 
@@ -57,7 +57,7 @@ impl RawEncoder for ASCIIEncoder {
     }
 }
 
-/// A raw_decoder for ASCII.
+/// A decoder for ASCII.
 #[deriving(Clone)]
 pub struct ASCIIDecoder;
 
