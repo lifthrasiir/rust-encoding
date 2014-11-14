@@ -1,0 +1,8 @@
+[package]
+name = "encoding_index_tests"
+version = "0.1.0"
+authors = ["Kang Seonghoon <public+rust@mearie.org>"]
+
+[lib]
+name = "encoding_index_tests"
+path = "index_tests.rs"

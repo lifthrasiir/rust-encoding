@@ -7,3 +7,5 @@ authors = ["Kang Seonghoon <public+rust@mearie.org>"]
 name = "encoding-index-simpchinese"
 path = "lib.rs"
 
+[dependencies.encoding_index_tests]
+path = "../tests"

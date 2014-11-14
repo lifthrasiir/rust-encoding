@@ -4,9 +4,10 @@
 
 //! Macros and utilities for testing indices.
 
-#![macro_escape]
+#![feature(macro_rules)]
 
 /// Makes a common test suite for single-byte indices.
+#[macro_export]
 macro_rules! single_byte_tests(
     () => (
         mod tests {
@@ -46,6 +47,7 @@ macro_rules! single_byte_tests(
 )
 
 /// Makes a common test suite for multi-byte indices.
+#[macro_export]
 macro_rules! multi_byte_tests(
     (make shared tests and benches with dups = $dups:expr) => ( // internal macro
         #[test]
@@ -136,6 +138,7 @@ macro_rules! multi_byte_tests(
 )
 
 /// Makes a common test suite for multi-byte range indices.
+#[macro_export]
 macro_rules! multi_byte_range_tests(
     (
         key = $minkey:expr .. $maxkey:expr, key < $keyubound:expr,
