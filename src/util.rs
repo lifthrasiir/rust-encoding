@@ -11,7 +11,7 @@ use std::default::Default;
 use types;
 
 /// Unchecked conversion to `char`.
-pub fn as_char<T:Int+NumCast>(ch: T) -> char {
+pub fn as_char<T:ToPrimitive>(ch: T) -> char {
     unsafe { mem::transmute(ch.to_u32().unwrap()) }
 }
 
