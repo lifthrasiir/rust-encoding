@@ -8,4 +8,6 @@ name = "encoding-index-korean"
 path = "lib.rs"
 
 [dependencies.encoding_index_tests]
+# TODO consider using dev-dependencies instead
+version = "0.1.0"
 path = "../tests"
