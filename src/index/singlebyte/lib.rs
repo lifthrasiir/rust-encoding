@@ -6,11 +6,11 @@
 //! Single-byte index tables for
 //! [rust-encoding](https://github.com/lifthrasiir/rust-encoding).
 
-#![feature(macro_rules)]
+#![feature(phase)]
 
 #[cfg(test)]
-#[path = "../index_tests.rs"]
-mod tests;
+#[phase(plugin)]
+extern crate encoding_index_tests;
 
 /// IBM code page 866.
 #[stable] pub mod ibm866;
