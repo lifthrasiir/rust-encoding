@@ -3,6 +3,11 @@ name = "encoding"
 version = "0.2.0"
 authors = ["Kang Seonghoon <public+rust@mearie.org>"]
 
+description = "Character encoding support for Rust"
+homepage = "https://github.com/lifthrasiir/rust-encoding"
+readme = "README.md"
+license = "MIT"
+
 [lib]
 name = "encoding"
 

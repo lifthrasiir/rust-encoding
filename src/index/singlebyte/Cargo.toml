@@ -3,6 +3,11 @@ name = "encoding-index-singlebyte"
 version = "1.0.20140915"
 authors = ["Kang Seonghoon <public+rust@mearie.org>"]
 
+description = "Index tables for various single-byte character encodings"
+homepage = "https://github.com/lifthrasiir/rust-encoding"
+readme = "../../../README.md"
+license = "CC0-1.0"
+
 [lib]
 name = "encoding-index-singlebyte"
 path = "lib.rs"
