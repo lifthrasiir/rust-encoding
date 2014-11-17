@@ -51,6 +51,9 @@
  * then it can just discard the first sequence and can emit the fixed string on an error.
  * It still has to feed the input bytes starting at the second offset again.
  */
+pub use DecoderTrap::{DecodeStrict,DecodeReplace,DecodeIgnore,DecoderCall};
+pub use EncoderTrap::{EncodeStrict,EncodeReplace,EncodeIgnore,EncodeNcrEscape,EncoderCall};
+
 use std::str::SendStr;
 
 /// Error information from either encoder or decoder.
