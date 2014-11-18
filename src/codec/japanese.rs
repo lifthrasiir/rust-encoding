@@ -165,6 +165,8 @@ mod eucjp_tests {
     use std::iter::range_inclusive;
     use testutils;
     use types::*;
+    use types::DecoderTrap::Strict as DecodeStrict;
+    use types::EncoderTrap::Strict as EncodeStrict;
 
     #[test]
     fn test_encoder_valid() {
@@ -521,6 +523,8 @@ mod windows31j_tests {
     use std::iter::range_inclusive;
     use testutils;
     use types::*;
+    use types::DecoderTrap::Strict as DecodeStrict;
+    use types::EncoderTrap::Strict as EncodeStrict;
 
     #[test]
     fn test_encoder_valid() {
@@ -918,6 +922,9 @@ mod iso2022jp_tests {
     use super::ISO2022JPEncoding;
     use testutils;
     use types::*;
+    use types::DecoderTrap::Replace as DecodeReplace;
+    use types::DecoderTrap::Strict as DecodeStrict;
+    use types::EncoderTrap::Strict as EncodeStrict;
 
     #[test]
     fn test_encoder_valid() {

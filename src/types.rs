@@ -467,6 +467,7 @@ pub fn decode(input: &[u8], trap: DecoderTrap, fallback_encoding: EncodingRef)
 #[cfg(test)]
 mod tests {
     use super::*;
+    use super::EncoderTrap::NcrEscape;
     use util::StrCharIndex;
 
     // a contrived encoding example: same as ASCII, but inserts `prepend` between each character
@@ -521,9 +522,9 @@ mod tests {
         static INCOMPAT: &'static MyEncoding =
             &MyEncoding { flag: false, prohibit: '\u0080', prepend: "" };
 
-        assert_eq!(COMPAT.encode("Hello\u203d I'm fine.", EncodeNcrEscape),
+        assert_eq!(COMPAT.encode("Hello\u203d I'm fine.", NcrEscape),
                    Ok(b"Hello&#8253; I'm fine.".to_vec()));
-        assert_eq!(INCOMPAT.encode("Hello\u203d I'm fine.", EncodeNcrEscape),
+        assert_eq!(INCOMPAT.encode("Hello\u203d I'm fine.", NcrEscape),
                    Ok(b"Hello&#8253; I'm fine.".to_vec()));
     }
 
@@ -535,9 +536,9 @@ mod tests {
             &MyEncoding { flag: false, prohibit: '\u0080', prepend: "*" };
 
         // this should behave incorrectly as the encoding broke the assumption.
-        assert_eq!(COMPAT.encode("Hello\u203d I'm fine.", EncodeNcrEscape),
+        assert_eq!(COMPAT.encode("Hello\u203d I'm fine.", NcrEscape),
                    Ok(b"He*l*l*o&#8253;* *I*'*m* *f*i*n*e.".to_vec()));
-        assert_eq!(INCOMPAT.encode("Hello\u203d I'm fine.", EncodeNcrEscape),
+        assert_eq!(INCOMPAT.encode("Hello\u203d I'm fine.", NcrEscape),
                    Ok(b"He*l*l*o*&*#*8*2*5*3*;* *I*'*m* *f*i*n*e.".to_vec()));
     }
 
@@ -547,6 +548,6 @@ mod tests {
         static FAIL: &'static MyEncoding = &MyEncoding { flag: false, prohibit: '&', prepend: "" };
 
         // this should fail as this contrived encoding does not support `&` at all
-        let _ = FAIL.encode("Hello\u203d I'm fine.", EncodeNcrEscape);
+        let _ = FAIL.encode("Hello\u203d I'm fine.", NcrEscape);
     }
 }

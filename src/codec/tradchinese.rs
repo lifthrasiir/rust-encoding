@@ -125,6 +125,8 @@ mod bigfive2003_tests {
     use std::iter::range_inclusive;
     use testutils;
     use types::*;
+    use types::DecoderTrap::Strict as DecodeStrict;
+    use types::EncoderTrap::Strict as EncodeStrict;
 
     #[test]
     fn test_encoder_valid() {
