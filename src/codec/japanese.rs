@@ -7,6 +7,7 @@
 use util::StrCharIndex;
 use index_japanese as index;
 use types::*;
+use self::ISO2022JPState::{ASCII,Katakana,Lead};
 
 /**
  * EUC-JP. (XXX with asymmetric JIS X 0212 support)

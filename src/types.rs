@@ -367,16 +367,16 @@ pub type DecoderTrapFunc =
 pub enum DecoderTrap {
     /// Immediately fails on errors.
     /// Corresponds to WHATWG "fatal" error algorithm.
-    DecodeStrict,
+    Strict,
     /// Replaces an error with a U+FFFD (decoder).
     /// Corresponds to WHATWG "replacement" error algorithm.
-    DecodeReplace,
+    Replace,
     /// Silently ignores an error, effectively replacing it with an empty sequence.
-    DecodeIgnore,
+    Ignore,
     /// Calls given function to handle decoder errors.
     /// The function is given the current decoder, input and output writer,
     /// and should return true only when it is fine to keep going.
-    #[unstable] DecoderCall(DecoderTrapFunc),
+    #[unstable] Call(DecoderTrapFunc),
 }
 
 impl DecoderTrap {
@@ -384,10 +384,10 @@ impl DecoderTrap {
     /// Returns true only when it is fine to keep going.
     fn trap(&self, decoder: &mut RawDecoder, input: &[u8], output: &mut StringWriter) -> bool {
         match *self {
-            DecodeStrict => false,
-            DecodeReplace => { output.write_char('\ufffd'); true },
-            DecodeIgnore => true,
-            DecoderCall(func) => func(decoder, input, output),
+            DecoderTrap::Strict     => false,
+            DecoderTrap::Replace    => { output.write_char('\ufffd'); true },
+            DecoderTrap::Ignore     => true,
+            DecoderTrap::Call(func) => func(decoder, input, output),
         }
     }
 }
@@ -396,21 +396,21 @@ impl DecoderTrap {
 pub enum EncoderTrap {
     /// Immediately fails on errors.
     /// Corresponds to WHATWG "fatal" error algorithm.
-    EncodeStrict,
+    Strict,
     /// Replaces an error with `?` in given encoding.
     /// Note that this fails when `?` cannot be represented in given encoding.
     /// Corresponds to WHATWG "URL" error algorithms.
-    EncodeReplace,
+    Replace,
     /// Silently ignores an error, effectively replacing it with an empty sequence.
-    EncodeIgnore,
+    Ignore,
     /// Replaces an error with XML numeric character references (e.g. `&#1234;`).
     /// The encoder trap fails when NCRs cannot be represented in given encoding.
     /// Corresponds to WHATWG "<form>" error algorithms.
-    EncodeNcrEscape,
+    NcrEscape,
     /// Calls given function to handle encoder errors.
     /// The function is given the current encoder, input and output writer,
     /// and should return true only when it is fine to keep going.
-    #[unstable] EncoderCall(EncoderTrapFunc),
+    #[unstable] Call(EncoderTrapFunc),
 }
 
 impl EncoderTrap {
@@ -431,17 +431,17 @@ impl EncoderTrap {
         }
 
         match *self {
-            EncodeStrict => false,
-            EncodeReplace => reencode(encoder, "?", output, "Replace"),
-            EncodeIgnore => true,
-            EncodeNcrEscape => {
+            EncoderTrap::Strict     => false,
+            EncoderTrap::Replace    => reencode(encoder, "?", output, "Replace"),
+            EncoderTrap::Ignore     => true,
+            EncoderTrap::NcrEscape  => {
                 let mut escapes = String::new();
                 for ch in input.chars() {
                     escapes.push_str(format!("&#{:d};", ch as int)[]);
                 }
                 reencode(encoder, escapes[], output, "NcrEscape")
             },
-            EncoderCall(func) => func(encoder, input, output),
+            EncoderTrap::Call(func) => func(encoder, input, output),
         }
     }
 }
