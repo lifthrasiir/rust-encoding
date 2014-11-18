@@ -126,19 +126,19 @@ There are two ways to get `Encoding`:
   It is useful when a list of required encodings is not available in advance,
   but it will result in the larger binary and missed optimization opportunities.
 
-**`Encoder`** is an experimental incremental encoder.
+**`RawEncoder`** is an experimental incremental encoder.
 At each step of `raw_feed`, it receives a slice of string
 and emits any encoded bytes to a generic `ByteWriter` (normally `Vec<u8>`).
 It will stop at the first error if any, and would return a `CodecError` struct in that case.
 The caller is responsible for calling `raw_finish` at the end of encoding process.
 
-**`Decoder`** is an experimental incremental decoder.
+**`RawDecoder`** is an experimental incremental decoder.
 At each step of `raw_feed`, it receives a slice of byte sequence
 and emits any decoded characters to a generic `StringWriter` (normally `String`).
-Otherwise it is identical to `Encoder`s.
+Otherwise it is identical to `RawEncoder`s.
 
 One should prefer `Encoding::{encode,decode}` as a primary interface.
-`Encoder` and `Decoder` is experimental and can change substantially.
+`RawEncoder` and `RawDecoder` is experimental and can change substantially.
 See the additional documents on `encoding::types` module for more information on them.
 
 ## Supported Encodings
