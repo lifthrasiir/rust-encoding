@@ -186,10 +186,7 @@ extern crate "encoding-index-tradchinese" as index_tradchinese;
 pub use self::types::{CodecError, ByteWriter, StringWriter,
                       RawEncoder, RawDecoder, EncodingRef, Encoding,
                       EncoderTrapFunc, DecoderTrapFunc, DecoderTrap,
-                      DecodeStrict, DecodeReplace, DecodeIgnore,
-                      EncoderTrap, EncodeStrict, EncodeReplace,
-                      EncodeIgnore, EncodeNcrEscape, decode,
-                      EncoderCall, DecoderCall}; // reexport
+                      EncoderTrap, decode}; // reexport
 
 #[deprecated = "use encoding::RawEncoder instead"] pub use self::types::RawEncoder as Encoder;
 #[deprecated = "use encoding::RawDecoder instead"] pub use self::types::RawDecoder as Decoder;
