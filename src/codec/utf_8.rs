@@ -638,6 +638,8 @@ mod tests {
         use std::str;
         use testutils;
         use types::*;
+        use types::DecoderTrap::Strict as DecodeStrict;
+        use types::EncoderTrap::Strict as EncodeStrict;
 
         #[bench]
         fn bench_encode(bencher: &mut test::Bencher) {
@@ -693,6 +695,8 @@ mod tests {
         use std::str;
         use testutils;
         use types::*;
+        use types::DecoderTrap::Strict as DecodeStrict;
+        use types::EncoderTrap::Strict as EncodeStrict;
 
         #[bench]
         fn bench_encode(bencher: &mut test::Bencher) {
@@ -746,6 +750,7 @@ mod tests {
         use std::str;
         use testutils;
         use types::*;
+        use types::DecoderTrap::Replace as DecodeReplace;
 
         #[bench]
         fn bench_decode_replace(bencher: &mut test::Bencher) {
@@ -790,6 +795,7 @@ mod tests {
         use std::str;
         use testutils;
         use types::*;
+        use types::DecoderTrap::Replace as DecodeReplace;
 
         #[bench]
         fn bench_decode_replace(bencher: &mut test::Bencher) {
