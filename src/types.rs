@@ -453,11 +453,11 @@ impl EncoderTrap {
 pub fn decode(input: &[u8], trap: DecoderTrap, fallback_encoding: EncodingRef)
            -> (Result<String,SendStr>, EncodingRef) {
     use all::{UTF_8, UTF_16LE, UTF_16BE};
-    if input.starts_with([0xEF, 0xBB, 0xBF]) {
+    if input.starts_with(&[0xEF, 0xBB, 0xBF]) {
         (UTF_8.decode(input[3..], trap), UTF_8 as EncodingRef)
-    } else if input.starts_with([0xFE, 0xFF]) {
+    } else if input.starts_with(&[0xFE, 0xFF]) {
         (UTF_16BE.decode(input[2..], trap), UTF_16BE as EncodingRef)
-    } else if input.starts_with([0xFF, 0xFE]) {
+    } else if input.starts_with(&[0xFF, 0xFE]) {
         (UTF_16LE.decode(input[2..], trap), UTF_16LE as EncodingRef)
     } else {
         (fallback_encoding.decode(input, trap), fallback_encoding)
