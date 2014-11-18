@@ -19,55 +19,56 @@ and also provides an advanced interface for error detection and recovery.
 To encode a string:
 
 ~~~~ {.rust}
-use encoding::{Encoding, EncodeStrict};
+use encoding::{Encoding, EncoderTrap};
 use encoding::all::ISO_8859_1;
 
-assert_eq!(ISO_8859_1.encode("caf\u00e9", EncodeStrict),
+assert_eq!(ISO_8859_1.encode("caf\u00e9", EncoderTrap::Strict),
            Ok(vec!(99,97,102,233)));
 ~~~~
 
 To encode a string with unrepresentable characters:
 
 ~~~~ {.rust}
-use encoding::{Encoding, EncodeStrict, EncodeReplace, EncodeIgnore, EncodeNcrEscape};
+use encoding::{Encoding, EncoderTrap};
 use encoding::all::ISO_8859_2;
 
-assert!(ISO_8859_2.encode("Acme\u00a9", EncodeStrict).is_err());
-assert_eq!(ISO_8859_2.encode("Acme\ua9", EncodeReplace),
+assert!(ISO_8859_2.encode("Acme\u00a9", EncoderTrap::Strict).is_err());
+assert_eq!(ISO_8859_2.encode("Acme\u00a9", EncoderTrap::Replace),
            Ok(vec!(65,99,109,101,63)));
-assert_eq!(ISO_8859_2.encode("Acme\u00a9", EncodeIgnore),
+assert_eq!(ISO_8859_2.encode("Acme\u00a9", EncoderTrap::Ignore),
            Ok(vec!(65,99,109,101)));
-assert_eq!(ISO_8859_2.encode("Acme\u00a9", EncodeNcrEscape),
+assert_eq!(ISO_8859_2.encode("Acme\u00a9", EncoderTrap::NcrEscape),
            Ok(vec!(65,99,109,101,38,35,49,54,57,59)));
 ~~~~
 
 To decode a byte sequence:
 
 ~~~~ {.rust}
-use encoding::{Encoding, DecodeStrict};
+use encoding::{Encoding, DecoderTrap};
 use encoding::all::ISO_8859_1;
 
-assert_eq!(ISO_8859_1.decode([99,97,102,233], DecodeStrict),
+assert_eq!(ISO_8859_1.decode([99,97,102,233], DecoderTrap::Strict),
            Ok("caf\u00e9".to_string()));
 ~~~~
 
 To decode a byte sequence with invalid sequences:
 
 ~~~~ {.rust}
-use encoding::{Encoding, DecodeStrict, DecodeReplace, DecodeIgnore};
+use encoding::{Encoding, DecoderTrap};
 use encoding::all::ISO_8859_6;
 
-assert!(ISO_8859_6.decode([65,99,109,101,169], DecodeStrict).is_err());
-assert_eq!(ISO_8859_6.decode([65,99,109,101,169], DecodeReplace),
+assert!(ISO_8859_6.decode([65,99,109,101,169], DecoderTrap::Strict).is_err());
+assert_eq!(ISO_8859_6.decode([65,99,109,101,169], DecoderTrap::Replace),
            Ok("Acme\ufffd".to_string()));
-assert_eq!(ISO_8859_6.decode([65,99,109,101,169], DecodeIgnore),
+assert_eq!(ISO_8859_6.decode([65,99,109,101,169], DecoderTrap::Ignore),
            Ok("Acme".to_string()));
 ~~~~
 
 A practical example of custom encoder traps:
 
 ~~~~ {.rust}
-use encoding::{Encoding, RawEncoder, ByteWriter, EncoderTrap, DecodeStrict};
+use encoding::{Encoding, ByteWriter, EncoderTrap, DecoderTrap};
+use encoding::types::RawEncoder;
 use encoding::all::ASCII;
 
 // hexadecimal numeric character reference replacement
@@ -78,18 +79,18 @@ fn hex_ncr_escape(_encoder: &mut RawEncoder, input: &str, output: &mut ByteWrite
     output.write_bytes(escapes.as_bytes());
     true
 }
-#[allow(non_uppercase_statics)] static HexNcrEscape: EncoderTrap = EncoderTrap(hex_ncr_escape);
+static HEX_NCR_ESCAPE: EncoderTrap = EncoderTrap::Call(hex_ncr_escape);
 
 let orig = "Hello, 世界!".to_string();
-let encoded = ASCII.encode(orig.as_slice(), HexNcrEscape).unwrap();
-assert_eq!(ASCII.decode(encoded.as_slice(), DecodeStrict),
+let encoded = ASCII.encode(orig.as_slice(), HEX_NCR_ESCAPE).unwrap();
+assert_eq!(ASCII.decode(encoded.as_slice(), DecoderTrap::Strict),
            Ok("Hello, &#x4e16;&#x754c;!".to_string()));
 ~~~~
 
 Getting the encoding from the string label, as specified in WHATWG Encoding standard:
 
 ~~~~ {.rust}
-use encoding::{Encoding, DecodeReplace};
+use encoding::{Encoding, DecoderTrap};
 use encoding::label::encoding_from_whatwg_label;
 use encoding::all::WINDOWS_949;
 
@@ -97,11 +98,11 @@ let euckr = encoding_from_whatwg_label("euc-kr").unwrap();
 assert_eq!(euckr.name(), "windows-949");
 assert_eq!(euckr.whatwg_name(), Some("euc-kr")); // for the sake of compatibility
 let broken = &[0xbf, 0xec, 0xbf, 0xcd, 0xff, 0xbe, 0xd3];
-assert_eq!(euckr.decode(broken, DecodeReplace),
+assert_eq!(euckr.decode(broken, DecoderTrap::Replace),
            Ok("\uc6b0\uc640\ufffd\uc559".to_string()));
 
 // corresponding rust-encoding native API:
-assert_eq!(WINDOWS_949.decode(broken, DecodeReplace),
+assert_eq!(WINDOWS_949.decode(broken, DecoderTrap::Replace),
            Ok("\uc6b0\uc640\ufffd\uc559".to_string()));
 ~~~~
 
@@ -113,7 +114,7 @@ There are three main entry points to rust-encoding.
 It contains `encode` and `decode` methods for converting `String` to `Vec<u8>` and vice versa.
 For the error handling, they receive **traps** (`EncoderTrap` and `DecoderTrap` respectively)
 which replace any error with some string (e.g. `U+FFFD`) or sequence (e.g. `?`).
-You can also use `EncodeStrict` and `DecodeStrict` traps to stop on an error.
+You can also use `EncoderTrap::Strict` and `DecoderTrap::Strict` traps to stop on an error.
 
 There are two ways to get `Encoding`:
 
@@ -134,7 +135,7 @@ The caller is responsible for calling `raw_finish` at the end of encoding proces
 **`RawDecoder`** is an experimental incremental decoder.
 At each step of `raw_feed`, it receives a slice of byte sequence
 and emits any decoded characters to a generic `StringWriter` (normally `String`).
-Otherwise it is identical to `Encoder`s.
+Otherwise it is identical to `RawEncoder`s.
 
 One should prefer `Encoding::{encode,decode}` as a primary interface.
 `RawEncoder` and `RawDecoder` is experimental and can change substantially.

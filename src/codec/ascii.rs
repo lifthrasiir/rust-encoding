@@ -101,6 +101,10 @@ mod tests {
     use super::ASCIIEncoding;
     use testutils;
     use types::*;
+    use types::DecoderTrap::Replace as DecodeReplace;
+    use types::DecoderTrap::Strict as DecodeStrict;
+    use types::EncoderTrap::Strict as EncodeStrict;
+    use types::EncoderTrap::Replace as EncodeReplace;
 
     #[test]
     fn test_encoder() {

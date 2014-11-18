@@ -6,6 +6,7 @@ extern crate encoding;
 extern crate getopts;
 
 use std::{io, os};
+use encoding::{EncoderTrap, DecoderTrap};
 use encoding::label::encoding_from_whatwg_label;
 use getopts::{optopt, optflag};
 
@@ -54,10 +55,10 @@ fn main() {
         policy = Some("ignore".to_string());
     }
     let (intrap, outtrap) = match policy.as_ref().map(|s| s.as_slice()) {
-        Some("strict") | None => (encoding::DecodeStrict, encoding::EncodeStrict),
-        Some("ignore") => (encoding::DecodeIgnore, encoding::EncodeIgnore),
-        Some("replace") => (encoding::DecodeReplace, encoding::EncodeReplace),
-        Some("ncr-escape") => (encoding::DecodeReplace, encoding::EncodeNcrEscape),
+        Some("strict") | None => (DecoderTrap::Strict, EncoderTrap::Strict),
+        Some("ignore") => (DecoderTrap::Ignore, EncoderTrap::Ignore),
+        Some("replace") => (DecoderTrap::Replace, EncoderTrap::Replace),
+        Some("ncr-escape") => (DecoderTrap::Replace, EncoderTrap::NcrEscape),
         Some(s) => panic!("invalid error policy {}", s),
     };
 

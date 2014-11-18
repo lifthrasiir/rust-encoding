@@ -158,6 +158,8 @@ mod gb18030_tests {
     use super::GB18030Encoding;
     use testutils;
     use types::*;
+    use types::DecoderTrap::Strict as DecodeStrict;
+    use types::EncoderTrap::Strict as EncodeStrict;
 
     #[test]
     fn test_encoder_valid() {
@@ -479,6 +481,8 @@ mod hz_tests {
     use super::HZEncoding;
     use testutils;
     use types::*;
+    use types::DecoderTrap::Strict as DecodeStrict;
+    use types::EncoderTrap::Strict as EncodeStrict;
 
     #[test]
     fn test_encoder_valid() {
