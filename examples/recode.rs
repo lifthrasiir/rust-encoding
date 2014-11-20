@@ -23,13 +23,13 @@ fn main() {
         optflag("h", "help", "print this help menu"),
     ];
 
-    let matches = match getopts::getopts(args.tail(), opts) {
+    let matches = match getopts::getopts(args.tail(), opts.as_slice()) {
         Ok(m) => m,
         Err(e) => panic!(e.to_string()),
     };
     if matches.opt_present("h") {
         println!("{}", getopts::usage("Converts the character encoding using rust-encoding.",
-                                      opts));
+                                      opts.as_slice()));
         return;
     }
 

@@ -1119,13 +1119,13 @@ mod iso2022jp_tests {
         assert_feed_ok!(d, [], [0x1b, 0x28], "");
         assert_finish_err!(d, ""); // no backup
 
-        assert_eq!(ISO2022JPEncoding.decode([0x1b], DecodeReplace),
+        assert_eq!(ISO2022JPEncoding.decode([0x1b][], DecodeReplace),
                    Ok("\ufffd".to_string()));
-        assert_eq!(ISO2022JPEncoding.decode([0x1b, 0x24], DecodeReplace),
+        assert_eq!(ISO2022JPEncoding.decode([0x1b, 0x24][], DecodeReplace),
                    Ok("\ufffd".to_string()));
-        assert_eq!(ISO2022JPEncoding.decode([0x1b, 0x24, 0x28], DecodeReplace),
+        assert_eq!(ISO2022JPEncoding.decode([0x1b, 0x24, 0x28][], DecodeReplace),
                    Ok("\ufffd\x28".to_string()));
-        assert_eq!(ISO2022JPEncoding.decode([0x1b, 0x28], DecodeReplace),
+        assert_eq!(ISO2022JPEncoding.decode([0x1b, 0x28][], DecodeReplace),
                    Ok("\ufffd".to_string()));
     }
 

@@ -23,7 +23,7 @@ use encoding::{Encoding, EncoderTrap};
 use encoding::all::ISO_8859_1;
 
 assert_eq!(ISO_8859_1.encode("caf\u00e9", EncoderTrap::Strict),
-           Ok(vec!(99,97,102,233)));
+           Ok(vec![99,97,102,233]));
 ~~~~
 
 To encode a string with unrepresentable characters:
@@ -34,11 +34,11 @@ use encoding::all::ISO_8859_2;
 
 assert!(ISO_8859_2.encode("Acme\u00a9", EncoderTrap::Strict).is_err());
 assert_eq!(ISO_8859_2.encode("Acme\u00a9", EncoderTrap::Replace),
-           Ok(vec!(65,99,109,101,63)));
+           Ok(vec![65,99,109,101,63]));
 assert_eq!(ISO_8859_2.encode("Acme\u00a9", EncoderTrap::Ignore),
-           Ok(vec!(65,99,109,101)));
+           Ok(vec![65,99,109,101]));
 assert_eq!(ISO_8859_2.encode("Acme\u00a9", EncoderTrap::NcrEscape),
-           Ok(vec!(65,99,109,101,38,35,49,54,57,59)));
+           Ok(vec![65,99,109,101,38,35,49,54,57,59]));
 ~~~~
 
 To decode a byte sequence:
@@ -47,8 +47,8 @@ To decode a byte sequence:
 use encoding::{Encoding, DecoderTrap};
 use encoding::all::ISO_8859_1;
 
-assert_eq!(ISO_8859_1.decode([99,97,102,233], DecoderTrap::Strict),
-           Ok("caf\u00e9".to_string()));
+assert_eq!(ISO_8859_1.decode(&[99,97,102,233], DecoderTrap::Strict),
+           Ok("caf\u00e9".into_string()));
 ~~~~
 
 To decode a byte sequence with invalid sequences:
@@ -57,11 +57,11 @@ To decode a byte sequence with invalid sequences:
 use encoding::{Encoding, DecoderTrap};
 use encoding::all::ISO_8859_6;
 
-assert!(ISO_8859_6.decode([65,99,109,101,169], DecoderTrap::Strict).is_err());
-assert_eq!(ISO_8859_6.decode([65,99,109,101,169], DecoderTrap::Replace),
-           Ok("Acme\ufffd".to_string()));
-assert_eq!(ISO_8859_6.decode([65,99,109,101,169], DecoderTrap::Ignore),
-           Ok("Acme".to_string()));
+assert!(ISO_8859_6.decode(&[65,99,109,101,169], DecoderTrap::Strict).is_err());
+assert_eq!(ISO_8859_6.decode(&[65,99,109,101,169], DecoderTrap::Replace),
+           Ok("Acme\ufffd".into_string()));
+assert_eq!(ISO_8859_6.decode(&[65,99,109,101,169], DecoderTrap::Ignore),
+           Ok("Acme".into_string()));
 ~~~~
 
 A practical example of custom encoder traps:
@@ -81,10 +81,10 @@ fn hex_ncr_escape(_encoder: &mut RawEncoder, input: &str, output: &mut ByteWrite
 }
 static HEX_NCR_ESCAPE: EncoderTrap = EncoderTrap::Call(hex_ncr_escape);
 
-let orig = "Hello, 世界!".to_string();
+let orig = "Hello, 世界!".into_string();
 let encoded = ASCII.encode(orig.as_slice(), HEX_NCR_ESCAPE).unwrap();
 assert_eq!(ASCII.decode(encoded.as_slice(), DecoderTrap::Strict),
-           Ok("Hello, &#x4e16;&#x754c;!".to_string()));
+           Ok("Hello, &#x4e16;&#x754c;!".into_string()));
 ~~~~
 
 Getting the encoding from the string label, as specified in WHATWG Encoding standard:
@@ -99,11 +99,11 @@ assert_eq!(euckr.name(), "windows-949");
 assert_eq!(euckr.whatwg_name(), Some("euc-kr")); // for the sake of compatibility
 let broken = &[0xbf, 0xec, 0xbf, 0xcd, 0xff, 0xbe, 0xd3];
 assert_eq!(euckr.decode(broken, DecoderTrap::Replace),
-           Ok("\uc6b0\uc640\ufffd\uc559".to_string()));
+           Ok("\uc6b0\uc640\ufffd\uc559".into_string()));
 
 // corresponding rust-encoding native API:
 assert_eq!(WINDOWS_949.decode(broken, DecoderTrap::Replace),
-           Ok("\uc6b0\uc640\ufffd\uc559".to_string()));
+           Ok("\uc6b0\uc640\ufffd\uc559".into_string()));
 ~~~~
 
 ## Detailed Usage
