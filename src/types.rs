@@ -424,7 +424,7 @@ impl EncoderTrap {
             } else {
                 let (_, err) = encoder.raw_feed(input, output);
                 if err.is_some() {
-                    panic!("{:s} cannot reencode a replacement string", trapname);
+                    panic!("{} cannot reencode a replacement string", trapname);
                 }
             }
             true
@@ -437,7 +437,7 @@ impl EncoderTrap {
             EncoderTrap::NcrEscape  => {
                 let mut escapes = String::new();
                 for ch in input.chars() {
-                    escapes.push_str(format!("&#{:d};", ch as int)[]);
+                    escapes.push_str(format!("&#{};", ch as int)[]);
                 }
                 reencode(encoder, escapes[], output, "NcrEscape")
             },
