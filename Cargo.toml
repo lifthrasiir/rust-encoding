@@ -5,6 +5,7 @@ authors = ["Kang Seonghoon <public+rust@mearie.org>"]
 
 description = "Character encoding support for Rust"
 homepage = "https://github.com/lifthrasiir/rust-encoding"
+documentation = "https://lifthrasiir.github.io/rust-encoding/encoding/"
 repository = "https://github.com/lifthrasiir/rust-encoding"
 keywords = ["encoding"]
 readme = "README.md"

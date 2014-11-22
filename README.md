@@ -12,7 +12,7 @@ and also provides an advanced interface for error detection and recovery.
 
 [Complete Documentation][doc]
 
-[doc]: http://www.rust-ci.org/lifthrasiir/rust-encoding/doc/encoding/
+[doc]: https://lifthrasiir.github.io/rust-encoding/encoding/
 
 ## Simple Usage
 
