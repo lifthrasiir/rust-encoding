@@ -177,7 +177,7 @@ impl RawDecoder for UTF8Decoder {
                 self.queuelen = 0;
                 write_bytes(output, input[0..processed]);
                 return (processed, Some(CodecError {
-                    upto: upto as int, cause: "invalid sequence".into_maybe_owned()
+                    upto: upto as int, cause: "invalid sequence".into_cow()
                 }));
             }
         }
@@ -204,7 +204,7 @@ impl RawDecoder for UTF8Decoder {
         self.state = INITIAL_STATE;
         self.queuelen = 0;
         if state != ACCEPT_STATE {
-            Some(CodecError { upto: 0, cause: "incomplete sequence".into_maybe_owned() })
+            Some(CodecError { upto: 0, cause: "incomplete sequence".into_cow() })
         } else {
             assert!(queuelen == 0);
             None

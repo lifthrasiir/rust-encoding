@@ -495,7 +495,7 @@ mod tests {
                     }
                 } else {
                     return (i, Some(CodecError { upto: j as int,
-                                                 cause: "!!!".into_maybe_owned() }));
+                                                 cause: "!!!".into_cow() }));
                 }
             }
             (input.len(), None)

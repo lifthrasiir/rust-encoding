@@ -32,7 +32,7 @@ impl RawEncoder for ErrorEncoder {
         if input.len() > 0 {
             let str::CharRange {ch: _, next} = input.char_range_at(0);
             (0, Some(CodecError { upto: next as int,
-                                  cause: "unrepresentable character".into_maybe_owned() }))
+                                  cause: "unrepresentable character".into_cow() }))
         } else {
             (0, None)
         }
@@ -56,7 +56,7 @@ impl RawDecoder for ErrorDecoder {
 
     fn raw_feed(&mut self, input: &[u8], _output: &mut StringWriter) -> (uint, Option<CodecError>) {
         if input.len() > 0 {
-            (0, Some(CodecError { upto: 1, cause: "invalid sequence".into_maybe_owned() }))
+            (0, Some(CodecError { upto: 1, cause: "invalid sequence".into_cow() }))
         } else {
             (0, None)
         }

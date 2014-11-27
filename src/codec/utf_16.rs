@@ -122,7 +122,7 @@ impl<E:Endian+Clone+'static> RawEncoder for UTF16Encoder<E> {
                 }
                 _ => {
                     return (i, Some(CodecError {
-                        upto: j as int, cause: "unrepresentable character".into_maybe_owned()
+                        upto: j as int, cause: "unrepresentable character".into_cow()
                     }));
                 }
             }
@@ -184,7 +184,7 @@ impl<E:Endian+Clone+'static> RawDecoder for UTF16Decoder<E> {
                     }
                     _ => {
                         return (processed, Some(CodecError {
-                            upto: i as int - 2, cause: "invalid sequence".into_maybe_owned()
+                            upto: i as int - 2, cause: "invalid sequence".into_cow()
                         }));
                     }
                 }
@@ -196,7 +196,7 @@ impl<E:Endian+Clone+'static> RawDecoder for UTF16Decoder<E> {
                     }
                     0xdc00...0xdfff => {
                         return (processed, Some(CodecError {
-                            upto: i as int, cause: "invalid sequence".into_maybe_owned()
+                            upto: i as int, cause: "invalid sequence".into_cow()
                         }));
                     }
                     _ => {
@@ -226,7 +226,7 @@ impl<E:Endian+Clone+'static> RawDecoder for UTF16Decoder<E> {
                     self.leadbyte = 0xffff;
                     self.leadsurrogate = 0xffff;
                     return (processed, Some(CodecError {
-                        upto: i as int - 2, cause: "invalid sequence".into_maybe_owned()
+                        upto: i as int - 2, cause: "invalid sequence".into_cow()
                     }));
                 }
             }
@@ -258,14 +258,14 @@ impl<E:Endian+Clone+'static> RawDecoder for UTF16Decoder<E> {
                         }
                         _ => {
                             return (processed, Some(CodecError {
-                                upto: i as int - 1, cause: "invalid sequence".into_maybe_owned()
+                                upto: i as int - 1, cause: "invalid sequence".into_cow()
                             }));
                         }
                     }
                 }
                 0xdc00...0xdfff => {
                     return (processed, Some(CodecError {
-                        upto: i as int + 1, cause: "invalid sequence".into_maybe_owned()
+                        upto: i as int + 1, cause: "invalid sequence".into_cow()
                     }));
                 }
                 _ => {
@@ -284,7 +284,7 @@ impl<E:Endian+Clone+'static> RawDecoder for UTF16Decoder<E> {
         self.leadbyte = 0xffff;
         self.leadsurrogate = 0xffff;
         if leadbyte != 0xffff || leadsurrogate != 0xffff {
-            Some(CodecError { upto: 0, cause: "incomplete sequence".into_maybe_owned() })
+            Some(CodecError { upto: 0, cause: "incomplete sequence".into_cow() })
         } else {
             None
         }
