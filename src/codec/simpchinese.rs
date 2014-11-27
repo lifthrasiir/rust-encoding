@@ -376,7 +376,7 @@ impl RawEncoder for HZEncoder {
                 if ptr == 0xffff {
                     self.escaped = escaped; // do NOT reset the state!
                     return (i, Some(CodecError {
-                        upto: j as int, cause: "unrepresentable character".into_maybe_owned()
+                        upto: j as int, cause: "unrepresentable character".into_cow()
                     }));
                 } else {
                     let lead = ptr / 190;
@@ -384,7 +384,7 @@ impl RawEncoder for HZEncoder {
                     if lead < 0x21 - 1 || trail < 0x21 + 0x3f { // GBK extension, ignored
                         self.escaped = escaped; // do NOT reset the state!
                         return (i, Some(CodecError {
-                            upto: j as int, cause: "unrepresentable character".into_maybe_owned()
+                            upto: j as int, cause: "unrepresentable character".into_cow()
                         }));
                     } else {
                         ensure_escaped!();

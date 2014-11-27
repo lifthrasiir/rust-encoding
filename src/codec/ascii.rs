@@ -42,7 +42,7 @@ impl RawEncoder for ASCIIEncoder {
                 output.write_bytes(input.as_bytes()[..first_error]);
                 let str::CharRange {ch: _, next} = input.char_range_at(first_error);
                 (first_error, Some(CodecError {
-                    upto: next as int, cause: "unrepresentable character".into_maybe_owned()
+                    upto: next as int, cause: "unrepresentable character".into_cow()
                 }))
             }
             None => {
@@ -80,7 +80,7 @@ impl RawDecoder for ASCIIDecoder {
             Some(first_error) => {
                 write_ascii_bytes(output, input[..first_error]);
                 (first_error, Some(CodecError {
-                    upto: first_error as int + 1, cause: "invalid sequence".into_maybe_owned()
+                    upto: first_error as int + 1, cause: "invalid sequence".into_cow()
                 }))
             }
             None => {

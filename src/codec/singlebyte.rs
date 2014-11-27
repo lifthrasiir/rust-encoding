@@ -51,7 +51,7 @@ impl RawEncoder for SingleByteEncoder {
                     output.write_byte(index);
                 } else {
                     return (i, Some(CodecError {
-                        upto: j as int, cause: "unrepresentable character".into_maybe_owned()
+                        upto: j as int, cause: "unrepresentable character".into_cow()
                     }));
                 }
             }
@@ -94,7 +94,7 @@ impl RawDecoder for SingleByteDecoder {
                     output.write_char(as_char(ch));
                 } else {
                     return (i, Some(CodecError {
-                        upto: i as int + 1, cause: "invalid sequence".into_maybe_owned()
+                        upto: i as int + 1, cause: "invalid sequence".into_cow()
                     }));
                 }
             }

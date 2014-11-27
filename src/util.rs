@@ -97,7 +97,7 @@ impl<'a, St:Default> StatefulDecoderHelper<'a, St> {
     /// If this is the last expr in the rules, also resets back to the initial state.
     #[inline(always)]
     pub fn err(&mut self, msg: &'static str) -> St {
-        self.err = Some(types::CodecError { upto: self.pos as int, cause: msg.into_maybe_owned() });
+        self.err = Some(types::CodecError { upto: self.pos as int, cause: msg.into_cow() });
         Default::default()
     }
 
@@ -109,7 +109,7 @@ impl<'a, St:Default> StatefulDecoderHelper<'a, St> {
     #[inline(always)]
     pub fn backup_and_err(&mut self, backup: uint, msg: &'static str) -> St {
         let upto = self.pos as int - backup as int;
-        self.err = Some(types::CodecError { upto: upto, cause: msg.into_maybe_owned() });
+        self.err = Some(types::CodecError { upto: upto, cause: msg.into_cow() });
         Default::default()
     }
 }
