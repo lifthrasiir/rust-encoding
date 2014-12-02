@@ -54,7 +54,7 @@ pub struct StatefulDecoderHelper<'a, St> {
     /// The current index to the buffer.
     pub pos: uint,
     /// The output buffer.
-    pub output: &'a mut types::StringWriter + 'a,
+    pub output: &'a mut (types::StringWriter + 'a),
     /// The last codec error. The caller will later collect this.
     pub err: Option<types::CodecError>,
 }
