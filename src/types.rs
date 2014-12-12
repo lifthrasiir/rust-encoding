@@ -364,6 +364,7 @@ pub type DecoderTrapFunc =
 
 /// Trap, which handles decoder errors.
 #[stable]
+#[deriving(Copy)]
 pub enum DecoderTrap {
     /// Immediately fails on errors.
     /// Corresponds to WHATWG "fatal" error algorithm.
@@ -393,6 +394,7 @@ impl DecoderTrap {
 }
 
 #[stable]
+#[deriving(Copy)]
 pub enum EncoderTrap {
     /// Immediately fails on errors.
     /// Corresponds to WHATWG "fatal" error algorithm.

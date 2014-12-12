@@ -722,7 +722,7 @@ impl Encoding for ISO2022JPEncoding {
     fn raw_decoder(&self) -> Box<RawDecoder> { ISO2022JPDecoder::new() }
 }
 
-#[deriving(PartialEq,Clone)]
+#[deriving(PartialEq,Clone,Copy)]
 enum ISO2022JPState {
     ASCII, // U+0000..007F, U+00A5, U+203E
     Katakana, // JIS X 0201: U+FF61..FF9F
