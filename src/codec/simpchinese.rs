@@ -31,7 +31,7 @@ use types::*;
  * - Finally, GB 18030 added four-byte sequences to GBK for becoming a pan-Unicode encoding,
  *   while adding new characters to the (former) GBK region again.
  */
-#[deriving(Clone)]
+#[deriving(Clone, Copy)]
 pub struct GB18030Encoding;
 
 impl Encoding for GB18030Encoding {
@@ -42,7 +42,7 @@ impl Encoding for GB18030Encoding {
 }
 
 /// An encoder for GB 18030.
-#[deriving(Clone)]
+#[deriving(Clone, Copy)]
 pub struct GB18030Encoder;
 
 impl GB18030Encoder {
@@ -57,7 +57,7 @@ impl RawEncoder for GB18030Encoder {
         output.writer_hint(input.len());
 
         for ch in input.chars() {
-            if ch < '\u0080' {
+            if ch < '\u{80}' {
                 output.write_byte(ch as u8);
             } else {
                 let ptr = index::gb18030::backward(ch as u32);
@@ -90,7 +90,7 @@ impl RawEncoder for GB18030Encoder {
 
 ascii_compatible_stateful_decoder! {
     #[doc="A decoder for GB 18030."]
-    #[deriving(Clone)]
+    #[deriving(Clone, Copy)]
     struct GB18030Decoder;
 
     module gb18030;
@@ -167,18 +167,18 @@ mod gb18030_tests {
         assert_feed_ok!(e, "A", "", [0x41]);
         assert_feed_ok!(e, "BC", "", [0x42, 0x43]);
         assert_feed_ok!(e, "", "", []);
-        assert_feed_ok!(e, "\u4e2d\u534e\u4eba\u6c11\u5171\u548c\u56fd", "",
+        assert_feed_ok!(e, "\u{4e2d}\u{534e}\u{4eba}\u{6c11}\u{5171}\u{548c}\u{56fd}", "",
                         [0xd6, 0xd0, 0xbb, 0xaa, 0xc8, 0xcb, 0xc3, 0xf1,
                          0xb9, 0xb2, 0xba, 0xcd, 0xb9, 0xfa]);
-        assert_feed_ok!(e, "1\u20ac/m", "", [0x31, 0xa2, 0xe3, 0x2f, 0x6d]);
-        assert_feed_ok!(e, "\uff21\uff22\uff23", "", [0xa3, 0xc1, 0xa3, 0xc2, 0xa3, 0xc3]);
-        assert_feed_ok!(e, "\u0080", "", [0x81, 0x30, 0x81, 0x30]);
-        assert_feed_ok!(e, "\u0081", "", [0x81, 0x30, 0x81, 0x31]);
-        assert_feed_ok!(e, "\u00a3", "", [0x81, 0x30, 0x84, 0x35]);
-        assert_feed_ok!(e, "\u00a4", "", [0xa1, 0xe8]);
-        assert_feed_ok!(e, "\u00a5", "", [0x81, 0x30, 0x84, 0x36]);
-        assert_feed_ok!(e, "\U0010ffff", "", [0xe3, 0x32, 0x9a, 0x35]);
-        assert_feed_ok!(e, "\U0002a6a5\u3007", "", [0x98, 0x35, 0xee, 0x37, 0xa9, 0x96]);
+        assert_feed_ok!(e, "1\u{20ac}/m", "", [0x31, 0xa2, 0xe3, 0x2f, 0x6d]);
+        assert_feed_ok!(e, "\u{ff21}\u{ff22}\u{ff23}", "", [0xa3, 0xc1, 0xa3, 0xc2, 0xa3, 0xc3]);
+        assert_feed_ok!(e, "\u{80}", "", [0x81, 0x30, 0x81, 0x30]);
+        assert_feed_ok!(e, "\u{81}", "", [0x81, 0x30, 0x81, 0x31]);
+        assert_feed_ok!(e, "\u{a3}", "", [0x81, 0x30, 0x84, 0x35]);
+        assert_feed_ok!(e, "\u{a4}", "", [0xa1, 0xe8]);
+        assert_feed_ok!(e, "\u{a5}", "", [0x81, 0x30, 0x84, 0x36]);
+        assert_feed_ok!(e, "\u{10ffff}", "", [0xe3, 0x32, 0x9a, 0x35]);
+        assert_feed_ok!(e, "\u{2a6a5}\u{3007}", "", [0x98, 0x35, 0xee, 0x37, 0xa9, 0x96]);
         assert_finish_ok!(e, []);
     }
 
@@ -190,16 +190,16 @@ mod gb18030_tests {
         assert_feed_ok!(d, [], [], "");
         assert_feed_ok!(d, [0xd6, 0xd0, 0xbb, 0xaa, 0xc8, 0xcb, 0xc3, 0xf1,
                             0xb9, 0xb2, 0xba, 0xcd, 0xb9, 0xfa], [],
-                        "\u4e2d\u534e\u4eba\u6c11\u5171\u548c\u56fd");
-        assert_feed_ok!(d, [0x31, 0x80, 0x2f, 0x6d], [], "1\u20ac/m");
-        assert_feed_ok!(d, [0xa3, 0xc1, 0xa3, 0xc2, 0xa3, 0xc3], [], "\uff21\uff22\uff23");
-        assert_feed_ok!(d, [0x81, 0x30, 0x81, 0x30], [], "\u0080");
-        assert_feed_ok!(d, [0x81, 0x30, 0x81, 0x31], [], "\u0081");
-        assert_feed_ok!(d, [0x81, 0x30, 0x84, 0x35], [], "\u00a3");
-        assert_feed_ok!(d, [0xa1, 0xe8], [], "\u00a4" );
-        assert_feed_ok!(d, [0x81, 0x30, 0x84, 0x36], [], "\u00a5");
-        assert_feed_ok!(d, [0xe3, 0x32, 0x9a, 0x35], [], "\U0010ffff");
-        assert_feed_ok!(d, [0x98, 0x35, 0xee, 0x37, 0xa9, 0x96], [], "\U0002a6a5\u3007");
+                        "\u{4e2d}\u{534e}\u{4eba}\u{6c11}\u{5171}\u{548c}\u{56fd}");
+        assert_feed_ok!(d, [0x31, 0x80, 0x2f, 0x6d], [], "1\u{20ac}/m");
+        assert_feed_ok!(d, [0xa3, 0xc1, 0xa3, 0xc2, 0xa3, 0xc3], [], "\u{ff21}\u{ff22}\u{ff23}");
+        assert_feed_ok!(d, [0x81, 0x30, 0x81, 0x30], [], "\u{80}");
+        assert_feed_ok!(d, [0x81, 0x30, 0x81, 0x31], [], "\u{81}");
+        assert_feed_ok!(d, [0x81, 0x30, 0x84, 0x35], [], "\u{a3}");
+        assert_feed_ok!(d, [0xa1, 0xe8], [], "\u{a4}" );
+        assert_feed_ok!(d, [0x81, 0x30, 0x84, 0x36], [], "\u{a5}");
+        assert_feed_ok!(d, [0xe3, 0x32, 0x9a, 0x35], [], "\u{10ffff}");
+        assert_feed_ok!(d, [0x98, 0x35, 0xee, 0x37, 0xa9, 0x96], [], "\u{2a6a5}\u{3007}");
         assert_finish_ok!(d, "");
     }
 
@@ -207,26 +207,26 @@ mod gb18030_tests {
     fn test_decoder_valid_partial() {
         let mut d = GB18030Encoding.raw_decoder();
         assert_feed_ok!(d, [], [0xa1], "");
-        assert_feed_ok!(d, [0xa1], [], "\u3000");
+        assert_feed_ok!(d, [0xa1], [], "\u{3000}");
         assert_feed_ok!(d, [], [0x81], "");
         assert_feed_ok!(d, [], [0x30], "");
         assert_feed_ok!(d, [], [0x81], "");
-        assert_feed_ok!(d, [0x30], [], "\u0080");
+        assert_feed_ok!(d, [0x30], [], "\u{80}");
         assert_feed_ok!(d, [], [0x81], "");
         assert_feed_ok!(d, [], [0x30], "");
-        assert_feed_ok!(d, [0x81, 0x31], [], "\u0081");
+        assert_feed_ok!(d, [0x81, 0x31], [], "\u{81}");
         assert_feed_ok!(d, [], [0x81], "");
-        assert_feed_ok!(d, [0x30, 0x81, 0x32], [], "\u0082");
+        assert_feed_ok!(d, [0x30, 0x81, 0x32], [], "\u{82}");
         assert_feed_ok!(d, [], [0x81], "");
         assert_feed_ok!(d, [], [0x30, 0x81], "");
-        assert_feed_ok!(d, [0x33], [], "\u0083");
+        assert_feed_ok!(d, [0x33], [], "\u{83}");
         assert_feed_ok!(d, [], [0x81, 0x30], "");
         assert_feed_ok!(d, [], [0x81], "");
-        assert_feed_ok!(d, [0x34], [], "\u0084");
+        assert_feed_ok!(d, [0x34], [], "\u{84}");
         assert_feed_ok!(d, [], [0x81, 0x30], "");
-        assert_feed_ok!(d, [0x81, 0x35], [], "\u0085");
+        assert_feed_ok!(d, [0x81, 0x35], [], "\u{85}");
         assert_feed_ok!(d, [], [0x81, 0x30, 0x81], "");
-        assert_feed_ok!(d, [0x36], [], "\u0086");
+        assert_feed_ok!(d, [0x36], [], "\u{86}");
         assert_finish_ok!(d, "");
     }
 
@@ -286,19 +286,19 @@ mod gb18030_tests {
     #[test]
     fn test_decoder_feed_after_finish() {
         let mut d = GB18030Encoding.raw_decoder();
-        assert_feed_ok!(d, [0xd2, 0xbb], [0xd2], "\u4e00");
+        assert_feed_ok!(d, [0xd2, 0xbb], [0xd2], "\u{4e00}");
         assert_finish_err!(d, "");
-        assert_feed_ok!(d, [0xd2, 0xbb], [], "\u4e00");
+        assert_feed_ok!(d, [0xd2, 0xbb], [], "\u{4e00}");
         assert_finish_ok!(d, "");
 
         let mut d = GB18030Encoding.raw_decoder();
-        assert_feed_ok!(d, [0x98, 0x35, 0xee, 0x37], [0x98, 0x35, 0xee], "\U0002a6a5");
+        assert_feed_ok!(d, [0x98, 0x35, 0xee, 0x37], [0x98, 0x35, 0xee], "\u{2a6a5}");
         assert_finish_err!(d, "");
-        assert_feed_ok!(d, [0x98, 0x35, 0xee, 0x37], [0x98, 0x35], "\U0002a6a5");
+        assert_feed_ok!(d, [0x98, 0x35, 0xee, 0x37], [0x98, 0x35], "\u{2a6a5}");
         assert_finish_err!(d, "");
-        assert_feed_ok!(d, [0x98, 0x35, 0xee, 0x37], [0x98], "\U0002a6a5");
+        assert_feed_ok!(d, [0x98, 0x35, 0xee, 0x37], [0x98], "\u{2a6a5}");
         assert_finish_err!(d, "");
-        assert_feed_ok!(d, [0x98, 0x35, 0xee, 0x37], [], "\U0002a6a5");
+        assert_feed_ok!(d, [0x98, 0x35, 0xee, 0x37], [], "\u{2a6a5}");
         assert_finish_ok!(d, "");
     }
 
@@ -331,7 +331,7 @@ mod gb18030_tests {
  * they are equivalent to ISO-2022-CN escape sequences `ESC $ ) A` and `ESC ( B`.
  * Additional escape sequences `~~` (for a literal `~`) and `~\n` (ignored) are also supported.
  */
-#[deriving(Clone)]
+#[deriving(Clone, Copy)]
 pub struct HZEncoding;
 
 impl Encoding for HZEncoding {
@@ -342,7 +342,7 @@ impl Encoding for HZEncoding {
 }
 
 /// An encoder for HZ.
-#[deriving(Clone)]
+#[deriving(Clone, Copy)]
 pub struct HZEncoder {
     escaped: bool,
 }
@@ -367,7 +367,7 @@ impl RawEncoder for HZEncoder {
         )
 
         for ((i,j), ch) in input.index_iter() {
-            if ch < '\u0080' {
+            if ch < '\u{80}' {
                 ensure_unescaped!();
                 output.write_byte(ch as u8);
                 if ch == '~' { output.write_byte('~' as u8); }
@@ -406,7 +406,7 @@ impl RawEncoder for HZEncoder {
 
 stateful_decoder! {
     #[doc="A decoder for HZ."]
-    #[deriving(Clone)]
+    #[deriving(Clone, Copy)]
     struct HZDecoder;
 
     module hz;
@@ -490,20 +490,20 @@ mod hz_tests {
         assert_feed_ok!(e, "A", "", b"A");
         assert_feed_ok!(e, "BC", "", b"BC");
         assert_feed_ok!(e, "", "", b"");
-        assert_feed_ok!(e, "\u4e2d\u534e\u4eba\u6c11\u5171\u548c\u56fd", "", b"~{VP;*HKCq92:M9z");
-        assert_feed_ok!(e, "\uff21\uff22\uff23", "", b"#A#B#C");
-        assert_feed_ok!(e, "1\u20ac/m", "", b"~}1~{\"c~}/m");
-        assert_feed_ok!(e, "~<\u00a4~\u00a4>~", "", b"~~<~{!h~}~~~{!h~}>~~");
+        assert_feed_ok!(e, "\u{4e2d}\u{534e}\u{4eba}\u{6c11}\u{5171}\u{548c}\u{56fd}", "", b"~{VP;*HKCq92:M9z");
+        assert_feed_ok!(e, "\u{ff21}\u{ff22}\u{ff23}", "", b"#A#B#C");
+        assert_feed_ok!(e, "1\u{20ac}/m", "", b"~}1~{\"c~}/m");
+        assert_feed_ok!(e, "~<\u{a4}~\u{0a4}>~", "", b"~~<~{!h~}~~~{!h~}>~~");
         assert_finish_ok!(e, []);
     }
 
     #[test]
     fn test_encoder_invalid() {
         let mut e = HZEncoding.raw_encoder();
-        assert_feed_err!(e, "", "\uffff", "", []);
-        assert_feed_err!(e, "?", "\uffff", "!", [0x3f]);
+        assert_feed_err!(e, "", "\u{ffff}", "", []);
+        assert_feed_err!(e, "?", "\u{ffff}", "!", [0x3f]);
         // no support for GBK extension
-        assert_feed_err!(e, "", "\u3007", "", []);
+        assert_feed_err!(e, "", "\u{3007}", "", []);
         assert_finish_ok!(e, []);
     }
 
@@ -517,12 +517,12 @@ mod hz_tests {
         assert_feed_ok!(d, b"", b"", "");
         assert_feed_ok!(d, b"\nH", b"~", "H");
         assert_feed_ok!(d, b"{VP~}~{;*~{HKCq92:M9z", b"",
-                        "\u4e2d\u534e\u4eba\u6c11\u5171\u548c\u56fd");
+                        "\u{4e2d}\u{534e}\u{4eba}\u{6c11}\u{5171}\u{548c}\u{56fd}");
         assert_feed_ok!(d, b"", b"#", "");
-        assert_feed_ok!(d, b"A", b"~", "\uff21");
-        assert_feed_ok!(d, b"~#B~~#C", b"~", "~\uff22~\uff23");
+        assert_feed_ok!(d, b"A", b"~", "\u{ff21}");
+        assert_feed_ok!(d, b"~#B~~#C", b"~", "~\u{ff22}~\u{ff23}");
         assert_feed_ok!(d, b"", b"", "");
-        assert_feed_ok!(d, b"\n#D~{#E~\n#F~{#G", b"~", "#D\uff25#F\uff27");
+        assert_feed_ok!(d, b"\n#D~{#E~\n#F~{#G", b"~", "#D\u{ff25}#F\u{ff27}");
         assert_feed_ok!(d, b"}X~}YZ", b"", "XYZ");
         assert_finish_ok!(d, "");
     }
@@ -544,9 +544,9 @@ mod hz_tests {
     fn test_decoder_invalid_carriage_return() {
         // CR in the multibyte mode is invalid but *also* resets the state
         let mut d = HZEncoding.raw_decoder();
-        assert_feed_ok!(d, b"~{#A", b"", "\uff21");
+        assert_feed_ok!(d, b"~{#A", b"", "\u{ff21}");
         assert_feed_err!(d, b"", b"\n", b"", "");
-        assert_feed_ok!(d, b"#B~{#C", b"", "#B\uff23");
+        assert_feed_ok!(d, b"#B~{#C", b"", "#B\u{ff23}");
         assert_feed_err!(d, b"", b"#\n", b"", "");
         assert_feed_ok!(d, b"#D", b"", "#D");
         assert_finish_ok!(d, "");
@@ -563,7 +563,7 @@ mod hz_tests {
         assert_finish_err!(d, "");
 
         let mut d = HZEncoding.raw_decoder();
-        assert_feed_ok!(d, b"~{#A", b"~", "\uff21");
+        assert_feed_ok!(d, b"~{#A", b"~", "\u{ff21}");
         assert_finish_err!(d, "");
     }
 
@@ -575,21 +575,21 @@ mod hz_tests {
         assert_feed_ok!(d, b"#B", b"", "#B");
         assert_feed_ok!(d, b"", b"~", "");
         assert_feed_err!(d, b"", b"", b"xy", "");
-        assert_feed_ok!(d, b"#C~{#D", b"", "#C\uff24");
+        assert_feed_ok!(d, b"#C~{#D", b"", "#C\u{ff24}");
         assert_feed_err!(d, b"", b"~", b"xy", "");
-        assert_feed_ok!(d, b"#E", b"", "\uff25"); // does not reset to ASCII
+        assert_feed_ok!(d, b"#E", b"", "\u{ff25}"); // does not reset to ASCII
         assert_feed_ok!(d, b"", b"~", "");
         assert_feed_err!(d, b"", b"", b"xy", "");
-        assert_feed_ok!(d, b"#F~}#G", b"", "\uff26#G");
+        assert_feed_ok!(d, b"#F~}#G", b"", "\u{ff26}#G");
         assert_finish_ok!(d, "");
     }
 
     #[test]
     fn test_decoder_feed_after_finish() {
         let mut d = HZEncoding.raw_decoder();
-        assert_feed_ok!(d, b"R;~{R;", b"R", "R;\u4e00");
+        assert_feed_ok!(d, b"R;~{R;", b"R", "R;\u{4e00}");
         assert_finish_err!(d, "");
-        assert_feed_ok!(d, b"R;~{R;", b"", "R;\u4e00");
+        assert_feed_ok!(d, b"R;~{R;", b"", "R;\u{4e00}");
         assert_finish_ok!(d, "");
     }
 

@@ -13,7 +13,7 @@ use types::*;
  * It is both a basis and a lowest common denominator of many other encodings
  * including UTF-8, which Rust internally assumes.
  */
-#[deriving(Clone)]
+#[deriving(Clone, Copy)]
 pub struct ASCIIEncoding;
 
 impl Encoding for ASCIIEncoding {
@@ -23,7 +23,7 @@ impl Encoding for ASCIIEncoding {
 }
 
 /// An encoder for ASCII.
-#[deriving(Clone)]
+#[deriving(Clone, Copy)]
 pub struct ASCIIEncoder;
 
 impl ASCIIEncoder {
@@ -58,7 +58,7 @@ impl RawEncoder for ASCIIEncoder {
 }
 
 /// A decoder for ASCII.
-#[deriving(Clone)]
+#[deriving(Clone, Copy)]
 pub struct ASCIIDecoder;
 
 impl ASCIIDecoder {
@@ -112,8 +112,8 @@ mod tests {
         assert_feed_ok!(e, "A", "", [0x41]);
         assert_feed_ok!(e, "BC", "", [0x42, 0x43]);
         assert_feed_ok!(e, "", "", []);
-        assert_feed_err!(e, "", "\u00a0", "", []);
-        assert_feed_err!(e, "X", "\u00a0", "Z", [0x58]);
+        assert_feed_err!(e, "", "\u{a0}", "", []);
+        assert_feed_err!(e, "X", "\u{a0}", "Z", [0x58]);
         assert_finish_ok!(e, []);
     }
 

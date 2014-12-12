@@ -22,7 +22,7 @@ use types::*;
  * This particular implementation of Big5 includes the widespread ETEN and HKSCS extensions,
  * but excludes less common extensions such as Big5+, Big-5E and Unicode-at-on.
  */
-#[deriving(Clone)]
+#[deriving(Clone, Copy)]
 pub struct BigFive2003Encoding;
 
 impl Encoding for BigFive2003Encoding {
@@ -33,7 +33,7 @@ impl Encoding for BigFive2003Encoding {
 }
 
 /// An encoder for Big5-2003.
-#[deriving(Clone)]
+#[deriving(Clone, Copy)]
 pub struct BigFive2003Encoder;
 
 impl BigFive2003Encoder {
@@ -48,7 +48,7 @@ impl RawEncoder for BigFive2003Encoder {
         output.writer_hint(input.len());
 
         for ((i,j), ch) in input.index_iter() {
-            if ch < '\u0080' {
+            if ch < '\u{80}' {
                 output.write_byte(ch as u8);
             } else {
                 let ptr = index::big5::backward(ch as u32);
@@ -75,7 +75,7 @@ impl RawEncoder for BigFive2003Encoder {
 
 ascii_compatible_stateful_decoder! {
     #[doc="A decoder for Big5-2003 with HKSCS-2008 extension."]
-    #[deriving(Clone)]
+    #[deriving(Clone, Copy)]
     struct BigFive2003HKSCS2008Decoder;
 
     module bigfive2003;
@@ -109,10 +109,10 @@ ascii_compatible_stateful_decoder! {
                 let backup = if b < 0x80 {1} else {0};
                 ctx.backup_and_err(backup, "invalid sequence")
             },
-            0 /*index=1133*/ => ctx.emit_str("\u00ca\u0304"),
-            1 /*index=1135*/ => ctx.emit_str("\u00ca\u030c"),
-            2 /*index=1164*/ => ctx.emit_str("\u00ea\u0304"),
-            3 /*index=1166*/ => ctx.emit_str("\u00ea\u030c"),
+            0 /*index=1133*/ => ctx.emit_str("\u{ca}\u{304}"),
+            1 /*index=1135*/ => ctx.emit_str("\u{ca}\u{30c}"),
+            2 /*index=1164*/ => ctx.emit_str("\u{ea}\u{304}"),
+            3 /*index=1166*/ => ctx.emit_str("\u{ea}\u{30c}"),
             ch => ctx.emit(ch),
         };
     }
@@ -134,19 +134,19 @@ mod bigfive2003_tests {
         assert_feed_ok!(e, "A", "", [0x41]);
         assert_feed_ok!(e, "BC", "", [0x42, 0x43]);
         assert_feed_ok!(e, "", "", []);
-        assert_feed_ok!(e, "\u4e2d\u83ef\u6c11\u570b", "",
+        assert_feed_ok!(e, "\u{4e2d}\u{83ef}\u{6c11}\u{570b}", "",
                         [0xa4, 0xa4, 0xb5, 0xd8, 0xa5, 0xc1, 0xb0, 0xea]);
-        assert_feed_ok!(e, "1\u20ac/m", "", [0x31, 0xa3, 0xe1, 0x2f, 0x6d]);
-        assert_feed_ok!(e, "\uffed", "", [0xf9, 0xfe]);
+        assert_feed_ok!(e, "1\u{20ac}/m", "", [0x31, 0xa3, 0xe1, 0x2f, 0x6d]);
+        assert_feed_ok!(e, "\u{ffed}", "", [0xf9, 0xfe]);
         assert_finish_ok!(e, []);
     }
 
     #[test]
     fn test_encoder_invalid() {
         let mut e = BigFive2003Encoding.raw_encoder();
-        assert_feed_err!(e, "", "\uffff", "", []);
-        assert_feed_err!(e, "?", "\uffff", "!", [0x3f]);
-        assert_feed_err!(e, "", "\u3eec", "\u4e00", []); // HKSCS-2008 addition
+        assert_feed_err!(e, "", "\u{ffff}", "", []);
+        assert_feed_err!(e, "?", "\u{ffff}", "!", [0x3f]);
+        assert_feed_err!(e, "", "\u{3eec}", "\u{4e00}", []); // HKSCS-2008 addition
         assert_finish_ok!(e, []);
     }
 
@@ -157,15 +157,15 @@ mod bigfive2003_tests {
         assert_feed_ok!(d, [0x42, 0x43], [], "BC");
         assert_feed_ok!(d, [], [], "");
         assert_feed_ok!(d, [0xa4, 0xa4, 0xb5, 0xd8, 0xa5, 0xc1, 0xb0, 0xea], [],
-                        "\u4e2d\u83ef\u6c11\u570b");
+                        "\u{4e2d}\u{83ef}\u{6c11}\u{570b}");
         assert_feed_ok!(d, [], [0xa4], "");
-        assert_feed_ok!(d, [0xa4, 0xb5, 0xd8], [0xa5], "\u4e2d\u83ef");
-        assert_feed_ok!(d, [0xc1, 0xb0, 0xea], [], "\u6c11\u570b");
-        assert_feed_ok!(d, [0x31, 0xa3, 0xe1, 0x2f, 0x6d], [], "1\u20ac/m");
-        assert_feed_ok!(d, [0xf9, 0xfe], [], "\uffed");
-        assert_feed_ok!(d, [0x87, 0x7e], [], "\u3eec"); // HKSCS-2008 addition
+        assert_feed_ok!(d, [0xa4, 0xb5, 0xd8], [0xa5], "\u{4e2d}\u{83ef}");
+        assert_feed_ok!(d, [0xc1, 0xb0, 0xea], [], "\u{6c11}\u{570b}");
+        assert_feed_ok!(d, [0x31, 0xa3, 0xe1, 0x2f, 0x6d], [], "1\u{20ac}/m");
+        assert_feed_ok!(d, [0xf9, 0xfe], [], "\u{ffed}");
+        assert_feed_ok!(d, [0x87, 0x7e], [], "\u{3eec}"); // HKSCS-2008 addition
         assert_feed_ok!(d, [0x88, 0x62, 0x88, 0x64, 0x88, 0xa3, 0x88, 0xa5], [],
-                        "\u00ca\u0304\u00ca\u030c\u00ea\u0304\u00ea\u030c"); // two-byte mappings
+                        "\u{ca}\u{304}\u{00ca}\u{30c}\u{ea}\u{304}\u{ea}\u{30c}"); // two-byte mappings
         assert_finish_ok!(d, "");
     }
 
@@ -223,9 +223,9 @@ mod bigfive2003_tests {
     #[test]
     fn test_decoder_feed_after_finish() {
         let mut d = BigFive2003Encoding.raw_decoder();
-        assert_feed_ok!(d, [0xa4, 0x40], [0xa4], "\u4e00");
+        assert_feed_ok!(d, [0xa4, 0x40], [0xa4], "\u{4e00}");
         assert_finish_err!(d, "");
-        assert_feed_ok!(d, [0xa4, 0x40], [], "\u4e00");
+        assert_feed_ok!(d, [0xa4, 0x40], [], "\u{4e00}");
         assert_finish_ok!(d, "");
     }
 

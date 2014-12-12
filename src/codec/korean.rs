@@ -19,7 +19,7 @@ use types::*;
  * Its design strongly resembles that of Shift_JIS but less prone to errors
  * since the set of MSB-unset second bytes is much limited compared to Shift_JIS.
  */
-#[deriving(Clone)]
+#[deriving(Clone, Copy)]
 pub struct Windows949Encoding;
 
 impl Encoding for Windows949Encoding {
@@ -30,7 +30,7 @@ impl Encoding for Windows949Encoding {
 }
 
 /// An encoder for Windows code page 949.
-#[deriving(Clone)]
+#[deriving(Clone, Copy)]
 pub struct Windows949Encoder;
 
 impl Windows949Encoder {
@@ -45,7 +45,7 @@ impl RawEncoder for Windows949Encoder {
         output.writer_hint(input.len());
 
         for ((i,j), ch) in input.index_iter() {
-            if ch <= '\u007f' {
+            if ch <= '\u{7f}' {
                 output.write_byte(ch as u8);
             } else {
                 let ptr = index::euc_kr::backward(ch as u32);
@@ -78,7 +78,7 @@ impl RawEncoder for Windows949Encoder {
 
 ascii_compatible_stateful_decoder! {
     #[doc="A decoder for Windows code page 949."]
-    #[deriving(Clone)]
+    #[deriving(Clone, Copy)]
     struct Windows949Decoder;
 
     module windows949;
@@ -134,17 +134,17 @@ mod windows949_tests {
         assert_feed_ok!(e, "A", "", [0x41]);
         assert_feed_ok!(e, "BC", "", [0x42, 0x43]);
         assert_feed_ok!(e, "", "", []);
-        assert_feed_ok!(e, "\uac00", "", [0xb0, 0xa1]);
-        assert_feed_ok!(e, "\ub098\ub2e4", "", [0xb3, 0xaa, 0xb4, 0xd9]);
-        assert_feed_ok!(e, "\ubdc1\u314b\ud7a3", "", [0x94, 0xee, 0xa4, 0xbb, 0xc6, 0x52]);
+        assert_feed_ok!(e, "\u{ac00}", "", [0xb0, 0xa1]);
+        assert_feed_ok!(e, "\u{b098}\u{b2e4}", "", [0xb3, 0xaa, 0xb4, 0xd9]);
+        assert_feed_ok!(e, "\u{bdc1}\u{314b}\u{d7a3}", "", [0x94, 0xee, 0xa4, 0xbb, 0xc6, 0x52]);
         assert_finish_ok!(e, []);
     }
 
     #[test]
     fn test_encoder_invalid() {
         let mut e = Windows949Encoding.raw_encoder();
-        assert_feed_err!(e, "", "\uffff", "", []);
-        assert_feed_err!(e, "?", "\uffff", "!", [0x3f]);
+        assert_feed_err!(e, "", "\u{ffff}", "", []);
+        assert_feed_err!(e, "?", "\u{ffff}", "!", [0x3f]);
         assert_finish_ok!(e, []);
     }
 
@@ -154,10 +154,10 @@ mod windows949_tests {
         assert_feed_ok!(d, [0x41], [], "A");
         assert_feed_ok!(d, [0x42, 0x43], [], "BC");
         assert_feed_ok!(d, [], [], "");
-        assert_feed_ok!(d, [0xb0, 0xa1], [], "\uac00");
-        assert_feed_ok!(d, [0xb3, 0xaa, 0xb4, 0xd9], [], "\ub098\ub2e4");
+        assert_feed_ok!(d, [0xb0, 0xa1], [], "\u{ac00}");
+        assert_feed_ok!(d, [0xb3, 0xaa, 0xb4, 0xd9], [], "\u{b098}\u{b2e4}");
         assert_feed_ok!(d, [0x94, 0xee, 0xa4, 0xbb, 0xc6, 0x52, 0xc1, 0x64], [],
-                        "\ubdc1\u314b\ud7a3\ud58f");
+                        "\u{bdc1}\u{314b}\u{d7a3}\u{d58f}");
         assert_finish_ok!(d, "");
     }
 
@@ -165,11 +165,11 @@ mod windows949_tests {
     fn test_decoder_valid_partial() {
         let mut d = Windows949Encoding.raw_decoder();
         assert_feed_ok!(d, [], [0xb0], "");
-        assert_feed_ok!(d, [0xa1], [], "\uac00");
-        assert_feed_ok!(d, [0xb3, 0xaa], [0xb4], "\ub098");
-        assert_feed_ok!(d, [0xd9], [0x94], "\ub2e4");
-        assert_feed_ok!(d, [0xee, 0xa4, 0xbb], [0xc6], "\ubdc1\u314b");
-        assert_feed_ok!(d, [0x52, 0xc1, 0x64], [], "\ud7a3\ud58f");
+        assert_feed_ok!(d, [0xa1], [], "\u{ac00}");
+        assert_feed_ok!(d, [0xb3, 0xaa], [0xb4], "\u{b098}");
+        assert_feed_ok!(d, [0xd9], [0x94], "\u{b2e4}");
+        assert_feed_ok!(d, [0xee, 0xa4, 0xbb], [0xc6], "\u{bdc1}\u{314b}");
+        assert_feed_ok!(d, [0x52, 0xc1, 0x64], [], "\u{d7a3}\u{d58f}");
         assert_finish_ok!(d, "");
     }
 
@@ -221,9 +221,9 @@ mod windows949_tests {
     #[test]
     fn test_decoder_feed_after_finish() {
         let mut d = Windows949Encoding.raw_decoder();
-        assert_feed_ok!(d, [0xb0, 0xa1], [0xb0], "\uac00");
+        assert_feed_ok!(d, [0xb0, 0xa1], [0xb0], "\u{ac00}");
         assert_finish_err!(d, "");
-        assert_feed_ok!(d, [0xb0, 0xa1], [], "\uac00");
+        assert_feed_ok!(d, [0xb0, 0xa1], [], "\u{ac00}");
         assert_finish_ok!(d, "");
     }
 

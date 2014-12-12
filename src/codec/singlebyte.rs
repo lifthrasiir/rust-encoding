@@ -8,6 +8,7 @@ use util::{as_char, StrCharIndex};
 use types::*;
 
 /// A common framework for single-byte encodings based on ASCII.
+#[deriving(Copy)]
 pub struct SingleByteEncoding {
     pub name: &'static str,
     pub whatwg_name: Option<&'static str>,
@@ -23,7 +24,7 @@ impl Encoding for SingleByteEncoding {
 }
 
 /// An encoder for single-byte encodings based on ASCII.
-#[deriving(Clone)]
+#[deriving(Clone, Copy)]
 pub struct SingleByteEncoder {
     index_backward: extern "Rust" fn(u32) -> u8,
 }
@@ -42,7 +43,7 @@ impl RawEncoder for SingleByteEncoder {
         output.writer_hint(input.len());
 
         for ((i,j), ch) in input.index_iter() {
-            if ch <= '\u007f' {
+            if ch <= '\u{7f}' {
                 output.write_byte(ch as u8);
                 continue;
             } else {
@@ -65,7 +66,7 @@ impl RawEncoder for SingleByteEncoder {
 }
 
 /// A decoder for single-byte encodings based on ASCII.
-#[deriving(Clone)]
+#[deriving(Clone, Copy)]
 pub struct SingleByteDecoder {
     index_forward: extern "Rust" fn(u8) -> u16,
 }
@@ -122,8 +123,8 @@ mod tests {
     #[test]
     fn test_encoder_non_bmp() {
         let mut e = ISO_8859_2.raw_encoder();
-        assert_feed_err!(e, "A", "\uFFFF", "B", [0x41]);
-        assert_feed_err!(e, "A", "\U00010000", "B", [0x41]);
+        assert_feed_err!(e, "A", "\u{FFFF}", "B", [0x41]);
+        assert_feed_err!(e, "A", "\u{10000}", "B", [0x41]);
     }
 }
 

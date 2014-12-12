@@ -22,7 +22,7 @@ To encode a string:
 use encoding::{Encoding, EncoderTrap};
 use encoding::all::ISO_8859_1;
 
-assert_eq!(ISO_8859_1.encode("caf\u00e9", EncoderTrap::Strict),
+assert_eq!(ISO_8859_1.encode("caf\u{e9}", EncoderTrap::Strict),
            Ok(vec![99,97,102,233]));
 ~~~~
 
@@ -32,12 +32,12 @@ To encode a string with unrepresentable characters:
 use encoding::{Encoding, EncoderTrap};
 use encoding::all::ISO_8859_2;
 
-assert!(ISO_8859_2.encode("Acme\u00a9", EncoderTrap::Strict).is_err());
-assert_eq!(ISO_8859_2.encode("Acme\u00a9", EncoderTrap::Replace),
+assert!(ISO_8859_2.encode("Acme\u{a9}", EncoderTrap::Strict).is_err());
+assert_eq!(ISO_8859_2.encode("Acme\u{a9}", EncoderTrap::Replace),
            Ok(vec![65,99,109,101,63]));
-assert_eq!(ISO_8859_2.encode("Acme\u00a9", EncoderTrap::Ignore),
+assert_eq!(ISO_8859_2.encode("Acme\u{a9}", EncoderTrap::Ignore),
            Ok(vec![65,99,109,101]));
-assert_eq!(ISO_8859_2.encode("Acme\u00a9", EncoderTrap::NcrEscape),
+assert_eq!(ISO_8859_2.encode("Acme\u{a9}", EncoderTrap::NcrEscape),
            Ok(vec![65,99,109,101,38,35,49,54,57,59]));
 ~~~~
 
@@ -48,7 +48,7 @@ use encoding::{Encoding, DecoderTrap};
 use encoding::all::ISO_8859_1;
 
 assert_eq!(ISO_8859_1.decode(&[99,97,102,233], DecoderTrap::Strict),
-           Ok("caf\u00e9".into_string()));
+           Ok("caf\u{e9}".into_string()));
 ~~~~
 
 To decode a byte sequence with invalid sequences:
@@ -59,7 +59,7 @@ use encoding::all::ISO_8859_6;
 
 assert!(ISO_8859_6.decode(&[65,99,109,101,169], DecoderTrap::Strict).is_err());
 assert_eq!(ISO_8859_6.decode(&[65,99,109,101,169], DecoderTrap::Replace),
-           Ok("Acme\ufffd".into_string()));
+           Ok("Acme\u{fffd}".into_string()));
 assert_eq!(ISO_8859_6.decode(&[65,99,109,101,169], DecoderTrap::Ignore),
            Ok("Acme".into_string()));
 ~~~~
@@ -99,11 +99,11 @@ assert_eq!(euckr.name(), "windows-949");
 assert_eq!(euckr.whatwg_name(), Some("euc-kr")); // for the sake of compatibility
 let broken = &[0xbf, 0xec, 0xbf, 0xcd, 0xff, 0xbe, 0xd3];
 assert_eq!(euckr.decode(broken, DecoderTrap::Replace),
-           Ok("\uc6b0\uc640\ufffd\uc559".into_string()));
+           Ok("\u{c6b0}\u{c640}\u{fffd}\u{c559}".into_string()));
 
 // corresponding rust-encoding native API:
 assert_eq!(WINDOWS_949.decode(broken, DecoderTrap::Replace),
-           Ok("\uc6b0\uc640\ufffd\uc559".into_string()));
+           Ok("\u{c6b0}\u{c640}\u{fffd}\u{c559}".into_string()));
 ~~~~
 
 ## Detailed Usage

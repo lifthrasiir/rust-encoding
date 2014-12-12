@@ -364,6 +364,7 @@ pub type DecoderTrapFunc =
 
 /// Trap, which handles decoder errors.
 #[stable]
+#[deriving(Copy)]
 pub enum DecoderTrap {
     /// Immediately fails on errors.
     /// Corresponds to WHATWG "fatal" error algorithm.
@@ -385,7 +386,7 @@ impl DecoderTrap {
     fn trap(&self, decoder: &mut RawDecoder, input: &[u8], output: &mut StringWriter) -> bool {
         match *self {
             DecoderTrap::Strict     => false,
-            DecoderTrap::Replace    => { output.write_char('\ufffd'); true },
+            DecoderTrap::Replace    => { output.write_char('\u{fffd}'); true },
             DecoderTrap::Ignore     => true,
             DecoderTrap::Call(func) => func(decoder, input, output),
         }
@@ -393,6 +394,7 @@ impl DecoderTrap {
 }
 
 #[stable]
+#[deriving(Copy)]
 pub enum EncoderTrap {
     /// Immediately fails on errors.
     /// Corresponds to WHATWG "fatal" error algorithm.
@@ -485,7 +487,7 @@ mod tests {
         fn raw_feed(&mut self, input: &str,
                     output: &mut ByteWriter) -> (uint, Option<CodecError>) {
             for ((i,j), ch) in input.index_iter() {
-                if ch <= '\u007f' && ch != self.prohibit {
+                if ch <= '\u{7f}' && ch != self.prohibit {
                     if self.toggle && !self.prepend.is_empty() {
                         output.write_bytes(self.prepend.as_bytes());
                     }
@@ -518,27 +520,27 @@ mod tests {
     #[test]
     fn test_reencoding_trap_with_ascii_compatible_encoding() {
         static COMPAT: &'static MyEncoding =
-            &MyEncoding { flag: true, prohibit: '\u0080', prepend: "" };
+            &MyEncoding { flag: true, prohibit: '\u{80}', prepend: "" };
         static INCOMPAT: &'static MyEncoding =
-            &MyEncoding { flag: false, prohibit: '\u0080', prepend: "" };
+            &MyEncoding { flag: false, prohibit: '\u{80}', prepend: "" };
 
-        assert_eq!(COMPAT.encode("Hello\u203d I'm fine.", NcrEscape),
+        assert_eq!(COMPAT.encode("Hello\u{203d} I'm fine.", NcrEscape),
                    Ok(b"Hello&#8253; I'm fine.".to_vec()));
-        assert_eq!(INCOMPAT.encode("Hello\u203d I'm fine.", NcrEscape),
+        assert_eq!(INCOMPAT.encode("Hello\u{203d} I'm fine.", NcrEscape),
                    Ok(b"Hello&#8253; I'm fine.".to_vec()));
     }
 
     #[test]
     fn test_reencoding_trap_with_ascii_incompatible_encoding() {
         static COMPAT: &'static MyEncoding =
-            &MyEncoding { flag: true, prohibit: '\u0080', prepend: "*" };
+            &MyEncoding { flag: true, prohibit: '\u{80}', prepend: "*" };
         static INCOMPAT: &'static MyEncoding =
-            &MyEncoding { flag: false, prohibit: '\u0080', prepend: "*" };
+            &MyEncoding { flag: false, prohibit: '\u{80}', prepend: "*" };
 
         // this should behave incorrectly as the encoding broke the assumption.
-        assert_eq!(COMPAT.encode("Hello\u203d I'm fine.", NcrEscape),
+        assert_eq!(COMPAT.encode("Hello\u{203d} I'm fine.", NcrEscape),
                    Ok(b"He*l*l*o&#8253;* *I*'*m* *f*i*n*e.".to_vec()));
-        assert_eq!(INCOMPAT.encode("Hello\u203d I'm fine.", NcrEscape),
+        assert_eq!(INCOMPAT.encode("Hello\u{203d} I'm fine.", NcrEscape),
                    Ok(b"He*l*l*o*&*#*8*2*5*3*;* *I*'*m* *f*i*n*e.".to_vec()));
     }
 
@@ -548,6 +550,6 @@ mod tests {
         static FAIL: &'static MyEncoding = &MyEncoding { flag: false, prohibit: '&', prepend: "" };
 
         // this should fail as this contrived encoding does not support `&` at all
-        let _ = FAIL.encode("Hello\u203d I'm fine.", NcrEscape);
+        let _ = FAIL.encode("Hello\u{203d} I'm fine.", NcrEscape);
     }
 }

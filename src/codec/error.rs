@@ -8,7 +8,7 @@ use std::str;
 use types::*;
 
 /// An encoding that returns encoder/decoder error for every case.
-#[deriving(Clone)]
+#[deriving(Clone, Copy)]
 pub struct ErrorEncoding;
 
 impl Encoding for ErrorEncoding {
@@ -18,7 +18,7 @@ impl Encoding for ErrorEncoding {
 }
 
 /// An encoder that always returns error.
-#[deriving(Clone)]
+#[deriving(Clone, Copy)]
 pub struct ErrorEncoder;
 
 impl ErrorEncoder {
@@ -44,7 +44,7 @@ impl RawEncoder for ErrorEncoder {
 }
 
 /// A decoder that always returns error.
-#[deriving(Clone)]
+#[deriving(Clone, Copy)]
 pub struct ErrorDecoder;
 
 impl ErrorDecoder {
@@ -78,7 +78,7 @@ mod tests {
         assert_feed_err!(e, "", "A", "", []);
         assert_feed_err!(e, "", "B", "C", []);
         assert_feed_ok!(e, "", "", []);
-        assert_feed_err!(e, "", "\u00a0", "", []);
+        assert_feed_err!(e, "", "\u{a0}", "", []);
         assert_finish_ok!(e, []);
     }
 

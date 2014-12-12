@@ -143,7 +143,7 @@ macro_rules! stateful_decoder(
         #[allow(non_snake_case)]
         mod $stmod {
             pub use self::State::*;
-            #[deriving(PartialEq,Clone)]
+            #[deriving(PartialEq,Clone,Copy)]
             pub enum State {
                 $inist,
                 $(

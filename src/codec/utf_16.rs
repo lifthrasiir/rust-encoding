@@ -10,13 +10,13 @@ use types::*;
 /// An implementation type for little endian.
 ///
 /// Can be used as a type parameter to `UTF16Encoding`, `UTF16Encoder` and `UTF16Decoder`.
-#[deriving(Clone)]
+#[deriving(Clone, Copy)]
 pub struct Little;
 
 /// An implementation type for big endian.
 ///
 /// Can be used as a type parameter to `UTF16Encoding`, `UTF16Encoder` and `UTF16Decoder`.
-#[deriving(Clone)]
+#[deriving(Clone, Copy)]
 pub struct Big;
 
 /// An internal trait used to customize UTF-16 implementations.
@@ -68,7 +68,7 @@ impl Endian for Big {
  * This type is specialized with endianness type `E`,
  * which should be either `Little` (little endian) or `Big` (big endian).
  */
-#[deriving(Clone)]
+#[deriving(Clone, Copy)]
 pub struct UTF16Encoding<E>;
 
 /// UTF-16 in little endian.
@@ -91,7 +91,7 @@ impl<E:Endian+Clone+'static> Encoding for UTF16Encoding<E> {
  * This type is specialized with endianness type `E`,
  * which should be either `Little` (little endian) or `Big` (big endian).
  */
-#[deriving(Clone)]
+#[deriving(Clone, Copy)]
 pub struct UTF16Encoder<E>;
 
 impl<E:Endian+Clone+'static> UTF16Encoder<E> {
@@ -304,30 +304,30 @@ mod tests {
     #[test]
     fn test_encoder_valid() {
         let mut e = UTF_16BE.raw_encoder();
-        assert_feed_ok!(e, "\u0000\
-                            \u0001\u0002\u0004\u0008\
-                            \u0010\u0020\u0040\u0080\
-                            \u0100\u0200\u0400\u0800\
-                            \u1000\u2000\u4000\u8000\
-                            \uffff", "",
+        assert_feed_ok!(e, "\u{0}\
+                            \u{1}\u{02}\u{004}\u{0008}\
+                            \u{10}\u{020}\u{0040}\u{80}\
+                            \u{100}\u{0200}\u{400}\u{800}\
+                            \u{1000}\u{2000}\u{4000}\u{8000}\
+                            \u{ffff}", "",
                         [0x00, 0x00,
                          0x00, 0x01, 0x00, 0x02, 0x00, 0x04, 0x00, 0x08,
                          0x00, 0x10, 0x00, 0x20, 0x00, 0x40, 0x00, 0x80,
                          0x01, 0x00, 0x02, 0x00, 0x04, 0x00, 0x08, 0x00,
                          0x10, 0x00, 0x20, 0x00, 0x40, 0x00, 0x80, 0x00,
                          0xff, 0xff]);
-        assert_feed_ok!(e, "\U00010000\
-                            \U00010001\U00010002\
-                            \U00010004\U00010008\
-                            \U00010010\U00010020\
-                            \U00010040\U00010080\
-                            \U00010100\U00010200\
-                            \U00010400\U00010800\
-                            \U00011000\U00012000\
-                            \U00014000\U00018000\
-                            \U00020000\U00030000\
-                            \U00050000\U00090000\
-                            \U0010FFFF", "",
+        assert_feed_ok!(e, "\u{10000}\
+                            \u{10001}\u{010002}\
+                            \u{10004}\u{010008}\
+                            \u{10010}\u{010020}\
+                            \u{10040}\u{010080}\
+                            \u{10100}\u{010200}\
+                            \u{10400}\u{010800}\
+                            \u{11000}\u{012000}\
+                            \u{14000}\u{018000}\
+                            \u{20000}\u{030000}\
+                            \u{50000}\u{090000}\
+                            \u{10FFFF}", "",
                         [0xd8, 0x00, 0xdc, 0x00,
                          0xd8, 0x00, 0xdc, 0x01, 0xd8, 0x00, 0xdc, 0x02,
                          0xd8, 0x00, 0xdc, 0x04, 0xd8, 0x00, 0xdc, 0x08,
@@ -352,12 +352,12 @@ mod tests {
                             0x01, 0x00, 0x02, 0x00, 0x04, 0x00, 0x08, 0x00,
                             0x10, 0x00, 0x20, 0x00, 0x40, 0x00, 0x80, 0x00,
                             0xff, 0xff], [],
-                        "\u0000\
-                         \u0001\u0002\u0004\u0008\
-                         \u0010\u0020\u0040\u0080\
-                         \u0100\u0200\u0400\u0800\
-                         \u1000\u2000\u4000\u8000\
-                         \uffff");
+                        "\u{0}\
+                         \u{1}\u{02}\u{004}\u{0008}\
+                         \u{10}\u{020}\u{0040}\u{80}\
+                         \u{100}\u{0200}\u{400}\u{800}\
+                         \u{1000}\u{2000}\u{4000}\u{8000}\
+                         \u{ffff}");
         assert_feed_ok!(d, [0xd8, 0x00, 0xdc, 0x00,
                             0xd8, 0x00, 0xdc, 0x01, 0xd8, 0x00, 0xdc, 0x02,
                             0xd8, 0x00, 0xdc, 0x04, 0xd8, 0x00, 0xdc, 0x08,
@@ -370,18 +370,18 @@ mod tests {
                             0xd8, 0x40, 0xdc, 0x00, 0xd8, 0x80, 0xdc, 0x00,
                             0xd9, 0x00, 0xdc, 0x00, 0xda, 0x00, 0xdc, 0x00,
                             0xdb, 0xff, 0xdf, 0xff], [],
-                        "\U00010000\
-                         \U00010001\U00010002\
-                         \U00010004\U00010008\
-                         \U00010010\U00010020\
-                         \U00010040\U00010080\
-                         \U00010100\U00010200\
-                         \U00010400\U00010800\
-                         \U00011000\U00012000\
-                         \U00014000\U00018000\
-                         \U00020000\U00030000\
-                         \U00050000\U00090000\
-                         \U0010FFFF");
+                        "\u{10000}\
+                         \u{10001}\u{010002}\
+                         \u{10004}\u{010008}\
+                         \u{10010}\u{010020}\
+                         \u{10040}\u{010080}\
+                         \u{10100}\u{010200}\
+                         \u{10400}\u{010800}\
+                         \u{11000}\u{012000}\
+                         \u{14000}\u{018000}\
+                         \u{20000}\u{030000}\
+                         \u{50000}\u{090000}\
+                         \u{10FFFF}");
         assert_finish_ok!(d, "");
     }
 
@@ -389,15 +389,15 @@ mod tests {
     fn test_decoder_valid_partial_bmp() {
         let mut d = UTF_16BE.raw_decoder();
         assert_feed_ok!(d, [], [0x12], "");
-        assert_feed_ok!(d, [0x34], [], "\u1234");
+        assert_feed_ok!(d, [0x34], [], "\u{1234}");
         assert_feed_ok!(d, [], [0x56], "");
-        assert_feed_ok!(d, [0x78], [], "\u5678");
+        assert_feed_ok!(d, [0x78], [], "\u{5678}");
         assert_finish_ok!(d, "");
 
         let mut d = UTF_16BE.raw_decoder();
         assert_feed_ok!(d, [], [0x12], "");
-        assert_feed_ok!(d, [0x34], [0x56], "\u1234");
-        assert_feed_ok!(d, [0x78, 0xab, 0xcd], [], "\u5678\uabcd");
+        assert_feed_ok!(d, [0x34], [0x56], "\u{1234}");
+        assert_feed_ok!(d, [0x78, 0xab, 0xcd], [], "\u{5678}\u{abcd}");
         assert_finish_ok!(d, "");
     }
 
@@ -407,23 +407,23 @@ mod tests {
         assert_feed_ok!(d, [], [0xd8], "");
         assert_feed_ok!(d, [], [0x08], "");
         assert_feed_ok!(d, [], [0xdf], "");
-        assert_feed_ok!(d, [0x45], [0xd9], "\U00012345");
+        assert_feed_ok!(d, [0x45], [0xd9], "\u{12345}");
         assert_feed_ok!(d, [], [0x5e], "");
         assert_feed_ok!(d, [], [0xdc], "");
-        assert_feed_ok!(d, [0x90], [], "\U00067890");
+        assert_feed_ok!(d, [0x90], [], "\u{67890}");
         assert_finish_ok!(d, "");
 
         let mut d = UTF_16BE.raw_decoder();
         assert_feed_ok!(d, [], [0xd8], "");
         assert_feed_ok!(d, [], [0x08, 0xdf], "");
-        assert_feed_ok!(d, [0x45], [0xd9, 0x5e], "\U00012345");
-        assert_feed_ok!(d, [0xdc, 0x90], [], "\U00067890");
+        assert_feed_ok!(d, [0x45], [0xd9, 0x5e], "\u{12345}");
+        assert_feed_ok!(d, [0xdc, 0x90], [], "\u{67890}");
         assert_finish_ok!(d, "");
 
         let mut d = UTF_16BE.raw_decoder();
         assert_feed_ok!(d, [], [0xd8, 0x08, 0xdf], "");
-        assert_feed_ok!(d, [0x45], [0xd9, 0x5e, 0xdc], "\U00012345");
-        assert_feed_ok!(d, [0x90], [], "\U00067890");
+        assert_feed_ok!(d, [0x45], [0xd9, 0x5e, 0xdc], "\u{12345}");
+        assert_feed_ok!(d, [0x90], [], "\u{67890}");
         assert_finish_ok!(d, "");
     }
 
@@ -498,12 +498,12 @@ mod tests {
     fn test_decoder_invalid_lone_lower_surrogate() {
         let mut d = UTF_16BE.raw_decoder();
         assert_feed_err!(d, [], [0xdc, 0x00], [], "");
-        assert_feed_err!(d, [0x12, 0x34], [0xdc, 0x00], [0x56, 0x78], "\u1234");
+        assert_feed_err!(d, [0x12, 0x34], [0xdc, 0x00], [0x56, 0x78], "\u{1234}");
         assert_finish_ok!(d, "");
 
         let mut d = UTF_16BE.raw_decoder();
         assert_feed_err!(d, [], [0xdf, 0xff], [], "");
-        assert_feed_err!(d, [0x12, 0x34], [0xdf, 0xff], [0x56, 0x78], "\u1234");
+        assert_feed_err!(d, [0x12, 0x34], [0xdf, 0xff], [0x56, 0x78], "\u{1234}");
         assert_finish_ok!(d, "");
     }
 
@@ -512,13 +512,13 @@ mod tests {
         let mut d = UTF_16BE.raw_decoder();
         assert_feed_ok!(d, [], [0xdc], "");
         assert_feed_err!(d, [], [0x00], [], "");
-        assert_feed_ok!(d, [0x12, 0x34], [0xdc], "\u1234");
+        assert_feed_ok!(d, [0x12, 0x34], [0xdc], "\u{1234}");
         assert_feed_err!(d, [], [0x00], [0x56, 0x78], "");
         assert_finish_ok!(d, "");
 
         assert_feed_ok!(d, [], [0xdf], "");
         assert_feed_err!(d, [], [0xff], [], "");
-        assert_feed_ok!(d, [0x12, 0x34], [0xdf], "\u1234");
+        assert_feed_ok!(d, [0x12, 0x34], [0xdf], "\u{1234}");
         assert_feed_err!(d, [], [0xff], [0x56, 0x78], "");
         assert_finish_ok!(d, "");
     }
@@ -530,7 +530,7 @@ mod tests {
         assert_finish_err!(d, "");
 
         let mut d = UTF_16BE.raw_decoder();
-        assert_feed_ok!(d, [0x12, 0x34], [0x56], "\u1234");
+        assert_feed_ok!(d, [0x12, 0x34], [0x56], "\u{1234}");
         assert_finish_err!(d, "");
     }
 
@@ -541,7 +541,7 @@ mod tests {
         assert_finish_err!(d, "");
 
         let mut d = UTF_16BE.raw_decoder();
-        assert_feed_ok!(d, [0x12, 0x34], [0xd8, 0x00, 0xdc], "\u1234");
+        assert_feed_ok!(d, [0x12, 0x34], [0xd8, 0x00, 0xdc], "\u{1234}");
         assert_finish_err!(d, "");
     }
 
@@ -554,12 +554,12 @@ mod tests {
         assert_finish_err!(d, "");
 
         let mut d = UTF_16BE.raw_decoder();
-        assert_feed_ok!(d, [0x12, 0x34], [0xd8], "\u1234");
+        assert_feed_ok!(d, [0x12, 0x34], [0xd8], "\u{1234}");
         assert_feed_ok!(d, [], [0x00, 0xdc], "");
         assert_finish_err!(d, "");
 
         let mut d = UTF_16BE.raw_decoder();
-        assert_feed_ok!(d, [0x12, 0x34], [0xd8, 0x00], "\u1234");
+        assert_feed_ok!(d, [0x12, 0x34], [0xd8, 0x00], "\u{1234}");
         assert_feed_ok!(d, [], [0xdc], "");
         assert_finish_err!(d, "");
     }
@@ -567,19 +567,19 @@ mod tests {
     #[test]
     fn test_decoder_feed_after_finish() {
         let mut d = UTF_16BE.raw_decoder();
-        assert_feed_ok!(d, [0x12, 0x34], [0x12], "\u1234");
+        assert_feed_ok!(d, [0x12, 0x34], [0x12], "\u{1234}");
         assert_finish_err!(d, "");
-        assert_feed_ok!(d, [0x12, 0x34], [], "\u1234");
+        assert_feed_ok!(d, [0x12, 0x34], [], "\u{1234}");
         assert_finish_ok!(d, "");
 
         let mut d = UTF_16BE.raw_decoder();
-        assert_feed_ok!(d, [0xd8, 0x08, 0xdf, 0x45], [0xd8, 0x08, 0xdf], "\U00012345");
+        assert_feed_ok!(d, [0xd8, 0x08, 0xdf, 0x45], [0xd8, 0x08, 0xdf], "\u{12345}");
         assert_finish_err!(d, "");
-        assert_feed_ok!(d, [0xd8, 0x08, 0xdf, 0x45], [0xd8, 0x08], "\U00012345");
+        assert_feed_ok!(d, [0xd8, 0x08, 0xdf, 0x45], [0xd8, 0x08], "\u{12345}");
         assert_finish_err!(d, "");
-        assert_feed_ok!(d, [0xd8, 0x08, 0xdf, 0x45], [0xd8], "\U00012345");
+        assert_feed_ok!(d, [0xd8, 0x08, 0xdf, 0x45], [0xd8], "\u{12345}");
         assert_finish_err!(d, "");
-        assert_feed_ok!(d, [0xd8, 0x08, 0xdf, 0x45], [], "\U00012345");
+        assert_feed_ok!(d, [0xd8, 0x08, 0xdf, 0x45], [], "\u{12345}");
         assert_finish_ok!(d, "");
     }
 }
