@@ -51,10 +51,10 @@ impl RawEncoder for EUCJPEncoder {
 
         for ((i,j), ch) in input.index_iter() {
             match ch {
-                '\u0000'...'\u007f' => { output.write_byte(ch as u8); }
-                '\u00a5' => { output.write_byte(0x5c); }
-                '\u203e' => { output.write_byte(0x7e); }
-                '\uff61'...'\uff9f' => {
+                '\u{0}'...'\u{7f}' => { output.write_byte(ch as u8); }
+                '\u{a5}' => { output.write_byte(0x5c); }
+                '\u{203e}' => { output.write_byte(0x7e); }
+                '\u{ff61}'...'\u{ff9f}' => {
                     output.write_byte(0x8e);
                     output.write_byte((ch as uint - 0xff61 + 0xa1) as u8);
                 }
@@ -174,11 +174,11 @@ mod eucjp_tests {
         assert_feed_ok!(e, "A", "", [0x41]);
         assert_feed_ok!(e, "BC", "", [0x42, 0x43]);
         assert_feed_ok!(e, "", "", []);
-        assert_feed_ok!(e, "\u00a5", "", [0x5c]);
-        assert_feed_ok!(e, "\u203e", "", [0x7e]);
-        assert_feed_ok!(e, "\u306b\u307b\u3093", "", [0xa4, 0xcb, 0xa4, 0xdb, 0xa4, 0xf3]);
-        assert_feed_ok!(e, "\uff86\uff8e\uff9d", "", [0x8e, 0xc6, 0x8e, 0xce, 0x8e, 0xdd]);
-        assert_feed_ok!(e, "\u65e5\u672c", "", [0xc6, 0xfc, 0xcb, 0xdc]);
+        assert_feed_ok!(e, "\u{a5}", "", [0x5c]);
+        assert_feed_ok!(e, "\u{203e}", "", [0x7e]);
+        assert_feed_ok!(e, "\u{306b}\u{307b}\u{3093}", "", [0xa4, 0xcb, 0xa4, 0xdb, 0xa4, 0xf3]);
+        assert_feed_ok!(e, "\u{ff86}\u{ff8e}\u{ff9d}", "", [0x8e, 0xc6, 0x8e, 0xce, 0x8e, 0xdd]);
+        assert_feed_ok!(e, "\u{65e5}\u{672c}", "", [0xc6, 0xfc, 0xcb, 0xdc]);
         assert_finish_ok!(e, []);
     }
 
@@ -187,17 +187,17 @@ mod eucjp_tests {
         // these characters are double-mapped to both EUDC area and Shift_JIS extension area
         // but only the former should be used. (note that U+FFE2 is triple-mapped!)
         let mut e = EUCJPEncoding.raw_encoder();
-        assert_feed_ok!(e, "\u9ed1\u2170\uffe2", "", [0xfc, 0xee, 0xfc, 0xf1, 0xa2, 0xcc]);
+        assert_feed_ok!(e, "\u{9ed1}\u{2170}\u{ffe2}", "", [0xfc, 0xee, 0xfc, 0xf1, 0xa2, 0xcc]);
         assert_finish_ok!(e, []);
     }
 
     #[test]
     fn test_encoder_invalid() {
         let mut e = EUCJPEncoding.raw_encoder();
-        assert_feed_err!(e, "", "\uffff", "", []);
-        assert_feed_err!(e, "?", "\uffff", "!", [0x3f]);
+        assert_feed_err!(e, "", "\u{ffff}", "", []);
+        assert_feed_err!(e, "?", "\u{ffff}", "!", [0x3f]);
         // JIS X 0212 is not supported in the encoder
-        assert_feed_err!(e, "", "\u736c", "\u8c78", []);
+        assert_feed_err!(e, "", "\u{736c}", "\u{8c78}", []);
         assert_finish_ok!(e, []);
     }
 
@@ -209,10 +209,10 @@ mod eucjp_tests {
         assert_feed_ok!(d, [], [], "");
         assert_feed_ok!(d, [0x5c], [], "\\");
         assert_feed_ok!(d, [0x7e], [], "~");
-        assert_feed_ok!(d, [0xa4, 0xcb, 0xa4, 0xdb, 0xa4, 0xf3], [], "\u306b\u307b\u3093");
-        assert_feed_ok!(d, [0x8e, 0xc6, 0x8e, 0xce, 0x8e, 0xdd], [], "\uff86\uff8e\uff9d");
-        assert_feed_ok!(d, [0xc6, 0xfc, 0xcb, 0xdc], [], "\u65e5\u672c");
-        assert_feed_ok!(d, [0x8f, 0xcb, 0xc6, 0xec, 0xb8], [], "\u736c\u8c78");
+        assert_feed_ok!(d, [0xa4, 0xcb, 0xa4, 0xdb, 0xa4, 0xf3], [], "\u{306b}\u{307b}\u{3093}");
+        assert_feed_ok!(d, [0x8e, 0xc6, 0x8e, 0xce, 0x8e, 0xdd], [], "\u{ff86}\u{ff8e}\u{ff9d}");
+        assert_feed_ok!(d, [0xc6, 0xfc, 0xcb, 0xdc], [], "\u{65e5}\u{672c}");
+        assert_feed_ok!(d, [0x8f, 0xcb, 0xc6, 0xec, 0xb8], [], "\u{736c}\u{8c78}");
         assert_finish_ok!(d, "");
     }
 
@@ -220,22 +220,22 @@ mod eucjp_tests {
     fn test_decoder_valid_partial() {
         let mut d = EUCJPEncoding.raw_decoder();
         assert_feed_ok!(d, [], [0xa4], "");
-        assert_feed_ok!(d, [0xcb], [0xa4], "\u306b");
-        assert_feed_ok!(d, [0xdb], [0xa4], "\u307b");
-        assert_feed_ok!(d, [0xf3], [], "\u3093");
+        assert_feed_ok!(d, [0xcb], [0xa4], "\u{306b}");
+        assert_feed_ok!(d, [0xdb], [0xa4], "\u{307b}");
+        assert_feed_ok!(d, [0xf3], [], "\u{3093}");
         assert_feed_ok!(d, [], [0x8e], "");
-        assert_feed_ok!(d, [0xc6], [0x8e], "\uff86");
-        assert_feed_ok!(d, [0xce], [0x8e], "\uff8e");
-        assert_feed_ok!(d, [0xdd], [], "\uff9d");
+        assert_feed_ok!(d, [0xc6], [0x8e], "\u{ff86}");
+        assert_feed_ok!(d, [0xce], [0x8e], "\u{ff8e}");
+        assert_feed_ok!(d, [0xdd], [], "\u{ff9d}");
         assert_feed_ok!(d, [], [0xc6], "");
-        assert_feed_ok!(d, [0xfc], [0xcb], "\u65e5");
-        assert_feed_ok!(d, [0xdc], [], "\u672c");
+        assert_feed_ok!(d, [0xfc], [0xcb], "\u{65e5}");
+        assert_feed_ok!(d, [0xdc], [], "\u{672c}");
         assert_feed_ok!(d, [], [0x8f], "");
         assert_feed_ok!(d, [], [0xcb], "");
-        assert_feed_ok!(d, [0xc6], [0xec], "\u736c");
-        assert_feed_ok!(d, [0xb8], [], "\u8c78");
+        assert_feed_ok!(d, [0xc6], [0xec], "\u{736c}");
+        assert_feed_ok!(d, [0xb8], [], "\u{8c78}");
         assert_feed_ok!(d, [], [0x8f, 0xcb], "");
-        assert_feed_ok!(d, [0xc6, 0xec, 0xb8], [], "\u736c\u8c78");
+        assert_feed_ok!(d, [0xc6, 0xec, 0xb8], [], "\u{736c}\u{8c78}");
         assert_finish_ok!(d, "");
     }
 
@@ -377,9 +377,9 @@ mod eucjp_tests {
     #[test]
     fn test_decoder_feed_after_finish() {
         let mut d = EUCJPEncoding.raw_decoder();
-        assert_feed_ok!(d, [0xa4, 0xa2], [0xa4], "\u3042");
+        assert_feed_ok!(d, [0xa4, 0xa2], [0xa4], "\u{3042}");
         assert_finish_err!(d, "");
-        assert_feed_ok!(d, [0xa4, 0xa2], [], "\u3042");
+        assert_feed_ok!(d, [0xa4, 0xa2], [], "\u{3042}");
         assert_finish_ok!(d, "");
     }
 
@@ -444,10 +444,10 @@ impl RawEncoder for Windows31JEncoder {
 
         for ((i,j), ch) in input.index_iter() {
             match ch {
-                '\u0000'...'\u0080' => { output.write_byte(ch as u8); }
-                '\u00a5' => { output.write_byte(0x5c); }
-                '\u203e' => { output.write_byte(0x7e); }
-                '\uff61'...'\uff9f' => { output.write_byte((ch as uint - 0xff61 + 0xa1) as u8); }
+                '\u{0}'...'\u{80}' => { output.write_byte(ch as u8); }
+                '\u{a5}' => { output.write_byte(0x5c); }
+                '\u{203e}' => { output.write_byte(0x7e); }
+                '\u{ff61}'...'\u{ff9f}' => { output.write_byte((ch as uint - 0xff61 + 0xa1) as u8); }
                 _ => {
                     // corresponds to the "index shift_jis pointer" in the WHATWG spec
                     let ptr = index::jis0208::backward_remapped(ch as u32);
@@ -532,20 +532,20 @@ mod windows31j_tests {
         assert_feed_ok!(e, "A", "", [0x41]);
         assert_feed_ok!(e, "BC", "", [0x42, 0x43]);
         assert_feed_ok!(e, "", "", []);
-        assert_feed_ok!(e, "\u00a5", "", [0x5c]);
-        assert_feed_ok!(e, "\u203e", "", [0x7e]);
-        assert_feed_ok!(e, "\u306b\u307b\u3093", "", [0x82, 0xc9, 0x82, 0xd9, 0x82, 0xf1]);
-        assert_feed_ok!(e, "\uff86\uff8e\uff9d", "", [0xc6, 0xce, 0xdd]);
-        assert_feed_ok!(e, "\u65e5\u672c", "", [0x93, 0xfa, 0x96, 0x7b]);
+        assert_feed_ok!(e, "\u{a5}", "", [0x5c]);
+        assert_feed_ok!(e, "\u{203e}", "", [0x7e]);
+        assert_feed_ok!(e, "\u{306b}\u{307b}\u{3093}", "", [0x82, 0xc9, 0x82, 0xd9, 0x82, 0xf1]);
+        assert_feed_ok!(e, "\u{ff86}\u{ff8e}\u{ff9d}", "", [0xc6, 0xce, 0xdd]);
+        assert_feed_ok!(e, "\u{65e5}\u{672c}", "", [0x93, 0xfa, 0x96, 0x7b]);
         assert_finish_ok!(e, []);
     }
 
     #[test]
     fn test_encoder_no_eudc() {
         let mut e = Windows31JEncoding.raw_encoder();
-        assert_feed_err!(e, "", "\ue000", "", []);
-        assert_feed_err!(e, "", "\ue757", "", []);
-        assert_feed_err!(e, "", "\ue758", "", []);
+        assert_feed_err!(e, "", "\u{e000}", "", []);
+        assert_feed_err!(e, "", "\u{e757}", "", []);
+        assert_feed_err!(e, "", "\u{e758}", "", []);
         assert_finish_ok!(e, []);
     }
 
@@ -554,16 +554,16 @@ mod windows31j_tests {
         // these characters are double-mapped to both EUDC area and Shift_JIS extension area
         // but only the latter should be used. (note that U+FFE2 is triple-mapped!)
         let mut e = Windows31JEncoding.raw_encoder();
-        assert_feed_ok!(e, "\u9ed1\u2170\uffe2", "", [0xfc, 0x4b, 0xfa, 0x40, 0x81, 0xca]);
+        assert_feed_ok!(e, "\u{9ed1}\u{2170}\u{ffe2}", "", [0xfc, 0x4b, 0xfa, 0x40, 0x81, 0xca]);
         assert_finish_ok!(e, []);
     }
 
     #[test]
     fn test_encoder_invalid() {
         let mut e = Windows31JEncoding.raw_encoder();
-        assert_feed_err!(e, "", "\uffff", "", []);
-        assert_feed_err!(e, "?", "\uffff", "!", [0x3f]);
-        assert_feed_err!(e, "", "\u736c", "\u8c78", []);
+        assert_feed_err!(e, "", "\u{ffff}", "", []);
+        assert_feed_err!(e, "?", "\u{ffff}", "!", [0x3f]);
+        assert_feed_err!(e, "", "\u{736c}", "\u{8c78}", []);
         assert_finish_ok!(e, []);
     }
 
@@ -575,10 +575,10 @@ mod windows31j_tests {
         assert_feed_ok!(d, [], [], "");
         assert_feed_ok!(d, [0x5c], [], "\\");
         assert_feed_ok!(d, [0x7e], [], "~");
-        assert_feed_ok!(d, [0x80], [], "\u0080"); // compatibility
-        assert_feed_ok!(d, [0x82, 0xc9, 0x82, 0xd9, 0x82, 0xf1], [], "\u306b\u307b\u3093");
-        assert_feed_ok!(d, [0xc6, 0xce, 0xdd], [], "\uff86\uff8e\uff9d");
-        assert_feed_ok!(d, [0x93, 0xfa, 0x96, 0x7b], [], "\u65e5\u672c");
+        assert_feed_ok!(d, [0x80], [], "\u{80}"); // compatibility
+        assert_feed_ok!(d, [0x82, 0xc9, 0x82, 0xd9, 0x82, 0xf1], [], "\u{306b}\u{307b}\u{3093}");
+        assert_feed_ok!(d, [0xc6, 0xce, 0xdd], [], "\u{ff86}\u{ff8e}\u{ff9d}");
+        assert_feed_ok!(d, [0x93, 0xfa, 0x96, 0x7b], [], "\u{65e5}\u{672c}");
         assert_finish_ok!(d, "");
     }
 
@@ -586,8 +586,8 @@ mod windows31j_tests {
     fn test_decoder_eudc() {
         let mut d = Windows31JEncoding.raw_decoder();
         assert_feed_ok!(d, [], [0xf0], "");
-        assert_feed_ok!(d, [0x40], [], "\ue000");
-        assert_feed_ok!(d, [0xf9, 0xfc], [], "\ue757");
+        assert_feed_ok!(d, [0x40], [], "\u{e000}");
+        assert_feed_ok!(d, [0xf9, 0xfc], [], "\u{e757}");
         assert_feed_err!(d, [], [0xf0], [0x00], "");
         assert_feed_err!(d, [], [0xf0], [0xff], "");
         assert_finish_ok!(d, "");
@@ -674,9 +674,9 @@ mod windows31j_tests {
     #[test]
     fn test_decoder_feed_after_finish() {
         let mut d = Windows31JEncoding.raw_decoder();
-        assert_feed_ok!(d, [0x82, 0xa0], [0x82], "\u3042");
+        assert_feed_ok!(d, [0x82, 0xa0], [0x82], "\u{3042}");
         assert_finish_err!(d, "");
-        assert_feed_ok!(d, [0x82, 0xa0], [], "\u3042");
+        assert_feed_ok!(d, [0x82, 0xa0], [], "\u{3042}");
         assert_finish_ok!(d, "");
     }
 
@@ -759,10 +759,10 @@ impl RawEncoder for ISO2022JPEncoder {
 
         for ((i,j), ch) in input.index_iter() {
             match ch {
-                '\u0000'...'\u007f' => { ensure_ASCII!(); output.write_byte(ch as u8); }
-                '\u00a5' => { ensure_ASCII!(); output.write_byte(0x5c); }
-                '\u203e' => { ensure_ASCII!(); output.write_byte(0x7e); }
-                '\uff61'...'\uff9f' => {
+                '\u{0}'...'\u{7f}' => { ensure_ASCII!(); output.write_byte(ch as u8); }
+                '\u{a5}' => { ensure_ASCII!(); output.write_byte(0x5c); }
+                '\u{203e}' => { ensure_ASCII!(); output.write_byte(0x7e); }
+                '\u{ff61}'...'\u{ff9f}' => {
                     ensure_Katakana!();
                     output.write_byte((ch as uint - 0xff61 + 0x21) as u8);
                 }
@@ -933,12 +933,12 @@ mod iso2022jp_tests {
         assert_feed_ok!(e, "BC", "", [0x42, 0x43]);
         assert_feed_ok!(e, "\x1b\x24\x42", "", [0x1b, 0x24, 0x42]); // no round-trip guarantee
         assert_feed_ok!(e, "", "", []);
-        assert_feed_ok!(e, "\u00a5", "", [0x5c]);
-        assert_feed_ok!(e, "\u203e", "", [0x7e]);
-        assert_feed_ok!(e, "\u306b\u307b\u3093", "", [0x1b, 0x24, 0x42,
+        assert_feed_ok!(e, "\u{a5}", "", [0x5c]);
+        assert_feed_ok!(e, "\u{203e}", "", [0x7e]);
+        assert_feed_ok!(e, "\u{306b}\u{307b}\u{3093}", "", [0x1b, 0x24, 0x42,
                                                       0x24, 0x4b, 0x24, 0x5b, 0x24, 0x73]);
-        assert_feed_ok!(e, "\u65e5\u672c", "", [0x46, 0x7c, 0x4b, 0x5c]);
-        assert_feed_ok!(e, "\uff86\uff8e\uff9d", "", [0x1b, 0x28, 0x49,
+        assert_feed_ok!(e, "\u{65e5}\u{672c}", "", [0x46, 0x7c, 0x4b, 0x5c]);
+        assert_feed_ok!(e, "\u{ff86}\u{ff8e}\u{ff9d}", "", [0x1b, 0x28, 0x49,
                                                       0x46, 0x4e, 0x5d]);
         assert_feed_ok!(e, "XYZ", "", [0x1b, 0x28, 0x42,
                                        0x58, 0x59, 0x5a]);
@@ -951,8 +951,8 @@ mod iso2022jp_tests {
         // - D is omitted as the encoder does not support JIS X 0212.
         // a (3,2) De Bruijn near-sequence "ABCACBA" is used to test all possible cases.
         static AD: &'static str = "\x20";
-        static BD: &'static str = "\u30cd";
-        static CD: &'static str = "\uff88";
+        static BD: &'static str = "\u{30cd}";
+        static CD: &'static str = "\u{ff88}";
         static AE: &'static [u8] = &[0x1b, 0x28, 0x42, 0x20];
         static BE: &'static [u8] = &[0x1b, 0x24, 0x42, 0x25, 0x4d];
         static CE: &'static [u8] = &[0x1b, 0x28, 0x49, 0x48];
@@ -966,10 +966,10 @@ mod iso2022jp_tests {
     #[test]
     fn test_encoder_invalid() {
         let mut e = ISO2022JPEncoding.raw_encoder();
-        assert_feed_err!(e, "", "\uffff", "", []);
-        assert_feed_err!(e, "?", "\uffff", "!", [0x3f]);
+        assert_feed_err!(e, "", "\u{ffff}", "", []);
+        assert_feed_err!(e, "?", "\u{ffff}", "!", [0x3f]);
         // JIS X 0212 is not supported in the encoder
-        assert_feed_err!(e, "", "\u736c", "\u8c78", []);
+        assert_feed_err!(e, "", "\u{736c}", "\u{8c78}", []);
         assert_finish_ok!(e, []);
     }
 
@@ -986,31 +986,31 @@ mod iso2022jp_tests {
         assert_feed_ok!(d, [0x1b, 0x24, 0x42,
                             0x24, 0x4b,
                             0x1b, 0x24, 0x42,
-                            0x24, 0x5b, 0x24, 0x73], [], "\u306b\u307b\u3093");
-        assert_feed_ok!(d, [0x46, 0x7c, 0x4b, 0x5c], [], "\u65e5\u672c");
+                            0x24, 0x5b, 0x24, 0x73], [], "\u{306b}\u{307b}\u{3093}");
+        assert_feed_ok!(d, [0x46, 0x7c, 0x4b, 0x5c], [], "\u{65e5}\u{672c}");
         assert_feed_ok!(d, [0x1b, 0x28, 0x49,
-                            0x46, 0x4e, 0x5d], [], "\uff86\uff8e\uff9d");
+                            0x46, 0x4e, 0x5d], [], "\u{ff86}\u{ff8e}\u{ff9d}");
         assert_feed_ok!(d, [0x1b, 0x24, 0x28, 0x44,
                             0x4b, 0x46,
                             0x1b, 0x24, 0x40,
-                            0x6c, 0x38], [], "\u736c\u8c78");
+                            0x6c, 0x38], [], "\u{736c}\u{8c78}");
         assert_feed_ok!(d, [0x1b, 0x28, 0x42,
                             0x58, 0x59, 0x5a], [], "XYZ");
         assert_finish_ok!(d, "");
 
         let mut d = ISO2022JPEncoding.raw_decoder();
         assert_feed_ok!(d, [0x1b, 0x24, 0x42,
-                            0x24, 0x4b, 0x24, 0x5b, 0x24, 0x73], [], "\u306b\u307b\u3093");
+                            0x24, 0x4b, 0x24, 0x5b, 0x24, 0x73], [], "\u{306b}\u{307b}\u{3093}");
         assert_finish_ok!(d, "");
 
         let mut d = ISO2022JPEncoding.raw_decoder();
         assert_feed_ok!(d, [0x1b, 0x28, 0x49,
-                            0x46, 0x4e, 0x5d], [], "\uff86\uff8e\uff9d");
+                            0x46, 0x4e, 0x5d], [], "\u{ff86}\u{ff8e}\u{ff9d}");
         assert_finish_ok!(d, "");
 
         let mut d = ISO2022JPEncoding.raw_decoder();
         assert_feed_ok!(d, [0x1b, 0x24, 0x28, 0x44,
-                            0x4b, 0x46], [], "\u736c");
+                            0x4b, 0x46], [], "\u{736c}");
         assert_finish_ok!(d, "");
 
         // one ASCII character and three similarly looking characters:
@@ -1020,9 +1020,9 @@ mod iso2022jp_tests {
         // - D: U+793B CJK UNIFIED IDEOGRAPH-793B (requires JIS X 0212 Lead state)
         // a (4,2) De Bruijn sequence "AABBCCACBADDBDCDA" is used to test all possible cases.
         static AD: &'static str = "\x20";
-        static BD: &'static str = "\u30cd";
-        static CD: &'static str = "\uff88";
-        static DD: &'static str = "\u793b";
+        static BD: &'static str = "\u{30cd}";
+        static CD: &'static str = "\u{ff88}";
+        static DD: &'static str = "\u{793b}";
         static AE: &'static [u8] = &[0x1b, 0x28, 0x42,       0x20];
         static BE: &'static [u8] = &[0x1b, 0x24, 0x42,       0x25, 0x4d];
         static CE: &'static [u8] = &[0x1b, 0x28, 0x49,       0x48];
@@ -1048,23 +1048,23 @@ mod iso2022jp_tests {
         assert_feed_ok!(d, [], [0x1b], "");
         assert_feed_ok!(d, [], [0x24], "");
         assert_feed_ok!(d, [0x42], [0x24], "");
-        assert_feed_ok!(d, [0x4b], [0x1b, 0x24], "\u306b");
-        assert_feed_ok!(d, [0x42, 0x24, 0x5b], [], "\u307b");
+        assert_feed_ok!(d, [0x4b], [0x1b, 0x24], "\u{306b}");
+        assert_feed_ok!(d, [0x42, 0x24, 0x5b], [], "\u{307b}");
         assert_feed_ok!(d, [], [0x1b], "");
-        assert_feed_ok!(d, [0x24, 0x42, 0x24, 0x73], [], "\u3093");
+        assert_feed_ok!(d, [0x24, 0x42, 0x24, 0x73], [], "\u{3093}");
 
         assert_feed_ok!(d, [], [0x1b], "");
         assert_feed_ok!(d, [], [0x28], "");
-        assert_feed_ok!(d, [0x49, 0x46], [], "\uff86");
+        assert_feed_ok!(d, [0x49, 0x46], [], "\u{ff86}");
         assert_feed_ok!(d, [], [0x1b, 0x28], "");
-        assert_feed_ok!(d, [0x49, 0x4e], [0x1b], "\uff8e");
-        assert_feed_ok!(d, [0x28, 0x49, 0x5d], [], "\uff9d");
+        assert_feed_ok!(d, [0x49, 0x4e], [0x1b], "\u{ff8e}");
+        assert_feed_ok!(d, [0x28, 0x49, 0x5d], [], "\u{ff9d}");
 
         assert_feed_ok!(d, [], [0x1b, 0x24], "");
         assert_feed_ok!(d, [], [0x28], "");
         assert_feed_ok!(d, [0x44], [0x4b], "");
-        assert_feed_ok!(d, [0x46], [0x1b, 0x24, 0x28], "\u736c");
-        assert_feed_ok!(d, [0x44, 0x4b, 0x46], [], "\u736c");
+        assert_feed_ok!(d, [0x46], [0x1b, 0x24, 0x28], "\u{736c}");
+        assert_feed_ok!(d, [0x44, 0x4b, 0x46], [], "\u{736c}");
 
         assert_finish_ok!(d, "");
     }
@@ -1076,16 +1076,16 @@ mod iso2022jp_tests {
         assert_feed_ok!(d, [0x1b, 0x24, 0x42,
                             0x25, 0x4d,
                             0x0a,
-                            0x25, 0x4d], [], "\u30cd\n\x25\x4d");
+                            0x25, 0x4d], [], "\u{30cd}\n\x25\x4d");
         assert_feed_ok!(d, [0x1b, 0x24, 0x28, 0x44,
                             0x50, 0x4b,
                             0x0a,
-                            0x50, 0x4b], [], "\u793b\n\x50\x4b");
+                            0x50, 0x4b], [], "\u{793b}\n\x50\x4b");
         assert_finish_ok!(d, "");
 
         // other states don't allow CR
         let mut d = ISO2022JPEncoding.raw_decoder();
-        assert_feed_err!(d, [0x1b, 0x28, 0x49, 0x48], [0x0a], [], "\uff88"); // Katakana
+        assert_feed_err!(d, [0x1b, 0x28, 0x49, 0x48], [0x0a], [], "\u{ff88}"); // Katakana
         assert_feed_err!(d, [0x1b, 0x24, 0x42], [0x25, 0x0a], [], ""); // Trail
         assert_finish_ok!(d, "");
     }
@@ -1093,11 +1093,11 @@ mod iso2022jp_tests {
     #[test]
     fn test_decoder_invalid_partial() {
         let mut d = ISO2022JPEncoding.raw_decoder();
-        assert_feed_ok!(d, [0x1b, 0x24, 0x42, 0x24, 0x4b], [0x24], "\u306b");
+        assert_feed_ok!(d, [0x1b, 0x24, 0x42, 0x24, 0x4b], [0x24], "\u{306b}");
         assert_finish_err!(d, "");
 
         let mut d = ISO2022JPEncoding.raw_decoder();
-        assert_feed_ok!(d, [0x1b, 0x24, 0x28, 0x44, 0x4b, 0x46], [0x50], "\u736c");
+        assert_feed_ok!(d, [0x1b, 0x24, 0x28, 0x44, 0x4b, 0x46], [0x50], "\u{736c}");
         assert_finish_err!(d, "");
     }
 
@@ -1120,13 +1120,13 @@ mod iso2022jp_tests {
         assert_finish_err!(d, ""); // no backup
 
         assert_eq!(ISO2022JPEncoding.decode([0x1b][], DecodeReplace),
-                   Ok("\ufffd".to_string()));
+                   Ok("\u{fffd}".to_string()));
         assert_eq!(ISO2022JPEncoding.decode([0x1b, 0x24][], DecodeReplace),
-                   Ok("\ufffd".to_string()));
+                   Ok("\u{fffd}".to_string()));
         assert_eq!(ISO2022JPEncoding.decode([0x1b, 0x24, 0x28][], DecodeReplace),
-                   Ok("\ufffd\x28".to_string()));
+                   Ok("\u{fffd}\x28".to_string()));
         assert_eq!(ISO2022JPEncoding.decode([0x1b, 0x28][], DecodeReplace),
-                   Ok("\ufffd".to_string()));
+                   Ok("\u{fffd}".to_string()));
     }
 
     #[test]
@@ -1134,7 +1134,7 @@ mod iso2022jp_tests {
         // also tests allowed but never used escape codes in ISO 2022
         let mut d = ISO2022JPEncoding.raw_decoder();
         macro_rules! reset(() => (
-            assert_feed_ok!(d, [0x41, 0x42, 0x43, 0x1b, 0x24, 0x42, 0x21, 0x21], [], "ABC\u3000")))
+            assert_feed_ok!(d, [0x41, 0x42, 0x43, 0x1b, 0x24, 0x42, 0x21, 0x21], [], "ABC\u{3000}")))
 
         reset!()
         assert_feed_ok!(d, [], [0x1b], "");
@@ -1233,11 +1233,11 @@ mod iso2022jp_tests {
         let mut d = ISO2022JPEncoding.raw_decoder();
         assert_feed_ok!(d, [0x24, 0x22,
                             0x1b, 0x24, 0x42,
-                            0x24, 0x22], [0x24], "\x24\x22\u3042");
+                            0x24, 0x22], [0x24], "\x24\x22\u{3042}");
         assert_finish_err!(d, "");
         assert_feed_ok!(d, [0x24, 0x22,
                             0x1b, 0x24, 0x42,
-                            0x24, 0x22], [], "\x24\x22\u3042");
+                            0x24, 0x22], [], "\x24\x22\u{3042}");
         assert_finish_ok!(d, "");
     }
 

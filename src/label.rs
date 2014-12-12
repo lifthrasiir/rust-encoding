@@ -329,10 +329,10 @@ mod tests {
         assert!(encoding_from_whatwg_label("utf-8").is_some())
         assert!(encoding_from_whatwg_label("UTF-8").is_some())
         assert!(encoding_from_whatwg_label("\t\n\x0C\r utf-8\t\n\x0C\r ").is_some())
-        assert!(encoding_from_whatwg_label("\u00A0utf-8").is_none(),
+        assert!(encoding_from_whatwg_label("\u{A0}utf-8").is_none(),
                 "Non-ASCII whitespace should not be trimmed")
         assert!(encoding_from_whatwg_label("greek").is_some())
-        assert!(encoding_from_whatwg_label("gree\u212A").is_none(),
+        assert!(encoding_from_whatwg_label("gree\u{212A}").is_none(),
                 "Case-insensitive matching should be ASCII only. Kelvin sign does not match k.")
     }
 

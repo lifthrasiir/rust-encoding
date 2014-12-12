@@ -42,7 +42,7 @@ impl RawEncoder for SingleByteEncoder {
         output.writer_hint(input.len());
 
         for ((i,j), ch) in input.index_iter() {
-            if ch <= '\u007f' {
+            if ch <= '\u{7f}' {
                 output.write_byte(ch as u8);
                 continue;
             } else {
@@ -122,8 +122,8 @@ mod tests {
     #[test]
     fn test_encoder_non_bmp() {
         let mut e = ISO_8859_2.raw_encoder();
-        assert_feed_err!(e, "A", "\uFFFF", "B", [0x41]);
-        assert_feed_err!(e, "A", "\U00010000", "B", [0x41]);
+        assert_feed_err!(e, "A", "\u{FFFF}", "B", [0x41]);
+        assert_feed_err!(e, "A", "\u{10000}", "B", [0x41]);
     }
 }
 

@@ -112,8 +112,8 @@ mod tests {
         assert_feed_ok!(e, "A", "", [0x41]);
         assert_feed_ok!(e, "BC", "", [0x42, 0x43]);
         assert_feed_ok!(e, "", "", []);
-        assert_feed_err!(e, "", "\u00a0", "", []);
-        assert_feed_err!(e, "X", "\u00a0", "Z", [0x58]);
+        assert_feed_err!(e, "", "\u{a0}", "", []);
+        assert_feed_err!(e, "X", "\u{a0}", "Z", [0x58]);
         assert_finish_ok!(e, []);
     }
 

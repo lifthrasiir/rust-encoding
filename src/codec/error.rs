@@ -78,7 +78,7 @@ mod tests {
         assert_feed_err!(e, "", "A", "", []);
         assert_feed_err!(e, "", "B", "C", []);
         assert_feed_ok!(e, "", "", []);
-        assert_feed_err!(e, "", "\u00a0", "", []);
+        assert_feed_err!(e, "", "\u{a0}", "", []);
         assert_finish_ok!(e, []);
     }
 
