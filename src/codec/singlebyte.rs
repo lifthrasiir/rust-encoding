@@ -8,6 +8,7 @@ use util::{as_char, StrCharIndex};
 use types::*;
 
 /// A common framework for single-byte encodings based on ASCII.
+#[deriving(Copy)]
 pub struct SingleByteEncoding {
     pub name: &'static str,
     pub whatwg_name: Option<&'static str>,
@@ -23,7 +24,7 @@ impl Encoding for SingleByteEncoding {
 }
 
 /// An encoder for single-byte encodings based on ASCII.
-#[deriving(Clone)]
+#[deriving(Clone, Copy)]
 pub struct SingleByteEncoder {
     index_backward: extern "Rust" fn(u32) -> u8,
 }
@@ -65,7 +66,7 @@ impl RawEncoder for SingleByteEncoder {
 }
 
 /// A decoder for single-byte encodings based on ASCII.
-#[deriving(Clone)]
+#[deriving(Clone, Copy)]
 pub struct SingleByteDecoder {
     index_forward: extern "Rust" fn(u8) -> u16,
 }

@@ -24,7 +24,7 @@ use self::ISO2022JPState::{ASCII,Katakana,Lead};
  * the upper half of JIS X 0212 in G2 (`8E [A1-DF]`), and
  * JIS X 0212 in G3 (`8F [A1-FE] [A1-FE]`).
  */
-#[deriving(Clone)]
+#[deriving(Clone, Copy)]
 pub struct EUCJPEncoding;
 
 impl Encoding for EUCJPEncoding {
@@ -35,7 +35,7 @@ impl Encoding for EUCJPEncoding {
 }
 
 /// An encoder for EUC-JP with unused G3 character set.
-#[deriving(Clone)]
+#[deriving(Clone, Copy)]
 pub struct EUCJPEncoder;
 
 impl EUCJPEncoder {
@@ -83,7 +83,7 @@ impl RawEncoder for EUCJPEncoder {
 
 ascii_compatible_stateful_decoder! {
     #[doc="A decoder for EUC-JP with JIS X 0212 in G3."]
-    #[deriving(Clone)]
+    #[deriving(Clone, Copy)]
     struct EUCJP0212Decoder;
 
     module eucjp;
@@ -417,7 +417,7 @@ mod eucjp_tests {
  * It requires some cares to handle
  * since the second byte of JIS X 0208 can have its MSB unset.
  */
-#[deriving(Clone)]
+#[deriving(Clone, Copy)]
 pub struct Windows31JEncoding;
 
 impl Encoding for Windows31JEncoding {
@@ -428,7 +428,7 @@ impl Encoding for Windows31JEncoding {
 }
 
 /// An encoder for Shift_JIS with IBM/NEC extensions.
-#[deriving(Clone)]
+#[deriving(Clone, Copy)]
 pub struct Windows31JEncoder;
 
 impl Windows31JEncoder {
@@ -476,7 +476,7 @@ impl RawEncoder for Windows31JEncoder {
 
 ascii_compatible_stateful_decoder! {
     #[doc="A decoder for Shift_JIS with IBM/NEC extensions."]
-    #[deriving(Clone)]
+    #[deriving(Clone, Copy)]
     struct Windows31JDecoder;
 
     module windows31j;
@@ -712,7 +712,7 @@ mod windows31j_tests {
  *   but willfully violated)
  * - JIS X 0212-1990 (`ESC $ ( D`, XXX asymmetric support)
  */
-#[deriving(Clone)]
+#[deriving(Clone, Copy)]
 pub struct ISO2022JPEncoding;
 
 impl Encoding for ISO2022JPEncoding {
@@ -730,7 +730,7 @@ enum ISO2022JPState {
 }
 
 /// An encoder for ISO-2022-JP without JIS X 0212/0213 support.
-#[deriving(Clone)]
+#[deriving(Clone, Copy)]
 pub struct ISO2022JPEncoder {
     st: ISO2022JPState
 }
@@ -795,7 +795,7 @@ impl RawEncoder for ISO2022JPEncoder {
 
 stateful_decoder! {
     #[doc="A decoder for ISO-2022-JP with JIS X 0212 support."]
-    #[deriving(Clone)]
+    #[deriving(Clone, Copy)]
     struct ISO2022JPDecoder;
 
     module iso2022jp;

@@ -31,7 +31,7 @@ use types::*;
  * - Finally, GB 18030 added four-byte sequences to GBK for becoming a pan-Unicode encoding,
  *   while adding new characters to the (former) GBK region again.
  */
-#[deriving(Clone)]
+#[deriving(Clone, Copy)]
 pub struct GB18030Encoding;
 
 impl Encoding for GB18030Encoding {
@@ -42,7 +42,7 @@ impl Encoding for GB18030Encoding {
 }
 
 /// An encoder for GB 18030.
-#[deriving(Clone)]
+#[deriving(Clone, Copy)]
 pub struct GB18030Encoder;
 
 impl GB18030Encoder {
@@ -90,7 +90,7 @@ impl RawEncoder for GB18030Encoder {
 
 ascii_compatible_stateful_decoder! {
     #[doc="A decoder for GB 18030."]
-    #[deriving(Clone)]
+    #[deriving(Clone, Copy)]
     struct GB18030Decoder;
 
     module gb18030;
@@ -331,7 +331,7 @@ mod gb18030_tests {
  * they are equivalent to ISO-2022-CN escape sequences `ESC $ ) A` and `ESC ( B`.
  * Additional escape sequences `~~` (for a literal `~`) and `~\n` (ignored) are also supported.
  */
-#[deriving(Clone)]
+#[deriving(Clone, Copy)]
 pub struct HZEncoding;
 
 impl Encoding for HZEncoding {
@@ -342,7 +342,7 @@ impl Encoding for HZEncoding {
 }
 
 /// An encoder for HZ.
-#[deriving(Clone)]
+#[deriving(Clone, Copy)]
 pub struct HZEncoder {
     escaped: bool,
 }
@@ -406,7 +406,7 @@ impl RawEncoder for HZEncoder {
 
 stateful_decoder! {
     #[doc="A decoder for HZ."]
-    #[deriving(Clone)]
+    #[deriving(Clone, Copy)]
     struct HZDecoder;
 
     module hz;

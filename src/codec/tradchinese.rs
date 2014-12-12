@@ -22,7 +22,7 @@ use types::*;
  * This particular implementation of Big5 includes the widespread ETEN and HKSCS extensions,
  * but excludes less common extensions such as Big5+, Big-5E and Unicode-at-on.
  */
-#[deriving(Clone)]
+#[deriving(Clone, Copy)]
 pub struct BigFive2003Encoding;
 
 impl Encoding for BigFive2003Encoding {
@@ -33,7 +33,7 @@ impl Encoding for BigFive2003Encoding {
 }
 
 /// An encoder for Big5-2003.
-#[deriving(Clone)]
+#[deriving(Clone, Copy)]
 pub struct BigFive2003Encoder;
 
 impl BigFive2003Encoder {
@@ -75,7 +75,7 @@ impl RawEncoder for BigFive2003Encoder {
 
 ascii_compatible_stateful_decoder! {
     #[doc="A decoder for Big5-2003 with HKSCS-2008 extension."]
-    #[deriving(Clone)]
+    #[deriving(Clone, Copy)]
     struct BigFive2003HKSCS2008Decoder;
 
     module bigfive2003;
