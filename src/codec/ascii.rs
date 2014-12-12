@@ -101,10 +101,6 @@ mod tests {
     use super::ASCIIEncoding;
     use testutils;
     use types::*;
-    use types::DecoderTrap::Replace as DecodeReplace;
-    use types::DecoderTrap::Strict as DecodeStrict;
-    use types::EncoderTrap::Strict as EncodeStrict;
-    use types::EncoderTrap::Replace as EncodeReplace;
 
     #[test]
     fn test_encoder() {
@@ -133,7 +129,7 @@ mod tests {
         let s = testutils::ASCII_TEXT;
         bencher.bytes = s.len() as u64;
         bencher.iter(|| test::black_box({
-            ASCIIEncoding.encode(s, EncodeStrict)
+            ASCIIEncoding.encode(s, EncoderTrap::Strict)
         }))
     }
 
@@ -142,7 +138,7 @@ mod tests {
         let s = testutils::ASCII_TEXT.as_bytes();
         bencher.bytes = s.len() as u64;
         bencher.iter(|| test::black_box({
-            ASCIIEncoding.decode(s, DecodeStrict)
+            ASCIIEncoding.decode(s, DecoderTrap::Strict)
         }))
     }
 
@@ -151,7 +147,7 @@ mod tests {
         let s = testutils::KOREAN_TEXT;
         bencher.bytes = s.len() as u64;
         bencher.iter(|| test::black_box({
-            ASCIIEncoding.encode(s, EncodeReplace)
+            ASCIIEncoding.encode(s, EncoderTrap::Replace)
         }))
     }
 
@@ -160,7 +156,7 @@ mod tests {
         let s = testutils::KOREAN_TEXT.as_bytes();
         bencher.bytes = s.len() as u64;
         bencher.iter(|| test::black_box({
-            ASCIIEncoding.decode(s, DecodeReplace)
+            ASCIIEncoding.decode(s, DecoderTrap::Replace)
         }))
     }
 }

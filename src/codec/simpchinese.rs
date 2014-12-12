@@ -158,8 +158,6 @@ mod gb18030_tests {
     use super::GB18030Encoding;
     use testutils;
     use types::*;
-    use types::DecoderTrap::Strict as DecodeStrict;
-    use types::EncoderTrap::Strict as EncodeStrict;
 
     #[test]
     fn test_encoder_valid() {
@@ -307,17 +305,17 @@ mod gb18030_tests {
         let s = testutils::SIMPLIFIED_CHINESE_TEXT;
         bencher.bytes = s.len() as u64;
         bencher.iter(|| test::black_box({
-            GB18030Encoding.encode(s[], EncodeStrict)
+            GB18030Encoding.encode(s[], EncoderTrap::Strict)
         }))
     }
 
     #[bench]
     fn bench_decode_short_text(bencher: &mut test::Bencher) {
         let s = GB18030Encoding.encode(testutils::SIMPLIFIED_CHINESE_TEXT,
-                                       EncodeStrict).ok().unwrap();
+                                       EncoderTrap::Strict).ok().unwrap();
         bencher.bytes = s.len() as u64;
         bencher.iter(|| test::black_box({
-            GB18030Encoding.decode(s[], DecodeStrict)
+            GB18030Encoding.decode(s[], DecoderTrap::Strict)
         }))
     }
 }
@@ -481,8 +479,6 @@ mod hz_tests {
     use super::HZEncoding;
     use testutils;
     use types::*;
-    use types::DecoderTrap::Strict as DecodeStrict;
-    use types::EncoderTrap::Strict as EncodeStrict;
 
     #[test]
     fn test_encoder_valid() {
@@ -490,7 +486,8 @@ mod hz_tests {
         assert_feed_ok!(e, "A", "", b"A");
         assert_feed_ok!(e, "BC", "", b"BC");
         assert_feed_ok!(e, "", "", b"");
-        assert_feed_ok!(e, "\u{4e2d}\u{534e}\u{4eba}\u{6c11}\u{5171}\u{548c}\u{56fd}", "", b"~{VP;*HKCq92:M9z");
+        assert_feed_ok!(e, "\u{4e2d}\u{534e}\u{4eba}\u{6c11}\u{5171}\u{548c}\u{56fd}", "",
+                        b"~{VP;*HKCq92:M9z");
         assert_feed_ok!(e, "\u{ff21}\u{ff22}\u{ff23}", "", b"#A#B#C");
         assert_feed_ok!(e, "1\u{20ac}/m", "", b"~}1~{\"c~}/m");
         assert_feed_ok!(e, "~<\u{a4}~\u{0a4}>~", "", b"~~<~{!h~}~~~{!h~}>~~");
@@ -598,16 +595,17 @@ mod hz_tests {
         let s = testutils::SIMPLIFIED_CHINESE_TEXT;
         bencher.bytes = s.len() as u64;
         bencher.iter(|| test::black_box({
-            HZEncoding.encode(s[], EncodeStrict)
+            HZEncoding.encode(s[], EncoderTrap::Strict)
         }))
     }
 
     #[bench]
     fn bench_decode_short_text(bencher: &mut test::Bencher) {
-        let s = HZEncoding.encode(testutils::SIMPLIFIED_CHINESE_TEXT, EncodeStrict).ok().unwrap();
+        let s = HZEncoding.encode(testutils::SIMPLIFIED_CHINESE_TEXT,
+                                  EncoderTrap::Strict).ok().unwrap();
         bencher.bytes = s.len() as u64;
         bencher.iter(|| test::black_box({
-            HZEncoding.decode(s[], DecodeStrict)
+            HZEncoding.decode(s[], DecoderTrap::Strict)
         }))
     }
 }

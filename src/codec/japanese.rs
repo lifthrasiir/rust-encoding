@@ -165,8 +165,6 @@ mod eucjp_tests {
     use std::iter::range_inclusive;
     use testutils;
     use types::*;
-    use types::DecoderTrap::Strict as DecodeStrict;
-    use types::EncoderTrap::Strict as EncodeStrict;
 
     #[test]
     fn test_encoder_valid() {
@@ -388,16 +386,17 @@ mod eucjp_tests {
         let s = testutils::JAPANESE_TEXT;
         bencher.bytes = s.len() as u64;
         bencher.iter(|| test::black_box({
-            EUCJPEncoding.encode(s[], EncodeStrict)
+            EUCJPEncoding.encode(s[], EncoderTrap::Strict)
         }))
     }
 
     #[bench]
     fn bench_decode_short_text(bencher: &mut test::Bencher) {
-        let s = EUCJPEncoding.encode(testutils::JAPANESE_TEXT, EncodeStrict).ok().unwrap();
+        let s = EUCJPEncoding.encode(testutils::JAPANESE_TEXT,
+                                     EncoderTrap::Strict).ok().unwrap();
         bencher.bytes = s.len() as u64;
         bencher.iter(|| test::black_box({
-            EUCJPEncoding.decode(s[], DecodeStrict)
+            EUCJPEncoding.decode(s[], DecoderTrap::Strict)
         }))
     }
 }
@@ -523,8 +522,6 @@ mod windows31j_tests {
     use std::iter::range_inclusive;
     use testutils;
     use types::*;
-    use types::DecoderTrap::Strict as DecodeStrict;
-    use types::EncoderTrap::Strict as EncodeStrict;
 
     #[test]
     fn test_encoder_valid() {
@@ -685,16 +682,17 @@ mod windows31j_tests {
         let s = testutils::JAPANESE_TEXT;
         bencher.bytes = s.len() as u64;
         bencher.iter(|| test::black_box({
-            Windows31JEncoding.encode(s[], EncodeStrict)
+            Windows31JEncoding.encode(s[], EncoderTrap::Strict)
         }))
     }
 
     #[bench]
     fn bench_decode_short_text(bencher: &mut test::Bencher) {
-        let s = Windows31JEncoding.encode(testutils::JAPANESE_TEXT, EncodeStrict).ok().unwrap();
+        let s = Windows31JEncoding.encode(testutils::JAPANESE_TEXT,
+                                          EncoderTrap::Strict).ok().unwrap();
         bencher.bytes = s.len() as u64;
         bencher.iter(|| test::black_box({
-            Windows31JEncoding.decode(s[], DecodeStrict)
+            Windows31JEncoding.decode(s[], DecoderTrap::Strict)
         }))
     }
 }
@@ -922,9 +920,6 @@ mod iso2022jp_tests {
     use super::ISO2022JPEncoding;
     use testutils;
     use types::*;
-    use types::DecoderTrap::Replace as DecodeReplace;
-    use types::DecoderTrap::Strict as DecodeStrict;
-    use types::EncoderTrap::Strict as EncodeStrict;
 
     #[test]
     fn test_encoder_valid() {
@@ -936,10 +931,10 @@ mod iso2022jp_tests {
         assert_feed_ok!(e, "\u{a5}", "", [0x5c]);
         assert_feed_ok!(e, "\u{203e}", "", [0x7e]);
         assert_feed_ok!(e, "\u{306b}\u{307b}\u{3093}", "", [0x1b, 0x24, 0x42,
-                                                      0x24, 0x4b, 0x24, 0x5b, 0x24, 0x73]);
+                                                            0x24, 0x4b, 0x24, 0x5b, 0x24, 0x73]);
         assert_feed_ok!(e, "\u{65e5}\u{672c}", "", [0x46, 0x7c, 0x4b, 0x5c]);
         assert_feed_ok!(e, "\u{ff86}\u{ff8e}\u{ff9d}", "", [0x1b, 0x28, 0x49,
-                                                      0x46, 0x4e, 0x5d]);
+                                                            0x46, 0x4e, 0x5d]);
         assert_feed_ok!(e, "XYZ", "", [0x1b, 0x28, 0x42,
                                        0x58, 0x59, 0x5a]);
         assert_finish_ok!(e, []);
@@ -1119,13 +1114,13 @@ mod iso2022jp_tests {
         assert_feed_ok!(d, [], [0x1b, 0x28], "");
         assert_finish_err!(d, ""); // no backup
 
-        assert_eq!(ISO2022JPEncoding.decode([0x1b][], DecodeReplace),
+        assert_eq!(ISO2022JPEncoding.decode([0x1b][], DecoderTrap::Replace),
                    Ok("\u{fffd}".to_string()));
-        assert_eq!(ISO2022JPEncoding.decode([0x1b, 0x24][], DecodeReplace),
+        assert_eq!(ISO2022JPEncoding.decode([0x1b, 0x24][], DecoderTrap::Replace),
                    Ok("\u{fffd}".to_string()));
-        assert_eq!(ISO2022JPEncoding.decode([0x1b, 0x24, 0x28][], DecodeReplace),
+        assert_eq!(ISO2022JPEncoding.decode([0x1b, 0x24, 0x28][], DecoderTrap::Replace),
                    Ok("\u{fffd}\x28".to_string()));
-        assert_eq!(ISO2022JPEncoding.decode([0x1b, 0x28][], DecodeReplace),
+        assert_eq!(ISO2022JPEncoding.decode([0x1b, 0x28][], DecoderTrap::Replace),
                    Ok("\u{fffd}".to_string()));
     }
 
@@ -1134,7 +1129,9 @@ mod iso2022jp_tests {
         // also tests allowed but never used escape codes in ISO 2022
         let mut d = ISO2022JPEncoding.raw_decoder();
         macro_rules! reset(() => (
-            assert_feed_ok!(d, [0x41, 0x42, 0x43, 0x1b, 0x24, 0x42, 0x21, 0x21], [], "ABC\u{3000}")))
+            assert_feed_ok!(d, [0x41, 0x42, 0x43, 0x1b, 0x24, 0x42, 0x21, 0x21], [],
+                            "ABC\u{3000}")
+        ))
 
         reset!()
         assert_feed_ok!(d, [], [0x1b], "");
@@ -1246,16 +1243,17 @@ mod iso2022jp_tests {
         let s = testutils::JAPANESE_TEXT;
         bencher.bytes = s.len() as u64;
         bencher.iter(|| test::black_box({
-            ISO2022JPEncoding.encode(s[], EncodeStrict)
+            ISO2022JPEncoding.encode(s[], EncoderTrap::Strict)
         }))
     }
 
     #[bench]
     fn bench_decode_short_text(bencher: &mut test::Bencher) {
-        let s = ISO2022JPEncoding.encode(testutils::JAPANESE_TEXT, EncodeStrict).ok().unwrap();
+        let s = ISO2022JPEncoding.encode(testutils::JAPANESE_TEXT,
+                                         EncoderTrap::Strict).ok().unwrap();
         bencher.bytes = s.len() as u64;
         bencher.iter(|| test::black_box({
-            ISO2022JPEncoding.decode(s[], DecodeStrict)
+            ISO2022JPEncoding.decode(s[], DecoderTrap::Strict)
         }))
     }
 }

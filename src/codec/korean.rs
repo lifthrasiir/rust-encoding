@@ -125,8 +125,6 @@ mod windows949_tests {
     use std::iter::range_inclusive;
     use testutils;
     use types::*;
-    use types::DecoderTrap::Strict as DecodeStrict;
-    use types::EncoderTrap::Strict as EncodeStrict;
 
     #[test]
     fn test_encoder_valid() {
@@ -232,16 +230,17 @@ mod windows949_tests {
         let s = testutils::KOREAN_TEXT;
         bencher.bytes = s.len() as u64;
         bencher.iter(|| test::black_box({
-            Windows949Encoding.encode(s[], EncodeStrict)
+            Windows949Encoding.encode(s[], EncoderTrap::Strict)
         }))
     }
 
     #[bench]
     fn bench_decode_short_text(bencher: &mut test::Bencher) {
-        let s = Windows949Encoding.encode(testutils::KOREAN_TEXT, EncodeStrict).ok().unwrap();
+        let s = Windows949Encoding.encode(testutils::KOREAN_TEXT,
+                                          EncoderTrap::Strict).ok().unwrap();
         bencher.bytes = s.len() as u64;
         bencher.iter(|| test::black_box({
-            Windows949Encoding.decode(s[], DecodeStrict)
+            Windows949Encoding.decode(s[], DecoderTrap::Strict)
         }))
     }
 }

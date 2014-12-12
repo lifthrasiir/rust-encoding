@@ -125,8 +125,6 @@ mod bigfive2003_tests {
     use std::iter::range_inclusive;
     use testutils;
     use types::*;
-    use types::DecoderTrap::Strict as DecodeStrict;
-    use types::EncoderTrap::Strict as EncodeStrict;
 
     #[test]
     fn test_encoder_valid() {
@@ -165,7 +163,7 @@ mod bigfive2003_tests {
         assert_feed_ok!(d, [0xf9, 0xfe], [], "\u{ffed}");
         assert_feed_ok!(d, [0x87, 0x7e], [], "\u{3eec}"); // HKSCS-2008 addition
         assert_feed_ok!(d, [0x88, 0x62, 0x88, 0x64, 0x88, 0xa3, 0x88, 0xa5], [],
-                        "\u{ca}\u{304}\u{00ca}\u{30c}\u{ea}\u{304}\u{ea}\u{30c}"); // two-byte mappings
+                        "\u{ca}\u{304}\u{00ca}\u{30c}\u{ea}\u{304}\u{ea}\u{30c}"); // 2-byte output
         assert_finish_ok!(d, "");
     }
 
@@ -234,17 +232,17 @@ mod bigfive2003_tests {
         let s = testutils::TRADITIONAL_CHINESE_TEXT;
         bencher.bytes = s.len() as u64;
         bencher.iter(|| test::black_box({
-            BigFive2003Encoding.encode(s[], EncodeStrict)
+            BigFive2003Encoding.encode(s[], EncoderTrap::Strict)
         }))
     }
 
     #[bench]
     fn bench_decode_short_text(bencher: &mut test::Bencher) {
         let s = BigFive2003Encoding.encode(testutils::TRADITIONAL_CHINESE_TEXT,
-                                           EncodeStrict).ok().unwrap();
+                                           EncoderTrap::Strict).ok().unwrap();
         bencher.bytes = s.len() as u64;
         bencher.iter(|| test::black_box({
-            BigFive2003Encoding.decode(s[], DecodeStrict)
+            BigFive2003Encoding.decode(s[], DecoderTrap::Strict)
         }))
     }
 }

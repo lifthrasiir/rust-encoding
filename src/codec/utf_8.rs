@@ -1,5 +1,5 @@
 // This is a part of rust-encoding.
-// Copyright (c) 2013, Kang Seonghoon.
+// Copyright (c) 2013-2014, Kang Seonghoon.
 // See README.md and LICENSE.txt for details.
 //
 // Portions Copyright (c) 2008-2009 Bjoern Hoehrmann <bjoern@hoehrmann.de>
@@ -633,15 +633,13 @@ mod tests {
         use std::str;
         use testutils;
         use types::*;
-        use types::DecoderTrap::Strict as DecodeStrict;
-        use types::EncoderTrap::Strict as EncodeStrict;
 
         #[bench]
         fn bench_encode(bencher: &mut test::Bencher) {
             let s = testutils::ASCII_TEXT;
             bencher.bytes = s.len() as u64;
             bencher.iter(|| test::black_box({
-                UTF8Encoding.encode(s, EncodeStrict)
+                UTF8Encoding.encode(s, EncoderTrap::Strict)
             }))
         }
 
@@ -650,7 +648,7 @@ mod tests {
             let s = testutils::ASCII_TEXT.as_bytes();
             bencher.bytes = s.len() as u64;
             bencher.iter(|| test::black_box({
-                UTF8Encoding.decode(s, DecodeStrict)
+                UTF8Encoding.decode(s, DecoderTrap::Strict)
             }))
         }
 
@@ -690,15 +688,13 @@ mod tests {
         use std::str;
         use testutils;
         use types::*;
-        use types::DecoderTrap::Strict as DecodeStrict;
-        use types::EncoderTrap::Strict as EncodeStrict;
 
         #[bench]
         fn bench_encode(bencher: &mut test::Bencher) {
             let s = testutils::KOREAN_TEXT;
             bencher.bytes = s.len() as u64;
             bencher.iter(|| test::black_box({
-                UTF8Encoding.encode(s, EncodeStrict)
+                UTF8Encoding.encode(s, EncoderTrap::Strict)
             }))
         }
 
@@ -707,7 +703,7 @@ mod tests {
             let s = testutils::KOREAN_TEXT.as_bytes();
             bencher.bytes = s.len() as u64;
             bencher.iter(|| test::black_box({
-                UTF8Encoding.decode(s, DecodeStrict)
+                UTF8Encoding.decode(s, DecoderTrap::Strict)
             }))
         }
 
