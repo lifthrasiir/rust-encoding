@@ -255,7 +255,7 @@ def generate_multi_byte_index(crate, name):
             print >>f, '    ]'
         else:
             print >>f, '    dups = []'
-        print >>f, ')'
+        print >>f, ');'
 
     tablesz = 2 * (maxkey - minkey) + 2 * len(lower) + 2 * len(upper)
     if morebits: tablesz += 4 * ((maxkey - minkey + 31) // 32)
@@ -329,7 +329,7 @@ def generate_multi_byte_range_lbound_index(crate, name):
         print >>f, 'multi_byte_range_tests!('
         print >>f, '    key = %d .. %d, key < %d,' % (minkey, maxkey, keyubound)
         print >>f, '    value = %d .. %d, value < %d' % (minvalue, maxvalue, valueubound)
-        print >>f, ')'
+        print >>f, ');'
 
     return 8 * len(data)
 

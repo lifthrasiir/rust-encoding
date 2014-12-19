@@ -7,7 +7,7 @@
 // https://encoding.spec.whatwg.org/
 //
 // Identifier: fa9b1f3f5242df43e2e7bca80e9b6997c67944f20a4af91ee06bacc4e132d9c9
-// Date: 2014-09-15
+// Date: 2014-11-06
 
 static FORWARD_TABLE: &'static [u16] = &[
     128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142,

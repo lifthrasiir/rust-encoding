@@ -7,7 +7,7 @@
 // https://encoding.spec.whatwg.org/
 //
 // Identifier: cbaa91f3deb7d0841faf5c33041fc15a285da0e87e64ab802c4bf04b7c4da861
-// Date: 2014-09-15
+// Date: 2014-11-06
 
 static FORWARD_TABLE: &'static [u16] = &[
     12288, 12289, 12290, 65292, 65294, 12539, 65306, 65307, 65311, 65281,

@@ -1,6 +1,6 @@
 [package]
 name = "encoding-index-tradchinese"
-version = "1.0.20140915"
+version = "1.0.20141106"
 authors = ["Kang Seonghoon <public+rust@mearie.org>"]
 
 description = "Index tables for traditional Chinese character encodings"
@@ -14,5 +14,5 @@ path = "lib.rs"
 
 [dependencies.encoding_index_tests]
 # TODO consider using dev-dependencies instead
-version = "0.1.0"
+version = "0.1.1"
 path = "../tests"

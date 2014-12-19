@@ -49,22 +49,14 @@ impl RawEncoder for Windows949Encoder {
                 output.write_byte(ch as u8);
             } else {
                 let ptr = index::euc_kr::backward(ch as u32);
-                if ptr == 0xffff {
+                // XXX https://www.w3.org/Bugs/Public/show_bug.cgi?id=27675
+                if ptr == 0xffff || ch == '\u{fffd}' {
                     return (i, Some(CodecError {
                         upto: j as int, cause: "unrepresentable character".into_cow()
                     }));
-                } else if ptr < (26 + 26 + 126) * (0xc7 - 0x81) {
-                    let lead = ptr / (26 + 26 + 126) + 0x81;
-                    let trail = ptr % (26 + 26 + 126);
-                    let offset = if trail < 26 {0x41} else if trail < 26 + 26 {0x47} else {0x4d};
-                    output.write_byte(lead as u8);
-                    output.write_byte((trail + offset) as u8);
                 } else {
-                    let ptr = ptr - (26 + 26 + 126) * (0xc7 - 0x81);
-                    let lead = ptr / 94 + 0xc7;
-                    let trail = ptr % 94 + 0xa1;
-                    output.write_byte(lead as u8);
-                    output.write_byte(trail as u8);
+                    output.write_byte((ptr / 190 + 0x81) as u8);
+                    output.write_byte((ptr % 190 + 0x41) as u8);
                 }
             }
         }
@@ -89,14 +81,7 @@ ascii_compatible_stateful_decoder! {
         let lead = lead as uint;
         let trail = trail as uint;
         let index = match (lead, trail) {
-            (0x81...0xc6, 0x41...0x5a) =>
-                (26 + 26 + 126) * (lead - 0x81) + trail - 0x41,
-            (0x81...0xc6, 0x61...0x7a) =>
-                (26 + 26 + 126) * (lead - 0x81) + 26 + trail - 0x61,
-            (0x81...0xc6, 0x81...0xfe) =>
-                (26 + 26 + 126) * (lead - 0x81) + 26 + 26 + trail - 0x81,
-            (0xc7...0xfe, 0xa1...0xfe) =>
-                (26 + 26 + 126) * (0xc7 - 0x81) + (lead - 0xc7) * 94 + trail - 0xa1,
+            (0x81...0xfe, 0x41...0xfe) => (lead - 0x81) * 190 + (trail - 0x41),
             (_, _) => 0xffff,
         };
         index::euc_kr::forward(index as u16)
@@ -112,7 +97,11 @@ ascii_compatible_stateful_decoder! {
     // euc-kr lead != 0x00
     state S1(ctx, lead: u8) {
         case b => match map_two_bytes(lead, b) {
-            0xffff => ctx.backup_and_err(1, "invalid sequence"), // unconditional
+            // XXX https://www.w3.org/Bugs/Public/show_bug.cgi?id=27675
+            0xffff | 0xfffd => {
+                let backup = if b < 0x80 {1} else {0};
+                ctx.backup_and_err(backup, "invalid sequence")
+            },
             ch => ctx.emit(ch as u32)
         };
     }
@@ -143,6 +132,7 @@ mod windows949_tests {
         let mut e = Windows949Encoding.raw_encoder();
         assert_feed_err!(e, "", "\u{ffff}", "", []);
         assert_feed_err!(e, "?", "\u{ffff}", "!", [0x3f]);
+        assert_feed_err!(e, "?", "\u{fffd}", "!", [0x3f]); // for invalid table entries
         assert_finish_ok!(e, []);
     }
 
@@ -197,12 +187,28 @@ mod windows949_tests {
 
     #[test]
     fn test_decoder_invalid_lead_followed_by_invalid_trail() {
-        for i in range_inclusive(0x80u8, 0xff) {
+        // should behave similarly to Big5.
+        // https://www.w3.org/Bugs/Public/show_bug.cgi?id=16691
+        for i in range_inclusive(0x81u8, 0xfe) {
             let mut d = Windows949Encoding.raw_decoder();
-            assert_feed_err!(d, [], [i], [0x80], "");
-            assert_feed_err!(d, [], [i], [0xff], "");
+            assert_feed_err!(d, [], [i, 0x80], [0x20], "");
+            assert_feed_err!(d, [], [i, 0xff], [0x20], "");
+            assert_finish_ok!(d, "");
+
+            let mut d = Windows949Encoding.raw_decoder();
+            assert_feed_ok!(d, [], [i], "");
+            assert_feed_err!(d, [], [0x80], [0x20], "");
+            assert_feed_ok!(d, [], [i], "");
+            assert_feed_err!(d, [], [0xff], [0x20], "");
             assert_finish_ok!(d, "");
         }
+
+        let mut d = Windows949Encoding.raw_decoder();
+        assert_feed_err!(d, [], [0x80], [0x80], "");
+        assert_feed_err!(d, [], [0x80], [0xff], "");
+        assert_feed_err!(d, [], [0xff], [0x80], "");
+        assert_feed_err!(d, [], [0xff], [0xff], "");
+        assert_finish_ok!(d, "");
     }
 
     #[test]

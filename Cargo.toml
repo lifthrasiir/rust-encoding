@@ -1,13 +1,13 @@
 [package]
 name = "encoding"
-version = "0.2.7"
+version = "0.2.8"
 authors = ["Kang Seonghoon <public+rust@mearie.org>"]
 
 description = "Character encoding support for Rust"
 homepage = "https://github.com/lifthrasiir/rust-encoding"
 documentation = "https://lifthrasiir.github.io/rust-encoding/encoding/"
 repository = "https://github.com/lifthrasiir/rust-encoding"
-keywords = ["encoding"]
+keywords = ["encoding", "unicode", "charset"]
 readme = "README.md"
 license = "MIT"
 
@@ -15,22 +15,22 @@ license = "MIT"
 name = "encoding"
 
 [dependencies.encoding-index-singlebyte]
-version = "1.0.20140915"
+version = "1.0.20141106"
 path = "src/index/singlebyte"
 
 [dependencies.encoding-index-korean]
-version = "1.0.20140915"
+version = "1.1.20141106"
 path = "src/index/korean"
 
 [dependencies.encoding-index-japanese]
-version = "1.0.20140915"
+version = "1.0.20141106"
 path = "src/index/japanese"
 
 [dependencies.encoding-index-simpchinese]
-version = "1.0.20140915"
+version = "1.0.20141106"
 path = "src/index/simpchinese"
 
 [dependencies.encoding-index-tradchinese]
-version = "1.0.20140915"
+version = "1.0.20141106"
 path = "src/index/tradchinese"
 
