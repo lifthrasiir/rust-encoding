@@ -23,7 +23,7 @@ macro_rules! assert_feed_ok(
         assert!(output == buf[],
                 "raw_feed should push {}, but instead pushed {}", output, buf[]);
     })
-)
+);
 
 macro_rules! assert_feed_err(
     ($this:expr, $backup:expr, $processed:expr, $problem:expr, $remaining:expr, $output:expr) => ({
@@ -49,7 +49,7 @@ macro_rules! assert_feed_err(
     ($this:expr, $processed:expr, $problem:expr, $remaining:expr, $output:expr) => (
         assert_feed_err!($this, 0, $processed, $problem, $remaining, $output)
     )
-)
+);
 
 macro_rules! assert_finish_ok(
     ($this:expr, $output:expr) => ({
@@ -62,7 +62,7 @@ macro_rules! assert_finish_ok(
         assert!(output == buf[],
                 "raw_finish should push {}, but instead pushed {}", output, buf[]);
     })
-)
+);
 
 macro_rules! assert_finish_err(
     ($this:expr, $backup:expr, $output:expr) => ({
@@ -79,7 +79,7 @@ macro_rules! assert_finish_err(
     ($this:expr, $output:expr) => (
         assert_finish_err!($this, 0, $output)
     )
-)
+);
 
 /// Some ASCII-only text to test.
 //

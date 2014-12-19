@@ -44,7 +44,7 @@ macro_rules! single_byte_tests(
             }
         }
     );
-)
+);
 
 /// Makes a common test suite for multi-byte indices.
 #[macro_export]
@@ -135,7 +135,7 @@ macro_rules! multi_byte_tests(
             }
         }
     );
-)
+);
 
 /// Makes a common test suite for multi-byte range indices.
 #[macro_export]
@@ -203,5 +203,5 @@ macro_rules! multi_byte_range_tests(
             }
         }
     );
-)
+);
 

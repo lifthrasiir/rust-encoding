@@ -59,4 +59,4 @@ pub fn backward(code: u32) -> u8 {
 }
 
 #[cfg(test)]
-single_byte_tests!()
+single_byte_tests!();

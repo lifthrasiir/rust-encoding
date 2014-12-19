@@ -297,7 +297,7 @@ macro_rules! stateful_decoder(
             }
         }
     )
-)
+);
 
 /// Defines an ASCII-compatible stateful decoder from given state machine.
 macro_rules! ascii_compatible_stateful_decoder(
@@ -327,7 +327,7 @@ macro_rules! ascii_compatible_stateful_decoder(
                 $(case $($lhs)|+ => $($rhs),+;)+
                 final => $ctx.err("incomplete sequence");
             })*
-        )
+        );
     )
-)
+);
 

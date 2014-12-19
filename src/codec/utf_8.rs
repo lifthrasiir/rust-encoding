@@ -132,10 +132,10 @@ static ACCEPT_STATE: u8 = 0;
 static REJECT_STATE: u8 = 98;
 static REJECT_STATE_WITH_BACKUP: u8 = 86;
 
-macro_rules! is_reject_state(($state:expr) => ($state >= REJECT_STATE_WITH_BACKUP))
+macro_rules! is_reject_state(($state:expr) => ($state >= REJECT_STATE_WITH_BACKUP));
 macro_rules! next_state(($state:expr, $ch:expr) => (
     STATE_TRANSITIONS[($state + CHAR_CATEGORY[$ch as uint]) as uint]
-))
+));
 
 impl RawDecoder for UTF8Decoder {
     fn from_self(&self) -> Box<RawDecoder> { UTF8Decoder::new() }
@@ -214,7 +214,7 @@ pub fn from_utf8<'a>(input: &'a [u8]) -> Option<&'a str> {
     let mut iter = input.iter();
     let mut state;
 
-    macro_rules! return_as_whole(() => (return Some(unsafe {mem::transmute(input)})))
+    macro_rules! return_as_whole(() => (return Some(unsafe {mem::transmute(input)})));
 
     // optimization: if we are in the initial state, quickly skip to the first non-MSB-set byte.
     loop {
