@@ -110,7 +110,7 @@ def generate_single_byte_index(crate, name):
         print >>f, '}'
         print >>f
         print >>f, '#[cfg(test)]'
-        print >>f, 'single_byte_tests!()'
+        print >>f, 'single_byte_tests!();'
 
     return 2 * len(data) + len(lower) + 2 * len(upper)
 

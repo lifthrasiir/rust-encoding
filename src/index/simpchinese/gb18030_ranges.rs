@@ -89,4 +89,4 @@ pub fn backward(code: u32) -> u32 {
 multi_byte_range_tests!(
     key = 0 .. 189000, key < 1114112,
     value = 128 .. 65536, value < 1587600
-)
+);

@@ -747,13 +747,13 @@ impl RawEncoder for ISO2022JPEncoder {
         let mut st = self.st;
         macro_rules! ensure_ASCII(
             () => (if st != ASCII { output.write_bytes(b"\x1b(B"); st = ASCII; })
-        )
+        );
         macro_rules! ensure_Katakana(
             () => (if st != Katakana { output.write_bytes(b"\x1b(I"); st = Katakana; })
-        )
+        );
         macro_rules! ensure_Lead(
             () => (if st != Lead { output.write_bytes(b"\x1b$B"); st = Lead; })
-        )
+        );
 
         for ((i,j), ch) in input.index_iter() {
             match ch {
@@ -1131,79 +1131,79 @@ mod iso2022jp_tests {
         macro_rules! reset(() => (
             assert_feed_ok!(d, [0x41, 0x42, 0x43, 0x1b, 0x24, 0x42, 0x21, 0x21], [],
                             "ABC\u{3000}")
-        ))
+        ));
 
-        reset!()
+        reset!();
         assert_feed_ok!(d, [], [0x1b], "");
         assert_feed_err!(d, [], [], [0x00], "");
-        reset!()
+        reset!();
         assert_feed_err!(d, [], [0x1b], [0x0a], "");
-        reset!()
+        reset!();
         assert_feed_err!(d, [], [0x1b], [0x20], "");
-        reset!()
+        reset!();
         assert_feed_err!(d, [], [0x1b], [0x21, 0x5a], ""); // ESC ! Z (CZD)
-        reset!()
+        reset!();
         assert_feed_err!(d, [], [0x1b], [0x22, 0x5a], ""); // ESC " Z (C1D)
-        reset!()
+        reset!();
         assert_feed_err!(d, [], [0x1b], [0x24, 0x5a], ""); // ESC $ Z (GZDM4)
-        reset!()
+        reset!();
         assert_feed_ok!(d, [], [0x1b, 0x24], "");
         assert_feed_err!(d, -1, [], [], [0x24, 0x5a], "");
-        reset!()
+        reset!();
         assert_feed_err!(d, [], [0x1b], [0x24, 0x28, 0x5a], ""); // ESC $ ( Z (GZDM4)
-        reset!()
+        reset!();
         assert_feed_ok!(d, [], [0x1b, 0x24, 0x28], "");
         assert_feed_err!(d, -2, [], [], [0x24, 0x28, 0x5a], "");
-        reset!()
+        reset!();
         assert_feed_err!(d, [], [0x1b], [0x24, 0x29, 0x5a], ""); // ESC $ ) Z (G1DM4)
-        reset!()
+        reset!();
         assert_feed_err!(d, [], [0x1b], [0x24, 0x2a, 0x5a], ""); // ESC $ * Z (G2DM4)
-        reset!()
+        reset!();
         assert_feed_err!(d, [], [0x1b], [0x24, 0x2b, 0x5a], ""); // ESC $ + Z (G3DM4)
-        reset!()
+        reset!();
         assert_feed_err!(d, [], [0x1b], [0x24, 0x2d, 0x5a], ""); // ESC $ - Z (G1DM6)
-        reset!()
+        reset!();
         assert_feed_err!(d, [], [0x1b], [0x24, 0x2e, 0x5a], ""); // ESC $ . Z (G2DM6)
-        reset!()
+        reset!();
         assert_feed_err!(d, [], [0x1b], [0x24, 0x2f, 0x5a], ""); // ESC $ / Z (G3DM6)
-        reset!()
+        reset!();
         assert_feed_err!(d, [], [0x1b], [0x25, 0x5a], ""); // ESC % Z (DOCS)
-        reset!()
+        reset!();
         assert_feed_err!(d, [], [0x1b], [0x25, 0x2f, 0x5a], ""); // ESC % / Z (DOCS)
-        reset!()
+        reset!();
         assert_feed_err!(d, [], [0x1b], [0x28, 0x5a], ""); // ESC ( Z (GZD4)
-        reset!()
+        reset!();
         assert_feed_ok!(d, [], [0x1b, 0x28], "");
         assert_feed_err!(d, -1, [], [], [0x28, 0x5a], "");
-        reset!()
+        reset!();
         assert_feed_err!(d, [], [0x1b], [0x29, 0x5a], ""); // ESC ) Z (G1D4)
-        reset!()
+        reset!();
         assert_feed_err!(d, [], [0x1b], [0x2a, 0x5a], ""); // ESC * Z (G2D4)
-        reset!()
+        reset!();
         assert_feed_err!(d, [], [0x1b], [0x2b, 0x5a], ""); // ESC + Z (G3D4)
-        reset!()
+        reset!();
         assert_feed_err!(d, [], [0x1b], [0x2d, 0x5a], ""); // ESC - Z (G1D6)
-        reset!()
+        reset!();
         assert_feed_err!(d, [], [0x1b], [0x2e, 0x5a], ""); // ESC . Z (G2D6)
-        reset!()
+        reset!();
         assert_feed_err!(d, [], [0x1b], [0x2f, 0x5a], ""); // ESC / Z (G3D6)
-        reset!()
+        reset!();
         assert_feed_err!(d, [], [0x1b], [0x4e], ""); // ESC N (SS2)
-        reset!()
+        reset!();
         assert_feed_err!(d, [], [0x1b], [0x4f], ""); // ESC O (SS3)
-        reset!()
+        reset!();
         assert_feed_err!(d, [], [0x1b], [0x6e], ""); // ESC n (LS2)
-        reset!()
+        reset!();
         assert_feed_err!(d, [], [0x1b], [0x6f], ""); // ESC o (LS3)
-        reset!()
+        reset!();
         assert_feed_err!(d, [], [0x1b], [0x7c], ""); // ESC | (LS3R)
-        reset!()
+        reset!();
         assert_feed_err!(d, [], [0x1b], [0x7d], ""); // ESC } (LS2R)
-        reset!()
+        reset!();
         assert_feed_err!(d, [], [0x1b], [0x7e], ""); // ESC ~ (LS1R)
-        reset!()
+        reset!();
         assert_feed_err!(d, [], [0x1b], [0xff], "");
-        reset!()
+        reset!();
         assert_finish_ok!(d, "");
     }
 

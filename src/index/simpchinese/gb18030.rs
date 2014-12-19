@@ -4981,4 +4981,4 @@ multi_byte_tests!(
     dups = [
         6555,
     ]
-)
+);

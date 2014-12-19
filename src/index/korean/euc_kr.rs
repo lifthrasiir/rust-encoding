@@ -5101,4 +5101,4 @@ pub fn backward(code: u32) -> u16 {
 #[cfg(test)]
 multi_byte_tests!(
     dups = []
-)
+);

@@ -359,10 +359,10 @@ impl RawEncoder for HZEncoder {
         let mut escaped = self.escaped;
         macro_rules! ensure_escaped(
             () => (if !escaped { output.write_bytes(b"~{"); escaped = true; })
-        )
+        );
         macro_rules! ensure_unescaped(
             () => (if escaped { output.write_bytes(b"~}"); escaped = false; })
-        )
+        );
 
         for ((i,j), ch) in input.index_iter() {
             if ch < '\u{80}' {
