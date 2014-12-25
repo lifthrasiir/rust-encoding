@@ -1,18 +1,18 @@
-[Rust-encoding][doc]
-====================
+[Encoding][doc] 0.2.9
+=====================
 
-[![Rust-encoding on Travis CI][travis-image]][travis]
+[![Encoding on Travis CI][travis-image]][travis]
 
 [travis-image]: https://travis-ci.org/lifthrasiir/rust-encoding.png
 [travis]: https://travis-ci.org/lifthrasiir/rust-encoding
 
-Character encoding support for Rust.
+Character encoding support for Rust. (also known as `rust-encoding`)
 It is based on [WHATWG Encoding Standard](http://encoding.spec.whatwg.org/),
 and also provides an advanced interface for error detection and recovery.
 
 [Complete Documentation][doc]
 
-[doc]: https://lifthrasiir.github.io/rust-encoding/encoding/
+[doc]: https://lifthrasiir.github.io/rust-encoding/
 
 ## Simple Usage
 
@@ -101,14 +101,14 @@ let broken = &[0xbf, 0xec, 0xbf, 0xcd, 0xff, 0xbe, 0xd3];
 assert_eq!(euckr.decode(broken, DecoderTrap::Replace),
            Ok("\u{c6b0}\u{c640}\u{fffd}\u{c559}".to_string()));
 
-// corresponding rust-encoding native API:
+// corresponding Encoding native API:
 assert_eq!(WINDOWS_949.decode(broken, DecoderTrap::Replace),
            Ok("\u{c6b0}\u{c640}\u{fffd}\u{c559}".to_string()));
 ~~~~
 
 ## Detailed Usage
 
-There are three main entry points to rust-encoding.
+There are three main entry points to Encoding.
 
 **`Encoding`** is a single character encoding.
 It contains `encode` and `decode` methods for converting `String` to `Vec<u8>` and vice versa.
@@ -143,7 +143,7 @@ See the additional documents on `encoding::types` module for more information on
 
 ## Supported Encodings
 
-Rust-encoding covers all encodings specified by WHATWG Encoding Standard and some more:
+Encoding covers all encodings specified by WHATWG Encoding Standard and some more:
 
 * 7-bit strict ASCII (`ascii`)
 * UTF-8 (`utf-8`)

@@ -1,11 +1,11 @@
 [package]
 name = "encoding"
-version = "0.2.8"
+version = "0.2.9"
 authors = ["Kang Seonghoon <public+rust@mearie.org>"]
 
 description = "Character encoding support for Rust"
 homepage = "https://github.com/lifthrasiir/rust-encoding"
-documentation = "https://lifthrasiir.github.io/rust-encoding/encoding/"
+documentation = "https://lifthrasiir.github.io/rust-encoding/"
 repository = "https://github.com/lifthrasiir/rust-encoding"
 keywords = ["encoding", "unicode", "charset"]
 readme = "README.md"
