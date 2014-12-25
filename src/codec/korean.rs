@@ -49,8 +49,7 @@ impl RawEncoder for Windows949Encoder {
                 output.write_byte(ch as u8);
             } else {
                 let ptr = index::euc_kr::backward(ch as u32);
-                // XXX https://www.w3.org/Bugs/Public/show_bug.cgi?id=27675
-                if ptr == 0xffff || ch == '\u{fffd}' {
+                if ptr == 0xffff {
                     return (i, Some(CodecError {
                         upto: j as int, cause: "unrepresentable character".into_cow()
                     }));
@@ -97,8 +96,7 @@ ascii_compatible_stateful_decoder! {
     // euc-kr lead != 0x00
     state S1(ctx, lead: u8) {
         case b => match map_two_bytes(lead, b) {
-            // XXX https://www.w3.org/Bugs/Public/show_bug.cgi?id=27675
-            0xffff | 0xfffd => {
+            0xffff => {
                 let backup = if b < 0x80 {1} else {0};
                 ctx.backup_and_err(backup, "invalid sequence")
             },

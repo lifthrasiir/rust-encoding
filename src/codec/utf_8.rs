@@ -66,7 +66,7 @@ impl RawEncoder for UTF8Encoder {
 
     fn raw_feed(&mut self, input: &str, output: &mut ByteWriter) -> (uint, Option<CodecError>) {
         let input: &[u8] = input.as_bytes();
-        assert!(str::is_utf8(input));
+        assert!(str::from_utf8(input).is_ok());
         output.write_bytes(input);
         (input.len(), None)
     }
@@ -207,7 +207,7 @@ impl RawDecoder for UTF8Decoder {
     }
 }
 
-/// Equivalent to `std::str::from_utf8`.
+/// Almost equivalent to `std::str::from_utf8`.
 /// This function is provided for the fair benchmark against the stdlib's UTF-8 conversion
 /// functions, as rust-encoding always allocates a new string.
 pub fn from_utf8<'a>(input: &'a [u8]) -> Option<&'a str> {
@@ -618,13 +618,13 @@ mod tests {
     #[test]
     fn test_correct_from_utf8() {
         let s = testutils::ASCII_TEXT.as_bytes();
-        assert_eq!(from_utf8(s), str::from_utf8(s));
+        assert_eq!(from_utf8(s), str::from_utf8(s).ok());
 
         let s = testutils::KOREAN_TEXT.as_bytes();
-        assert_eq!(from_utf8(s), str::from_utf8(s));
+        assert_eq!(from_utf8(s), str::from_utf8(s).ok());
 
         let s = testutils::INVALID_UTF8_TEXT;
-        assert_eq!(from_utf8(s), str::from_utf8(s));
+        assert_eq!(from_utf8(s), str::from_utf8(s).ok());
     }
 
     mod bench_ascii {

@@ -48,7 +48,7 @@ use encoding::{Encoding, DecoderTrap};
 use encoding::all::ISO_8859_1;
 
 assert_eq!(ISO_8859_1.decode(&[99,97,102,233], DecoderTrap::Strict),
-           Ok("caf\u{e9}".into_string()));
+           Ok("caf\u{e9}".to_string()));
 ~~~~
 
 To decode a byte sequence with invalid sequences:
@@ -59,9 +59,9 @@ use encoding::all::ISO_8859_6;
 
 assert!(ISO_8859_6.decode(&[65,99,109,101,169], DecoderTrap::Strict).is_err());
 assert_eq!(ISO_8859_6.decode(&[65,99,109,101,169], DecoderTrap::Replace),
-           Ok("Acme\u{fffd}".into_string()));
+           Ok("Acme\u{fffd}".to_string()));
 assert_eq!(ISO_8859_6.decode(&[65,99,109,101,169], DecoderTrap::Ignore),
-           Ok("Acme".into_string()));
+           Ok("Acme".to_string()));
 ~~~~
 
 A practical example of custom encoder traps:
@@ -81,10 +81,10 @@ fn hex_ncr_escape(_encoder: &mut RawEncoder, input: &str, output: &mut ByteWrite
 }
 static HEX_NCR_ESCAPE: EncoderTrap = EncoderTrap::Call(hex_ncr_escape);
 
-let orig = "Hello, 世界!".into_string();
+let orig = "Hello, 世界!".to_string();
 let encoded = ASCII.encode(orig.as_slice(), HEX_NCR_ESCAPE).unwrap();
 assert_eq!(ASCII.decode(encoded.as_slice(), DecoderTrap::Strict),
-           Ok("Hello, &#x4e16;&#x754c;!".into_string()));
+           Ok("Hello, &#x4e16;&#x754c;!".to_string()));
 ~~~~
 
 Getting the encoding from the string label, as specified in WHATWG Encoding standard:
@@ -99,11 +99,11 @@ assert_eq!(euckr.name(), "windows-949");
 assert_eq!(euckr.whatwg_name(), Some("euc-kr")); // for the sake of compatibility
 let broken = &[0xbf, 0xec, 0xbf, 0xcd, 0xff, 0xbe, 0xd3];
 assert_eq!(euckr.decode(broken, DecoderTrap::Replace),
-           Ok("\u{c6b0}\u{c640}\u{fffd}\u{c559}".into_string()));
+           Ok("\u{c6b0}\u{c640}\u{fffd}\u{c559}".to_string()));
 
 // corresponding rust-encoding native API:
 assert_eq!(WINDOWS_949.decode(broken, DecoderTrap::Replace),
-           Ok("\u{c6b0}\u{c640}\u{fffd}\u{c559}".into_string()));
+           Ok("\u{c6b0}\u{c640}\u{fffd}\u{c559}".to_string()));
 ~~~~
 
 ## Detailed Usage
