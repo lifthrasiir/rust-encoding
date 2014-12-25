@@ -7,7 +7,7 @@
 // https://encoding.spec.whatwg.org/
 //
 // Identifier: cbaa91f3deb7d0841faf5c33041fc15a285da0e87e64ab802c4bf04b7c4da861
-// Date: 2014-11-06
+// Date: 2014-12-19
 
 static FORWARD_TABLE: &'static [u16] = &[
     12288, 12289, 12290, 65292, 65294, 12539, 65306, 65307, 65311, 65281,
@@ -3328,7 +3328,7 @@ pub fn backward_remapped(code: u32) -> u16 {
 
 #[cfg(test)]
 multi_byte_tests!(
-    remap = 8272 .. 8835,
+    remap = [8272, 8835],
     dups = [
         1207, 1208, 1209, 1212, 1213, 1214, 1217, 1218, 1219, 8644, 10716,
         10717, 10718, 10719, 10720, 10721, 10722, 10723, 10724, 10725, 10726,

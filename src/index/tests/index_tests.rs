@@ -8,7 +8,7 @@
 
 /// Makes a common test suite for single-byte indices.
 #[macro_export]
-macro_rules! single_byte_tests(
+macro_rules! single_byte_tests {
     () => (
         mod tests {
             extern crate test;
@@ -44,11 +44,11 @@ macro_rules! single_byte_tests(
             }
         }
     );
-);
+}
 
 /// Makes a common test suite for multi-byte indices.
 #[macro_export]
-macro_rules! multi_byte_tests(
+macro_rules! multi_byte_tests {
     (make shared tests and benches with dups = $dups:expr) => ( // internal macro
         #[test]
         fn test_correct_table() {
@@ -97,7 +97,7 @@ macro_rules! multi_byte_tests(
     );
 
     (
-        remap = $remap_min:expr .. $remap_max:expr,
+        remap = [$remap_min:expr, $remap_max:expr],
         dups = $dups:expr
     ) => (
         mod tests {
@@ -135,14 +135,14 @@ macro_rules! multi_byte_tests(
             }
         }
     );
-);
+}
 
 /// Makes a common test suite for multi-byte range indices.
 #[macro_export]
-macro_rules! multi_byte_range_tests(
+macro_rules! multi_byte_range_tests {
     (
-        key = $minkey:expr .. $maxkey:expr, key < $keyubound:expr,
-        value = $minvalue:expr .. $maxvalue:expr, value < $valueubound:expr
+        key = [$minkey:expr, $maxkey:expr], key < $keyubound:expr,
+        value = [$minvalue:expr, $maxvalue:expr], value < $valueubound:expr
     ) => (
         mod tests {
             extern crate test;
@@ -203,5 +203,5 @@ macro_rules! multi_byte_range_tests(
             }
         }
     );
-);
+}
 

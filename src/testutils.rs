@@ -158,7 +158,7 @@ pub static TRADITIONAL_CHINESE_TEXT: &'static str =
 //
 // Markus Kuhn's UTF-8 decoder capability and stress test.
 // http://www.cl.cam.ac.uk/~mgk25/ucs/examples/UTF-8-test.txt
-pub static INVALID_UTF8_TEXT: &'static [u8] = include_bin!("examples/UTF-8-test.txt");
+pub static INVALID_UTF8_TEXT: &'static [u8] = include_bytes!("examples/UTF-8-test.txt");
 
 /// Returns a longer text used for external data benchmarks.
 /// This can be overriden with an environment variable `EXTERNAL_BENCH_DATA`,
@@ -168,7 +168,7 @@ pub fn get_external_bench_data() -> Vec<u8> {
 
     // An HTML file derived from the Outer Space Treaty of 1967, in six available languages.
     // http://www.unoosa.org/oosa/SpaceLaw/outerspt.html
-    static LONGER_TEXT: &'static [u8] = include_bin!("examples/outer-space-treaty.html");
+    static LONGER_TEXT: &'static [u8] = include_bytes!("examples/outer-space-treaty.html");
 
     match os::getenv("EXTERNAL_BENCH_DATA") {
         Some(path) => {

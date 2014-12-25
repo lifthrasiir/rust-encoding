@@ -248,7 +248,7 @@ def generate_multi_byte_index(crate, name):
         print >>f, '#[cfg(test)]'
         print >>f, 'multi_byte_tests!('
         if remap:
-            print >>f, '    remap = %d .. %d,' % (REMAP_MIN, REMAP_MAX)
+            print >>f, '    remap = [%d, %d],' % (REMAP_MIN, REMAP_MAX)
         if dups:
             print >>f, '    dups = ['
             write_comma_separated(f, '        ', ['%d, ' % v for v in sorted(dups)])
@@ -327,8 +327,8 @@ def generate_multi_byte_range_lbound_index(crate, name):
         print >>f
         print >>f, '#[cfg(test)]'
         print >>f, 'multi_byte_range_tests!('
-        print >>f, '    key = %d .. %d, key < %d,' % (minkey, maxkey, keyubound)
-        print >>f, '    value = %d .. %d, value < %d' % (minvalue, maxvalue, valueubound)
+        print >>f, '    key = [%d, %d], key < %d,' % (minkey, maxkey, keyubound)
+        print >>f, '    value = [%d, %d], value < %d' % (minvalue, maxvalue, valueubound)
         print >>f, ');'
 
     return 8 * len(data)
