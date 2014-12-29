@@ -12,7 +12,7 @@ use types::EncodingRef;
 /// Implements "get an encoding" algorithm: http://encoding.spec.whatwg.org/#decode
 #[stable]
 pub fn encoding_from_whatwg_label(label: &str) -> Option<EncodingRef> {
-    match label.trim_chars([' ', '\n', '\r', '\t', '\x0C'][]).to_ascii_lower()[] {
+    match label.trim_chars([' ', '\n', '\r', '\t', '\x0C'][]).to_ascii_lowercase()[] {
         "unicode-1-1-utf-8" |
         "utf-8" |
         "utf8" =>
