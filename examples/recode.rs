@@ -1,5 +1,5 @@
 // This is a part of rust-encoding.
-// Copyright (c) 2014, Kang Seonghoon.
+// Copyright (c) 2014-2015, Kang Seonghoon.
 // See README.md and LICENSE.txt for details.
 
 extern crate encoding;
@@ -62,7 +62,7 @@ fn main() {
         Some(s) => panic!("invalid error policy {}", s),
     };
 
-    let mut input = match matches.free.head().map(|s| s.as_slice()) {
+    let mut input = match matches.free.first().map(|s| s.as_slice()) {
         Some("-") | None => box io::stdin() as Box<Reader>,
         Some(f) => box io::File::open(&Path::new(f)) as Box<Reader>,
     };

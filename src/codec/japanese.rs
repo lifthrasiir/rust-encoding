@@ -1,5 +1,5 @@
 // This is a part of rust-encoding.
-// Copyright (c) 2013-2014, Kang Seonghoon.
+// Copyright (c) 2013-2015, Kang Seonghoon.
 // See README.md and LICENSE.txt for details.
 
 //! Legacy Japanese encodings based on JIS X 0208 and JIS X 0212.
@@ -952,8 +952,8 @@ mod iso2022jp_tests {
         static BE: &'static [u8] = &[0x1b, 0x24, 0x42, 0x25, 0x4d];
         static CE: &'static [u8] = &[0x1b, 0x28, 0x49, 0x48];
         let mut e = ISO2022JPEncoding.raw_encoder();
-        let decoded = ["\x20",   BD, CD, AD, CD, BD, AD].concat();
-        let encoded = [[0x20][], BE, CE, AE, CE, BE, AE].concat_vec();
+        let decoded: String = ["\x20",   BD, CD, AD, CD, BD, AD].concat();
+        let encoded: Vec<_> = [[0x20][], BE, CE, AE, CE, BE, AE].concat();
         assert_feed_ok!(e, decoded[], "", encoded[]);
         assert_finish_ok!(e, []);
     }
@@ -1023,8 +1023,8 @@ mod iso2022jp_tests {
         static CE: &'static [u8] = &[0x1b, 0x28, 0x49,       0x48];
         static DE: &'static [u8] = &[0x1b, 0x24, 0x28, 0x44, 0x50, 0x4b];
         let mut d = ISO2022JPEncoding.raw_decoder();
-        let decoded = ["\x20",  AD,BD,BD,CD,CD,AD,CD,BD,AD,DD,DD,BD,DD,CD,DD,AD].concat();
-        let encoded = [[0x20][],AE,BE,BE,CE,CE,AE,CE,BE,AE,DE,DE,BE,DE,CE,DE,AE].concat_vec();
+        let decoded: String = ["\x20",  AD,BD,BD,CD,CD,AD,CD,BD,AD,DD,DD,BD,DD,CD,DD,AD].concat();
+        let encoded: Vec<_> = [[0x20][],AE,BE,BE,CE,CE,AE,CE,BE,AE,DE,DE,BE,DE,CE,DE,AE].concat();
         assert_feed_ok!(d, encoded[], [], decoded[]);
         assert_finish_ok!(d, "");
     }

@@ -1,10 +1,10 @@
 // This is a part of rust-encoding.
-// Copyright (c) 2013-2014, Kang Seonghoon.
+// Copyright (c) 2013-2015, Kang Seonghoon.
 // See README.md and LICENSE.txt for details.
 
 /*!
 
-# Encoding 0.2.11
+# Encoding 0.2.12
 
 Character encoding support for Rust. (also known as `rust-encoding`)
 It is based on [WHATWG Encoding Standard](http://encoding.spec.whatwg.org/),

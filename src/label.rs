@@ -1,5 +1,5 @@
 // This is a part of rust-encoding.
-// Copyright (c) 2013-2014, Kang Seonghoon.
+// Copyright (c) 2013-2015, Kang Seonghoon.
 // See README.md and LICENSE.txt for details.
 
 //! An interface for retrieving an encoding (or a set of encodings) from a string/numeric label.
@@ -12,7 +12,7 @@ use types::EncodingRef;
 /// Implements "get an encoding" algorithm: http://encoding.spec.whatwg.org/#decode
 #[stable]
 pub fn encoding_from_whatwg_label(label: &str) -> Option<EncodingRef> {
-    match label.trim_chars([' ', '\n', '\r', '\t', '\x0C'][]).to_ascii_lowercase()[] {
+    match label.trim_matches([' ', '\n', '\r', '\t', '\x0C'][]).to_ascii_lowercase()[] {
         "unicode-1-1-utf-8" |
         "utf-8" |
         "utf8" =>
