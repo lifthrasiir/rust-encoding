@@ -4,6 +4,7 @@
 
 //! Legacy simplified Chinese encodings based on GB 2312 and GB 18030.
 
+use std::borrow::IntoCow;
 use util::StrCharIndex;
 use index_simpchinese as index;
 use types::*;

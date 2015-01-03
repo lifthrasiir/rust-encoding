@@ -7,6 +7,7 @@
 #![macro_escape]
 
 use std::{str, mem};
+use std::borrow::IntoCow;
 use std::default::Default;
 use types;
 

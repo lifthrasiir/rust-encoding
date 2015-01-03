@@ -4,6 +4,7 @@
 
 //! Common codec implementation for single-byte encodings.
 
+use std::borrow::IntoCow;
 use util::{as_char, StrCharIndex};
 use types::*;
 

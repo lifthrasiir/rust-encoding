@@ -4,6 +4,7 @@
 
 //! Legacy Japanese encodings based on JIS X 0208 and JIS X 0212.
 
+use std::borrow::IntoCow;
 use util::StrCharIndex;
 use index_japanese as index;
 use types::*;

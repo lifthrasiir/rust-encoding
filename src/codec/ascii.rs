@@ -5,6 +5,7 @@
 //! 7-bit ASCII encoding.
 
 use std::{str, mem};
+use std::borrow::IntoCow;
 use types::*;
 
 /**

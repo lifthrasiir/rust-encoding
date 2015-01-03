@@ -4,6 +4,7 @@
 
 //! Legacy traditional Chinese encodings.
 
+use std::borrow::IntoCow;
 use util::StrCharIndex;
 use index_tradchinese as index;
 use types::*;

@@ -471,6 +471,7 @@ mod tests {
     use super::*;
     use super::EncoderTrap::NcrEscape;
     use util::StrCharIndex;
+    use std::borrow::IntoCow;
 
     // a contrived encoding example: same as ASCII, but inserts `prepend` between each character
     // within two "e"s (so that `widespread` becomes `wide*s*p*r*ead` and `eeeeasel` becomes

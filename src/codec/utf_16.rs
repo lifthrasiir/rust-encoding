@@ -4,6 +4,7 @@
 
 //! UTF-16.
 
+use std::borrow::IntoCow;
 use util::{as_char, StrCharIndex};
 use types::*;
 

@@ -5,6 +5,7 @@
 //! A placeholder encoding that returns encoder/decoder error for every case.
 
 use std::str;
+use std::borrow::IntoCow;
 use types::*;
 
 /// An encoding that returns encoder/decoder error for every case.
