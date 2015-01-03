@@ -20,7 +20,7 @@ use types::*;
  * Its design strongly resembles that of Shift_JIS but less prone to errors
  * since the set of MSB-unset second bytes is much limited compared to Shift_JIS.
  */
-#[deriving(Clone, Copy)]
+#[derive(Clone, Copy)]
 pub struct Windows949Encoding;
 
 impl Encoding for Windows949Encoding {
@@ -31,7 +31,7 @@ impl Encoding for Windows949Encoding {
 }
 
 /// An encoder for Windows code page 949.
-#[deriving(Clone, Copy)]
+#[derive(Clone, Copy)]
 pub struct Windows949Encoder;
 
 impl Windows949Encoder {
@@ -70,7 +70,7 @@ impl RawEncoder for Windows949Encoder {
 
 ascii_compatible_stateful_decoder! {
     #[doc="A decoder for Windows code page 949."]
-    #[deriving(Clone, Copy)]
+    #[derive(Clone, Copy)]
     struct Windows949Decoder;
 
     module windows949;

@@ -43,7 +43,7 @@ use types::*;
  * The UTF-8 scanner used by this module is heavily based on Bjoern Hoehrmann's
  * [Flexible and Economical UTF-8 Decoder](http://bjoern.hoehrmann.de/utf-8/decoder/dfa/).
  */
-#[deriving(Clone, Copy)]
+#[derive(Clone, Copy)]
 pub struct UTF8Encoding;
 
 impl Encoding for UTF8Encoding {
@@ -54,7 +54,7 @@ impl Encoding for UTF8Encoding {
 }
 
 /// An encoder for UTF-8.
-#[deriving(Clone, Copy)]
+#[derive(Clone, Copy)]
 pub struct UTF8Encoder;
 
 impl UTF8Encoder {
@@ -78,7 +78,7 @@ impl RawEncoder for UTF8Encoder {
 }
 
 /// A decoder for UTF-8.
-#[deriving(Clone, Copy)]
+#[derive(Clone, Copy)]
 pub struct UTF8Decoder {
     queuelen: uint,
     queue: [u8; 4],
