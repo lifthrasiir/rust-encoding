@@ -9,6 +9,7 @@
 use std::{str, mem};
 use std::borrow::IntoCow;
 use std::default::Default;
+use std::num::ToPrimitive;
 use types;
 
 /// Unchecked conversion to `char`.
