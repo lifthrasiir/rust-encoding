@@ -364,7 +364,7 @@ pub type DecoderTrapFunc =
 
 /// Trap, which handles decoder errors.
 #[stable]
-#[deriving(Copy)]
+#[derive(Copy)]
 pub enum DecoderTrap {
     /// Immediately fails on errors.
     /// Corresponds to WHATWG "fatal" error algorithm.
@@ -394,7 +394,7 @@ impl DecoderTrap {
 }
 
 #[stable]
-#[deriving(Copy)]
+#[derive(Copy)]
 pub enum EncoderTrap {
     /// Immediately fails on errors.
     /// Corresponds to WHATWG "fatal" error algorithm.
@@ -468,6 +468,7 @@ pub fn decode(input: &[u8], trap: DecoderTrap, fallback_encoding: EncodingRef)
 
 #[cfg(test)]
 mod tests {
+    use std::borrow::IntoCow;
     use super::*;
     use super::EncoderTrap::NcrEscape;
     use util::StrCharIndex;
