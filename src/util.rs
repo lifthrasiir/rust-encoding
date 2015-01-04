@@ -23,7 +23,9 @@ pub struct StrCharIndexIterator<'r> {
     string: &'r str,
 }
 
-impl<'r> Iterator<((uint,uint), char)> for StrCharIndexIterator<'r> {
+impl<'r> Iterator for StrCharIndexIterator<'r> {
+    type Item = ((uint,uint), char);
+
     #[inline]
     fn next(&mut self) -> Option<((uint,uint), char)> {
         if self.index < self.string.len() {

@@ -172,7 +172,7 @@ Whenever in doubt, look at the source code and specifications for detailed expla
 
 */
 
-#![feature(globs, macro_rules, slicing_syntax)]
+#![feature(globs, macro_rules, slicing_syntax, associated_types)]
 
 #![allow(experimental)]
 
