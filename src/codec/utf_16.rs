@@ -38,7 +38,7 @@ impl Endian for Little {
         output.write_byte(msb);
     }
     fn concat_two_bytes(_endian: Option<Little>, lead: u16, trail: u8) -> u16 {
-        lead | (trail as u16 << 8)
+        lead | ((trail as u16) << 8)
     }
 }
 
