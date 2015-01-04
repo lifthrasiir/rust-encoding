@@ -4,19 +4,20 @@
 
 //! UTF-16.
 
+use std::borrow::IntoCow;
 use util::{as_char, StrCharIndex};
 use types::*;
 
 /// An implementation type for little endian.
 ///
 /// Can be used as a type parameter to `UTF16Encoding`, `UTF16Encoder` and `UTF16Decoder`.
-#[deriving(Clone, Copy)]
+#[derive(Clone, Copy)]
 pub struct Little;
 
 /// An implementation type for big endian.
 ///
 /// Can be used as a type parameter to `UTF16Encoding`, `UTF16Encoder` and `UTF16Decoder`.
-#[deriving(Clone, Copy)]
+#[derive(Clone, Copy)]
 pub struct Big;
 
 /// An internal trait used to customize UTF-16 implementations.
@@ -68,7 +69,7 @@ impl Endian for Big {
  * This type is specialized with endianness type `E`,
  * which should be either `Little` (little endian) or `Big` (big endian).
  */
-#[deriving(Clone, Copy)]
+#[derive(Clone, Copy)]
 pub struct UTF16Encoding<E>;
 
 /// UTF-16 in little endian.
@@ -91,7 +92,7 @@ impl<E:Endian+Clone+'static> Encoding for UTF16Encoding<E> {
  * This type is specialized with endianness type `E`,
  * which should be either `Little` (little endian) or `Big` (big endian).
  */
-#[deriving(Clone, Copy)]
+#[derive(Clone, Copy)]
 pub struct UTF16Encoder<E>;
 
 impl<E:Endian+Clone+'static> UTF16Encoder<E> {

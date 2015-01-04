@@ -25,6 +25,7 @@
 //! UTF-8, the universal encoding.
 
 use std::{str, mem};
+use std::borrow::IntoCow;
 use types::*;
 
 /**
@@ -42,7 +43,7 @@ use types::*;
  * The UTF-8 scanner used by this module is heavily based on Bjoern Hoehrmann's
  * [Flexible and Economical UTF-8 Decoder](http://bjoern.hoehrmann.de/utf-8/decoder/dfa/).
  */
-#[deriving(Clone, Copy)]
+#[derive(Clone, Copy)]
 pub struct UTF8Encoding;
 
 impl Encoding for UTF8Encoding {
@@ -53,7 +54,7 @@ impl Encoding for UTF8Encoding {
 }
 
 /// An encoder for UTF-8.
-#[deriving(Clone, Copy)]
+#[derive(Clone, Copy)]
 pub struct UTF8Encoder;
 
 impl UTF8Encoder {
@@ -77,20 +78,20 @@ impl RawEncoder for UTF8Encoder {
 }
 
 /// A decoder for UTF-8.
-#[deriving(Clone, Copy)]
+#[derive(Clone, Copy)]
 pub struct UTF8Decoder {
     queuelen: uint,
-    queue: [u8, ..4],
+    queue: [u8; 4],
     state: u8,
 }
 
 impl UTF8Decoder {
     pub fn new() -> Box<RawDecoder> {
-        box UTF8Decoder { queuelen: 0, queue: [0, ..4], state: INITIAL_STATE } as Box<RawDecoder>
+        box UTF8Decoder { queuelen: 0, queue: [0; 4], state: INITIAL_STATE } as Box<RawDecoder>
     }
 }
 
-static CHAR_CATEGORY: [u8, ..256] = [
+static CHAR_CATEGORY: [u8; 256] = [
     //  0 (00-7F): one byte sequence
     //  1 (80-8F): continuation byte
     //  2 (C2-DF): start of two byte sequence
@@ -114,7 +115,7 @@ static CHAR_CATEGORY: [u8, ..256] = [
     10,3,3,3,3,3,3,3,3,3,3,3,3,4,3,3, 11,6,6,6,5,8,8,8,8,8,8,8,8,8,8,8,
 ];
 
-static STATE_TRANSITIONS: [u8, ..110] = [
+static STATE_TRANSITIONS: [u8; 110] = [
      0,98,12,24,48,84,72,98,98,98,36,60,       //  0: '??
     86, 0,86,86,86,86,86, 0,86, 0,86,86,       // 12: .. 'cc
     86,12,86,86,86,86,86,12,86,12,86,86,       // 24: .. 'cc cc

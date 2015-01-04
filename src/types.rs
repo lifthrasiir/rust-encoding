@@ -364,7 +364,7 @@ pub type DecoderTrapFunc =
 
 /// Trap, which handles decoder errors.
 #[stable]
-#[deriving(Copy)]
+#[derive(Copy)]
 pub enum DecoderTrap {
     /// Immediately fails on errors.
     /// Corresponds to WHATWG "fatal" error algorithm.
@@ -394,7 +394,7 @@ impl DecoderTrap {
 }
 
 #[stable]
-#[deriving(Copy)]
+#[derive(Copy)]
 pub enum EncoderTrap {
     /// Immediately fails on errors.
     /// Corresponds to WHATWG "fatal" error algorithm.
@@ -471,6 +471,7 @@ mod tests {
     use super::*;
     use super::EncoderTrap::NcrEscape;
     use util::StrCharIndex;
+    use std::borrow::IntoCow;
 
     // a contrived encoding example: same as ASCII, but inserts `prepend` between each character
     // within two "e"s (so that `widespread` becomes `wide*s*p*r*ead` and `eeeeasel` becomes
