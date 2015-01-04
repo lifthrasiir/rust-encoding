@@ -8,6 +8,8 @@
 
 use std::{str, mem};
 use std::default::Default;
+use std::num::ToPrimitive;
+use std::borrow::IntoCow;
 use types;
 
 /// Unchecked conversion to `char`.
@@ -143,7 +145,7 @@ macro_rules! stateful_decoder(
         #[allow(non_snake_case)]
         mod $stmod {
             pub use self::State::*;
-            #[deriving(PartialEq,Clone,Copy)]
+            #[derive(PartialEq,Clone,Copy)]
             pub enum State {
                 $inist,
                 $(

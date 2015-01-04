@@ -5,10 +5,11 @@
 //! A placeholder encoding that returns encoder/decoder error for every case.
 
 use std::str;
+use std::borrow::IntoCow;
 use types::*;
 
 /// An encoding that returns encoder/decoder error for every case.
-#[deriving(Clone, Copy)]
+#[derive(Clone, Copy)]
 pub struct ErrorEncoding;
 
 impl Encoding for ErrorEncoding {
@@ -18,7 +19,7 @@ impl Encoding for ErrorEncoding {
 }
 
 /// An encoder that always returns error.
-#[deriving(Clone, Copy)]
+#[derive(Clone, Copy)]
 pub struct ErrorEncoder;
 
 impl ErrorEncoder {
@@ -44,7 +45,7 @@ impl RawEncoder for ErrorEncoder {
 }
 
 /// A decoder that always returns error.
-#[deriving(Clone, Copy)]
+#[derive(Clone, Copy)]
 pub struct ErrorDecoder;
 
 impl ErrorDecoder {

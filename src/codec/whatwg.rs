@@ -9,7 +9,7 @@ use types::*;
 
 /// Replacement encoding used to solve a particular attack vector due to mismatching server and
 /// client supports for encodings. It is rarely useful outside.
-#[deriving(Clone, Copy)]
+#[derive(Clone, Copy)]
 pub struct EncoderOnlyUTF8Encoding;
 
 impl Encoding for EncoderOnlyUTF8Encoding {
