@@ -51,7 +51,7 @@
  * then it can just discard the first sequence and can emit the fixed string on an error.
  * It still has to feed the input bytes starting at the second offset again.
  */
-use std::str::SendStr;
+use std::string::CowString;
 
 /// Error information from either encoder or decoder.
 #[experimental]
@@ -64,7 +64,7 @@ pub struct CodecError {
     /// in order to continue encoding or decoding after an error.
     pub upto: int,
     /// A human-readable cause of the error.
-    pub cause: SendStr,
+    pub cause: CowString<'static>,
 }
 
 /// Byte writer used by encoders. In most cases this will be an owned vector of `u8`.
@@ -278,7 +278,7 @@ pub trait Encoding {
     /// which may return a replacement sequence to continue processing,
     /// or a failure to return the error.
     #[stable]
-    fn encode(&self, input: &str, trap: EncoderTrap) -> Result<Vec<u8>,SendStr> {
+    fn encode(&self, input: &str, trap: EncoderTrap) -> Result<Vec<u8>,CowString<'static>> {
         // we don't need to keep `unprocessed` here;
         // `raw_feed` should process as much input as possible.
         let mut encoder = self.raw_encoder();
@@ -317,7 +317,7 @@ pub trait Encoding {
     /// which may return a replacement string to continue processing,
     /// or a failure to return the error.
     #[stable]
-    fn decode(&self, input: &[u8], trap: DecoderTrap) -> Result<String,SendStr> {
+    fn decode(&self, input: &[u8], trap: DecoderTrap) -> Result<String,CowString<'static>> {
         // we don't need to keep `unprocessed` here;
         // `raw_feed` should process as much input as possible.
         let mut decoder = self.raw_decoder();
@@ -453,7 +453,7 @@ impl EncoderTrap {
 /// Return the result and the used encoding.
 #[unstable]
 pub fn decode(input: &[u8], trap: DecoderTrap, fallback_encoding: EncodingRef)
-           -> (Result<String,SendStr>, EncodingRef) {
+           -> (Result<String,CowString<'static>>, EncodingRef) {
     use all::{UTF_8, UTF_16LE, UTF_16BE};
     if input.starts_with(&[0xEF, 0xBB, 0xBF]) {
         (UTF_8.decode(input[3..], trap), UTF_8 as EncodingRef)
