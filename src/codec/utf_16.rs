@@ -105,7 +105,7 @@ impl<E:Endian+Clone+'static> RawEncoder for UTF16Encoder<E> {
     fn raw_feed(&mut self, input: &str, output: &mut ByteWriter) -> (uint, Option<CodecError>) {
         output.writer_hint(input.len() * 2);
 
-        let write_two_bytes = |output: &mut ByteWriter, msb: u8, lsb: u8|
+        let write_two_bytes = |&:output: &mut ByteWriter, msb: u8, lsb: u8|
             Endian::write_two_bytes(None::<E>, output, msb, lsb);
 
         for ((i,j), ch) in input.index_iter() {
@@ -161,7 +161,7 @@ impl<E:Endian+Clone+'static> RawDecoder for UTF16Decoder<E> {
     fn raw_feed(&mut self, input: &[u8], output: &mut StringWriter) -> (uint, Option<CodecError>) {
         output.writer_hint(input.len() / 2); // when every codepoint is U+0000..007F
 
-        let concat_two_bytes = |lead: u16, trail: u8|
+        let concat_two_bytes = |&:lead: u16, trail: u8|
             Endian::concat_two_bytes(None::<E>, lead, trail);
 
         let mut i = 0;
