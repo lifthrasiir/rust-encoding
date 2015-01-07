@@ -3328,6 +3328,7 @@ pub fn backward_remapped(code: u32) -> u16 {
 
 #[cfg(test)]
 multi_byte_tests!(
+    mod = jis0208,
     remap = [8272, 8835],
     dups = [
         1207, 1208, 1209, 1212, 1213, 1214, 1217, 1218, 1219, 8644, 10716,

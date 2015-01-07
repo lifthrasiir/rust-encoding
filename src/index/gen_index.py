@@ -1,5 +1,5 @@
 # This is a part of rust-encoding.
-# Copyright (c) 2013-2014, Kang Seonghoon.
+# Copyright (c) 2013-2015, Kang Seonghoon.
 # See README.md and LICENSE.txt for details.
 
 import urllib
@@ -66,6 +66,8 @@ def make_minimal_trie(invdata, lowerlimit=0x10000):
     return besttrie
 
 def generate_single_byte_index(crate, name):
+    modname = name.replace('-', '_')
+
     data = [None] * 128
     invdata = {}
     comments = []
@@ -110,11 +112,15 @@ def generate_single_byte_index(crate, name):
         print >>f, '}'
         print >>f
         print >>f, '#[cfg(test)]'
-        print >>f, 'single_byte_tests!();'
+        print >>f, 'single_byte_tests!('
+        print >>f, '    mod = %s' % modname
+        print >>f, ');'
 
     return 2 * len(data) + len(lower) + 2 * len(upper)
 
 def generate_multi_byte_index(crate, name):
+    modname = name.replace('-', '_')
+
     data = {}
     invdata = {}
     dups = []
@@ -247,6 +253,7 @@ def generate_multi_byte_index(crate, name):
         print >>f
         print >>f, '#[cfg(test)]'
         print >>f, 'multi_byte_tests!('
+        print >>f, '    mod = %s,' % modname
         if remap:
             print >>f, '    remap = [%d, %d],' % (REMAP_MIN, REMAP_MAX)
         if dups:
@@ -263,6 +270,8 @@ def generate_multi_byte_index(crate, name):
     return tablesz
 
 def generate_multi_byte_range_lbound_index(crate, name):
+    modname = name.replace('-', '_')
+
     data = []
     comments = []
     for key, value in whatwg_index(name, comments):
@@ -327,6 +336,7 @@ def generate_multi_byte_range_lbound_index(crate, name):
         print >>f
         print >>f, '#[cfg(test)]'
         print >>f, 'multi_byte_range_tests!('
+        print >>f, '    mod = %s,' % modname
         print >>f, '    key = [%d, %d], key < %d,' % (minkey, maxkey, keyubound)
         print >>f, '    value = [%d, %d], value < %d' % (minvalue, maxvalue, valueubound)
         print >>f, ');'

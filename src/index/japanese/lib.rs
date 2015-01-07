@@ -5,10 +5,8 @@
 
 //! Japanese index tables for [rust-encoding](https://github.com/lifthrasiir/rust-encoding).
 
-#![feature(phase)]
-
 #[cfg(test)]
-#[phase(plugin)]
+#[macro_use]
 extern crate encoding_index_tests;
 
 /// JIS X 0208 with common extensions.

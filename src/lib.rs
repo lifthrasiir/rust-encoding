@@ -4,7 +4,7 @@
 
 /*!
 
-# Encoding 0.2.16
+# Encoding 0.2.17
 
 Character encoding support for Rust. (also known as `rust-encoding`)
 It is based on [WHATWG Encoding Standard](http://encoding.spec.whatwg.org/),
@@ -172,7 +172,7 @@ Whenever in doubt, look at the source code and specifications for detailed expla
 
 */
 
-#![feature(globs, macro_rules, slicing_syntax, associated_types)]
+#![feature(slicing_syntax)]
 
 #![allow(experimental)]
 
@@ -193,8 +193,8 @@ pub use self::types::{CodecError, ByteWriter, StringWriter,
 #[deprecated = "use encoding::RawEncoder instead"] pub use self::types::RawEncoder as Encoder;
 #[deprecated = "use encoding::RawDecoder instead"] pub use self::types::RawDecoder as Decoder;
 
-mod util;
-#[cfg(test)] mod testutils;
+#[macro_use] mod util;
+#[cfg(test)] #[macro_use] mod testutils;
 
 pub mod types;
 

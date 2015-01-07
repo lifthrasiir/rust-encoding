@@ -7,7 +7,7 @@
 // https://encoding.spec.whatwg.org/
 //
 // Identifier: 198bacedfcf24390e219240a7b776b6cec34cff070330b08a601a69c67f7eb24
-// Date: 2014-11-06
+// Date: 2014-12-19
 
 static FORWARD_TABLE: &'static [u16] = &[
     8364, 129, 8218, 402, 8222, 8230, 8224, 8225, 710, 8240, 138, 8249, 338,
@@ -82,4 +82,6 @@ pub fn backward(code: u32) -> u8 {
 }
 
 #[cfg(test)]
-single_byte_tests!();
+single_byte_tests!(
+    mod = windows_1258
+);

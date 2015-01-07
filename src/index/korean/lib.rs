@@ -5,10 +5,8 @@
 
 //! Korean index tables for [rust-encoding](https://github.com/lifthrasiir/rust-encoding).
 
-#![feature(phase)]
-
 #[cfg(test)]
-#[phase(plugin)]
+#[macro_use]
 extern crate encoding_index_tests;
 
 /// KS X 1001 plus Unified Hangul Code.

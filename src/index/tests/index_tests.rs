@@ -1,18 +1,18 @@
 // This is a part of rust-encoding.
-// Copyright (c) 2013-2014, Kang Seonghoon.
+// Copyright (c) 2013-2015, Kang Seonghoon.
 // See README.md and LICENSE.txt for details.
 
 //! Macros and utilities for testing indices.
 
-#![feature(macro_rules)]
-
 /// Makes a common test suite for single-byte indices.
 #[macro_export]
 macro_rules! single_byte_tests {
-    () => (
+    (
+        mod = $parentmod:ident // XXX Rust issue #20701 prevents the use of `super`
+    ) => (
         mod tests {
             extern crate test;
-            use super::{forward, backward};
+            use $parentmod::{forward, backward};
             use std::iter::range_inclusive;
 
             #[test]
@@ -36,7 +36,7 @@ macro_rules! single_byte_tests {
             fn bench_backward_sequential_128(bencher: &mut test::Bencher) {
                 let mut start: u32 = 0;
                 bencher.iter(|| {
-                    for i in range(start, start + 0x80) {
+                    for i in start..(start + 0x80) {
                         test::black_box(backward(i));
                     }
                     start += 0x80;
@@ -65,7 +65,7 @@ macro_rules! multi_byte_tests {
         fn bench_forward_sequential_128(bencher: &mut test::Bencher) {
             let mut start: u32 = 0;
             bencher.iter(|| {
-                for i in range(start, start + 0x80) {
+                for i in start..(start + 0x80) {
                     test::black_box(forward(i as u16));
                 }
                 start += 0x80;
@@ -76,7 +76,7 @@ macro_rules! multi_byte_tests {
         fn bench_backward_sequential_128(bencher: &mut test::Bencher) {
             let mut start: u32 = 0;
             bencher.iter(|| {
-                for i in range(start, start + 0x80) {
+                for i in start..(start + 0x80) {
                     test::black_box(backward(i));
                 }
                 start += 0x80;
@@ -86,23 +86,25 @@ macro_rules! multi_byte_tests {
     );
 
     (
+        mod = $parentmod:ident, // XXX Rust issue #20701
         dups = $dups:expr
     ) => (
         mod tests {
             extern crate test;
-            use super::{forward, backward};
+            use $parentmod::{forward, backward};
 
             multi_byte_tests!(make shared tests and benches with dups = $dups);
         }
     );
 
     (
+        mod = $parentmod:ident, // XXX Rust issue #20701
         remap = [$remap_min:expr, $remap_max:expr],
         dups = $dups:expr
     ) => (
         mod tests {
             extern crate test;
-            use super::{forward, backward, backward_remapped};
+            use $parentmod::{forward, backward, backward_remapped};
 
             multi_byte_tests!(make shared tests and benches with dups = $dups);
 
@@ -111,7 +113,7 @@ macro_rules! multi_byte_tests {
 
             #[test]
             fn test_correct_remapping() {
-                for i in range::<u16>(REMAP_MIN, REMAP_MAX+1) {
+                for i in REMAP_MIN..(REMAP_MAX+1) {
                     let j = forward(i);
                     if j != 0xffff {
                         let ii = backward_remapped(j);
@@ -126,7 +128,7 @@ macro_rules! multi_byte_tests {
             fn bench_backward_remapped_sequential_128(bencher: &mut test::Bencher) {
                 let mut start: u32 = 0;
                 bencher.iter(|| {
-                    for i in range(start, start + 0x80) {
+                    for i in start..(start + 0x80) {
                         test::black_box(backward_remapped(i));
                     }
                     start += 0x80;
@@ -141,12 +143,13 @@ macro_rules! multi_byte_tests {
 #[macro_export]
 macro_rules! multi_byte_range_tests {
     (
+        mod = $parentmod:ident,
         key = [$minkey:expr, $maxkey:expr], key < $keyubound:expr,
         value = [$minvalue:expr, $maxvalue:expr], value < $valueubound:expr
     ) => (
         mod tests {
             extern crate test;
-            use super::{forward, backward};
+            use $parentmod::{forward, backward};
 
             static MIN_KEY: u32 = $minkey;
             static MAX_KEY: u32 = $maxkey;
@@ -158,17 +161,17 @@ macro_rules! multi_byte_range_tests {
             #[test]
             #[allow(unused_comparisons)]
             fn test_no_failure() {
-                for i in range::<u32>(if MIN_KEY>0 {MIN_KEY-1} else {0}, MAX_KEY+2) {
+                for i in (if MIN_KEY>0 {MIN_KEY-1} else {0})..(MAX_KEY+2) {
                     forward(i);
                 }
-                for j in range::<u32>(if MIN_VALUE>0 {MIN_VALUE-1} else {0}, MAX_VALUE+2) {
+                for j in (if MIN_VALUE>0 {MIN_VALUE-1} else {0})..(MAX_VALUE+2) {
                     backward(j);
                 }
             }
 
             #[test]
             fn test_correct_table() {
-                for i in range::<u32>(MIN_KEY, MAX_KEY+2) {
+                for i in MIN_KEY..(MAX_KEY+2) {
                     let j = forward(i);
                     if j == 0xffffffff { continue; }
                     let i_ = backward(j);
@@ -182,7 +185,7 @@ macro_rules! multi_byte_range_tests {
             fn bench_forward_sequential_128(bencher: &mut test::Bencher) {
                 let mut start: u32 = 0;
                 bencher.iter(|| {
-                    for i in range(start, start + 0x80) {
+                    for i in start..(start + 0x80) {
                         test::black_box(forward(i));
                     }
                     start += 0x80;
@@ -194,7 +197,7 @@ macro_rules! multi_byte_range_tests {
             fn bench_backward_sequential_128(bencher: &mut test::Bencher) {
                 let mut start: u32 = 0;
                 bencher.iter(|| {
-                    for i in range(start, start + 0x80) {
+                    for i in start..(start + 0x80) {
                         test::black_box(backward(i));
                     }
                     start += 0x80;
