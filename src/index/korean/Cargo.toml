@@ -1,6 +1,6 @@
 [package]
 name = "encoding-index-korean"
-version = "1.2.20141220"
+version = "1.20141219.0"
 authors = ["Kang Seonghoon <public+rust@mearie.org>"]
 
 description = "Index tables for Korean character encodings"

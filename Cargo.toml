@@ -1,6 +1,6 @@
 [package]
 name = "encoding"
-version = "0.2.17"
+version = "0.2.18"
 authors = ["Kang Seonghoon <public+rust@mearie.org>"]
 
 description = "Character encoding support for Rust"
@@ -16,29 +16,29 @@ name = "encoding"
 
 # version policy for index tables:
 # - major: addition or deletion of index tables
-# - minor: any changes to index tables
-# - patch: language changes, primarily tracks the index table date
+# - minor: any content changes to index tables, numbered by the date
+# - patch: language changes
 #
 # we definitely don't want to use the old index table,
 # so we should use tilde requirements here.
 
 [dependencies.encoding-index-singlebyte]
-version = "~1.0.20141219"
+version = "~1.20141219.0"
 path = "src/index/singlebyte"
 
 [dependencies.encoding-index-korean]
-version = "~1.2.20141220"
+version = "~1.20141219.0"
 path = "src/index/korean"
 
 [dependencies.encoding-index-japanese]
-version = "~1.0.20141220"
+version = "~1.20141219.0"
 path = "src/index/japanese"
 
 [dependencies.encoding-index-simpchinese]
-version = "~1.0.20141220"
+version = "~1.20141219.0"
 path = "src/index/simpchinese"
 
 [dependencies.encoding-index-tradchinese]
-version = "~1.0.20141219"
+version = "~1.20141219.0"
 path = "src/index/tradchinese"
 

@@ -1,6 +1,6 @@
 [package]
 name = "encoding-index-tradchinese"
-version = "1.0.20141219"
+version = "1.20141219.0"
 authors = ["Kang Seonghoon <public+rust@mearie.org>"]
 
 description = "Index tables for traditional Chinese character encodings"
