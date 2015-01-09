@@ -23,16 +23,16 @@ impl Encoding for ErrorEncoding {
 pub struct ErrorEncoder;
 
 impl ErrorEncoder {
-    pub fn new() -> Box<RawEncoder> { box ErrorEncoder as Box<RawEncoder> }
+    pub fn new() -> Box<RawEncoder> { Box::new(ErrorEncoder) }
 }
 
 impl RawEncoder for ErrorEncoder {
     fn from_self(&self) -> Box<RawEncoder> { ErrorEncoder::new() }
 
-    fn raw_feed(&mut self, input: &str, _output: &mut ByteWriter) -> (uint, Option<CodecError>) {
+    fn raw_feed(&mut self, input: &str, _output: &mut ByteWriter) -> (usize, Option<CodecError>) {
         if input.len() > 0 {
             let str::CharRange {ch: _, next} = input.char_range_at(0);
-            (0, Some(CodecError { upto: next as int,
+            (0, Some(CodecError { upto: next as isize,
                                   cause: "unrepresentable character".into_cow() }))
         } else {
             (0, None)
@@ -49,13 +49,14 @@ impl RawEncoder for ErrorEncoder {
 pub struct ErrorDecoder;
 
 impl ErrorDecoder {
-    pub fn new() -> Box<RawDecoder> { box ErrorDecoder as Box<RawDecoder> }
+    pub fn new() -> Box<RawDecoder> { Box::new(ErrorDecoder) }
 }
 
 impl RawDecoder for ErrorDecoder {
     fn from_self(&self) -> Box<RawDecoder> { ErrorDecoder::new() }
 
-    fn raw_feed(&mut self, input: &[u8], _output: &mut StringWriter) -> (uint, Option<CodecError>) {
+    fn raw_feed(&mut self,
+                input: &[u8], _output: &mut StringWriter) -> (usize, Option<CodecError>) {
         if input.len() > 0 {
             (0, Some(CodecError { upto: 1, cause: "invalid sequence".into_cow() }))
         } else {

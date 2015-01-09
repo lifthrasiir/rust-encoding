@@ -6,6 +6,8 @@
 //! Single-byte index tables for
 //! [rust-encoding](https://github.com/lifthrasiir/rust-encoding).
 
+#![cfg_attr(test, allow(unstable))]
+
 #[cfg(test)]
 #[macro_use]
 extern crate encoding_index_tests;

@@ -91,7 +91,7 @@ def generate_single_byte_index(crate, name):
         print >>f, '#[inline]'
         print >>f, '#[stable]'
         print >>f, 'pub fn forward(code: u8) -> u16 {'
-        print >>f, '    FORWARD_TABLE[(code - 0x80) as uint]'
+        print >>f, '    FORWARD_TABLE[(code - 0x80) as usize]'
         print >>f, '}'
         print >>f
         print >>f, "static BACKWARD_TABLE_LOWER: &'static [u8] = &["
@@ -106,9 +106,9 @@ def generate_single_byte_index(crate, name):
         print >>f, '#[inline]'
         print >>f, '#[stable]'
         print >>f, 'pub fn backward(code: u32) -> u8 {'
-        print >>f, '    let offset = (code >> %d) as uint;' % triebits
-        print >>f, '    let offset = if offset < %d {BACKWARD_TABLE_UPPER[offset] as uint} else {0};' % len(upper)
-        print >>f, '    BACKWARD_TABLE_LOWER[offset + ((code & %d) as uint)]' % ((1<<triebits)-1)
+        print >>f, '    let offset = (code >> %d) as usize;' % triebits
+        print >>f, '    let offset = if offset < %d {BACKWARD_TABLE_UPPER[offset] as usize} else {0};' % len(upper)
+        print >>f, '    BACKWARD_TABLE_LOWER[offset + ((code & %d) as usize)]' % ((1<<triebits)-1)
         print >>f, '}'
         print >>f
         print >>f, '#[cfg(test)]'
@@ -201,9 +201,9 @@ def generate_multi_byte_index(crate, name):
         print >>f, '#[stable]'
         print >>f, 'pub fn forward(code: u16) -> u32 {'
         if minkey != 0:
-            print >>f, '    let code = (code - %d) as uint;' % minkey
+            print >>f, '    let code = (code - %d) as usize;' % minkey
         else:
-            print >>f, '    let code = code as uint;'
+            print >>f, '    let code = code as usize;'
         print >>f, '    if code < %d {' % (maxkey - minkey)
         if morebits:
             print >>f, '        (FORWARD_TABLE[code] as u32) | ' + \
@@ -232,9 +232,9 @@ def generate_multi_byte_index(crate, name):
         print >>f, '#[inline]'
         print >>f, '#[stable]'
         print >>f, 'pub fn backward(code: u32) -> u16 {'
-        print >>f, '    let offset = (code >> %d) as uint;' % triebits
-        print >>f, '    let offset = if offset < %d {BACKWARD_TABLE_UPPER[offset] as uint} else {0};' % len(upper)
-        print >>f, '    BACKWARD_TABLE_LOWER[offset + ((code & %d) as uint)]' % ((1<<triebits)-1)
+        print >>f, '    let offset = (code >> %d) as usize;' % triebits
+        print >>f, '    let offset = if offset < %d {BACKWARD_TABLE_UPPER[offset] as usize} else {0};' % len(upper)
+        print >>f, '    BACKWARD_TABLE_LOWER[offset + ((code & %d) as usize)]' % ((1<<triebits)-1)
         print >>f, '}'
         if remap:
             print >>f
@@ -245,7 +245,7 @@ def generate_multi_byte_index(crate, name):
             print >>f, 'pub fn backward_remapped(code: u32) -> u16 {'
             print >>f, '    let value = backward(code);'
             print >>f, '    if %d <= value && value <= %d {' % (REMAP_MIN, REMAP_MAX)
-            print >>f, '        BACKWARD_TABLE_REMAPPED[(value - %d) as uint]' % REMAP_MIN
+            print >>f, '        BACKWARD_TABLE_REMAPPED[(value - %d) as usize]' % REMAP_MIN
             print >>f, '    } else {'
             print >>f, '        value'
             print >>f, '    }'

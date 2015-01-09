@@ -28,22 +28,22 @@ impl Encoding for ASCIIEncoding {
 pub struct ASCIIEncoder;
 
 impl ASCIIEncoder {
-    pub fn new() -> Box<RawEncoder> { box ASCIIEncoder as Box<RawEncoder> }
+    pub fn new() -> Box<RawEncoder> { Box::new(ASCIIEncoder) }
 }
 
 impl RawEncoder for ASCIIEncoder {
     fn from_self(&self) -> Box<RawEncoder> { ASCIIEncoder::new() }
     fn is_ascii_compatible(&self) -> bool { true }
 
-    fn raw_feed(&mut self, input: &str, output: &mut ByteWriter) -> (uint, Option<CodecError>) {
+    fn raw_feed(&mut self, input: &str, output: &mut ByteWriter) -> (usize, Option<CodecError>) {
         output.writer_hint(input.len());
 
         match input.as_bytes().iter().position(|&ch| ch >= 0x80) {
             Some(first_error) => {
-                output.write_bytes(input.as_bytes()[..first_error]);
+                output.write_bytes(&input.as_bytes()[..first_error]);
                 let str::CharRange {ch: _, next} = input.char_range_at(first_error);
                 (first_error, Some(CodecError {
-                    upto: next as int, cause: "unrepresentable character".into_cow()
+                    upto: next as isize, cause: "unrepresentable character".into_cow()
                 }))
             }
             None => {
@@ -63,14 +63,14 @@ impl RawEncoder for ASCIIEncoder {
 pub struct ASCIIDecoder;
 
 impl ASCIIDecoder {
-    pub fn new() -> Box<RawDecoder> { box ASCIIDecoder as Box<RawDecoder> }
+    pub fn new() -> Box<RawDecoder> { Box::new(ASCIIDecoder) }
 }
 
 impl RawDecoder for ASCIIDecoder {
     fn from_self(&self) -> Box<RawDecoder> { ASCIIDecoder::new() }
     fn is_ascii_compatible(&self) -> bool { true }
 
-    fn raw_feed(&mut self, input: &[u8], output: &mut StringWriter) -> (uint, Option<CodecError>) {
+    fn raw_feed(&mut self, input: &[u8], output: &mut StringWriter) -> (usize, Option<CodecError>) {
         output.writer_hint(input.len());
 
         fn write_ascii_bytes(output: &mut StringWriter, buf: &[u8]) {
@@ -79,9 +79,9 @@ impl RawDecoder for ASCIIDecoder {
 
         match input.iter().position(|&ch| ch >= 0x80) {
             Some(first_error) => {
-                write_ascii_bytes(output, input[..first_error]);
+                write_ascii_bytes(output, &input[..first_error]);
                 (first_error, Some(CodecError {
-                    upto: first_error as int + 1, cause: "invalid sequence".into_cow()
+                    upto: first_error as isize + 1, cause: "invalid sequence".into_cow()
                 }))
             }
             None => {

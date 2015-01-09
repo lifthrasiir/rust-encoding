@@ -32,7 +32,7 @@
  * Since these parts can span the multiple input sequences to `raw_feed`,
  * `raw_feed` returns two offsets (one optional)
  * with that the caller can track the problematic sequence.
- * The first offset (the first `uint` in the tuple) points to the first unprocessed bytes,
+ * The first offset (the first `usize` in the tuple) points to the first unprocessed bytes,
  * or is zero when unprocessed bytes have started before the current call.
  * (The first unprocessed byte can also be at offset 0,
  * which doesn't make a difference for the caller.)
@@ -62,7 +62,7 @@ pub struct CodecError {
     /// as long as the remaining byte is not yet processed.
     /// The caller should feed the bytes starting from this point again
     /// in order to continue encoding or decoding after an error.
-    pub upto: int,
+    pub upto: isize,
     /// A human-readable cause of the error.
     pub cause: CowString<'static>,
 }
@@ -76,7 +76,7 @@ pub trait ByteWriter {
     /// `RawEncoder`s are recommended but not required to call this method
     /// with an appropriate estimate.
     /// By default this method does nothing.
-    fn writer_hint(&mut self, _expectedlen: uint) {}
+    fn writer_hint(&mut self, _expectedlen: usize) {}
 
     /// Writes a single byte.
     fn write_byte(&mut self, b: u8);
@@ -86,7 +86,7 @@ pub trait ByteWriter {
 }
 
 impl ByteWriter for Vec<u8> {
-    fn writer_hint(&mut self, expectedlen: uint) {
+    fn writer_hint(&mut self, expectedlen: usize) {
         self.reserve(expectedlen);
     }
 
@@ -108,7 +108,7 @@ pub trait StringWriter {
     /// `RawDecoder`s are recommended but not required to call this method
     /// with an appropriate estimate.
     /// By default this method does nothing.
-    fn writer_hint(&mut self, _expectedlen: uint) {}
+    fn writer_hint(&mut self, _expectedlen: usize) {}
 
     /// Writes a single character.
     fn write_char(&mut self, c: char);
@@ -118,7 +118,7 @@ pub trait StringWriter {
 }
 
 impl StringWriter for String {
-    fn writer_hint(&mut self, expectedlen: uint) {
+    fn writer_hint(&mut self, expectedlen: usize) {
         let newlen = self.len() + expectedlen;
         self.reserve(newlen);
     }
@@ -148,7 +148,7 @@ pub trait RawEncoder: 'static {
     /// and returns a byte offset to the first unprocessed character
     /// (that can be zero when the first such character appeared in the prior calls to `raw_feed`)
     /// and optional error information (None means success).
-    fn raw_feed(&mut self, input: &str, output: &mut ByteWriter) -> (uint, Option<CodecError>);
+    fn raw_feed(&mut self, input: &str, output: &mut ByteWriter) -> (usize, Option<CodecError>);
 
     /// Finishes the encoder,
     /// pushes the an encoded byte sequence at the end of the given output,
@@ -166,7 +166,7 @@ pub trait RawEncoder: 'static {
 
     /// A test-friendly interface to `raw_feed`. Internal use only.
     #[cfg(test)]
-    fn test_feed(&mut self, input: &str) -> (uint, Option<CodecError>, Vec<u8>) {
+    fn test_feed(&mut self, input: &str) -> (usize, Option<CodecError>, Vec<u8>) {
         let mut buf = Vec::new();
         let (nprocessed, err) = self.raw_feed(input, &mut buf);
         (nprocessed, err, buf)
@@ -205,7 +205,7 @@ pub trait RawDecoder: 'static {
     /// and returns an offset to the first unprocessed byte
     /// (that can be zero when the first such byte appeared in the prior calls to `raw_feed`)
     /// and optional error information (None means success).
-    fn raw_feed(&mut self, input: &[u8], output: &mut StringWriter) -> (uint, Option<CodecError>);
+    fn raw_feed(&mut self, input: &[u8], output: &mut StringWriter) -> (usize, Option<CodecError>);
 
     /// Finishes the decoder,
     /// pushes the a decoded string at the end of the given output,
@@ -222,7 +222,7 @@ pub trait RawDecoder: 'static {
 
     /// A test-friendly interface to `raw_feed`. Internal use only.
     #[cfg(test)]
-    fn test_feed(&mut self, input: &[u8]) -> (uint, Option<CodecError>, String) {
+    fn test_feed(&mut self, input: &[u8]) -> (usize, Option<CodecError>, String) {
         let mut buf = String::new();
         let (nprocessed, err) = self.raw_feed(input, &mut buf);
         (nprocessed, err, buf)
@@ -286,12 +286,12 @@ pub trait Encoding {
         let mut ret = Vec::new();
 
         loop {
-            let (offset, err) = encoder.raw_feed(input[remaining..], &mut ret);
+            let (offset, err) = encoder.raw_feed(&input[remaining..], &mut ret);
             let unprocessed = remaining + offset;
             match err {
                 Some(err) => {
-                    remaining = (remaining as int + err.upto) as uint;
-                    if !trap.trap(&mut *encoder, input[unprocessed..remaining], &mut ret) {
+                    remaining = (remaining as isize + err.upto) as usize;
+                    if !trap.trap(&mut *encoder, &input[unprocessed..remaining], &mut ret) {
                         return Err(err.cause);
                     }
                 }
@@ -299,8 +299,8 @@ pub trait Encoding {
                     remaining = input.len();
                     match encoder.raw_finish(&mut ret) {
                         Some(err) => {
-                            remaining = (remaining as int + err.upto) as uint;
-                            if !trap.trap(&mut *encoder, input[unprocessed..remaining], &mut ret) {
+                            remaining = (remaining as isize + err.upto) as usize;
+                            if !trap.trap(&mut *encoder, &input[unprocessed..remaining], &mut ret) {
                                 return Err(err.cause);
                             }
                         }
@@ -325,12 +325,12 @@ pub trait Encoding {
         let mut ret = String::new();
 
         loop {
-            let (offset, err) = decoder.raw_feed(input[remaining..], &mut ret);
+            let (offset, err) = decoder.raw_feed(&input[remaining..], &mut ret);
             let unprocessed = remaining + offset;
             match err {
                 Some(err) => {
-                    remaining = (remaining as int + err.upto) as uint;
-                    if !trap.trap(&mut *decoder, input[unprocessed..remaining], &mut ret) {
+                    remaining = (remaining as isize + err.upto) as usize;
+                    if !trap.trap(&mut *decoder, &input[unprocessed..remaining], &mut ret) {
                         return Err(err.cause);
                     }
                 }
@@ -338,8 +338,8 @@ pub trait Encoding {
                     remaining = input.len();
                     match decoder.raw_finish(&mut ret) {
                         Some(err) => {
-                            remaining = (remaining as int + err.upto) as uint;
-                            if !trap.trap(&mut *decoder, input[unprocessed..remaining], &mut ret) {
+                            remaining = (remaining as isize + err.upto) as usize;
+                            if !trap.trap(&mut *decoder, &input[unprocessed..remaining], &mut ret) {
                                 return Err(err.cause);
                             }
                         }
@@ -439,9 +439,9 @@ impl EncoderTrap {
             EncoderTrap::NcrEscape  => {
                 let mut escapes = String::new();
                 for ch in input.chars() {
-                    escapes.push_str(format!("&#{};", ch as int)[]);
+                    escapes.push_str(&format!("&#{};", ch as isize)[]);
                 }
-                reencode(encoder, escapes[], output, "NcrEscape")
+                reencode(encoder, &escapes[], output, "NcrEscape")
             },
             EncoderTrap::Call(func) => func(encoder, input, output),
         }
@@ -456,11 +456,11 @@ pub fn decode(input: &[u8], trap: DecoderTrap, fallback_encoding: EncodingRef)
            -> (Result<String,CowString<'static>>, EncodingRef) {
     use all::{UTF_8, UTF_16LE, UTF_16BE};
     if input.starts_with(&[0xEF, 0xBB, 0xBF]) {
-        (UTF_8.decode(input[3..], trap), UTF_8 as EncodingRef)
+        (UTF_8.decode(&input[3..], trap), UTF_8 as EncodingRef)
     } else if input.starts_with(&[0xFE, 0xFF]) {
-        (UTF_16BE.decode(input[2..], trap), UTF_16BE as EncodingRef)
+        (UTF_16BE.decode(&input[2..], trap), UTF_16BE as EncodingRef)
     } else if input.starts_with(&[0xFF, 0xFE]) {
-        (UTF_16LE.decode(input[2..], trap), UTF_16LE as EncodingRef)
+        (UTF_16LE.decode(&input[2..], trap), UTF_16LE as EncodingRef)
     } else {
         (fallback_encoding.decode(input, trap), fallback_encoding)
     }
@@ -479,14 +479,14 @@ mod tests {
     struct MyEncoder { flag: bool, prohibit: char, prepend: &'static str, toggle: bool }
     impl RawEncoder for MyEncoder {
         fn from_self(&self) -> Box<RawEncoder> {
-            box MyEncoder { flag: self.flag,
-                            prohibit: self.prohibit,
-                            prepend: self.prepend,
-                            toggle: false } as Box<RawEncoder>
+            Box::new(MyEncoder { flag: self.flag,
+                                 prohibit: self.prohibit,
+                                 prepend: self.prepend,
+                                 toggle: false })
         }
         fn is_ascii_compatible(&self) -> bool { self.flag }
         fn raw_feed(&mut self, input: &str,
-                    output: &mut ByteWriter) -> (uint, Option<CodecError>) {
+                    output: &mut ByteWriter) -> (usize, Option<CodecError>) {
             for ((i,j), ch) in input.index_iter() {
                 if ch <= '\u{7f}' && ch != self.prohibit {
                     if self.toggle && !self.prepend.is_empty() {
@@ -497,7 +497,7 @@ mod tests {
                         self.toggle = !self.toggle;
                     }
                 } else {
-                    return (i, Some(CodecError { upto: j as int,
+                    return (i, Some(CodecError { upto: j as isize,
                                                  cause: "!!!".into_cow() }));
                 }
             }
@@ -510,10 +510,10 @@ mod tests {
     impl Encoding for MyEncoding {
         fn name(&self) -> &'static str { "my encoding" }
         fn raw_encoder(&self) -> Box<RawEncoder> {
-            box MyEncoder { flag: self.flag,
-                            prohibit: self.prohibit,
-                            prepend: self.prepend,
-                            toggle: false } as Box<RawEncoder>
+            Box::new(MyEncoder { flag: self.flag,
+                                 prohibit: self.prohibit,
+                                 prepend: self.prepend,
+                                 toggle: false })
         }
         fn raw_decoder(&self) -> Box<RawDecoder> { panic!("not supported") }
     }

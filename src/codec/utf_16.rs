@@ -5,7 +5,7 @@
 //! UTF-16.
 
 use std::borrow::IntoCow;
-use util::{as_char, StrCharIndex};
+use util::as_char;
 use types::*;
 
 /// An implementation type for little endian.
@@ -21,7 +21,7 @@ pub struct Little;
 pub struct Big;
 
 /// An internal trait used to customize UTF-16 implementations.
-trait Endian {
+trait Endian: Clone + 'static {
     fn name(_endian: Option<Self>) -> &'static str;
     fn whatwg_name(_endian: Option<Self>) -> Option<&'static str>;
     fn write_two_bytes(_endian: Option<Self>, output: &mut ByteWriter, msb: u8, lsb: u8);
@@ -77,7 +77,7 @@ pub type UTF16LEEncoding = UTF16Encoding<Little>;
 /// UTF-16 in big endian.
 pub type UTF16BEEncoding = UTF16Encoding<Big>;
 
-impl<E:Endian+Clone+'static> Encoding for UTF16Encoding<E> {
+impl<E: Endian> Encoding for UTF16Encoding<E> {
     fn name(&self) -> &'static str { Endian::name(None::<E>) }
     fn whatwg_name(&self) -> Option<&'static str> { Endian::whatwg_name(None::<E>) }
     fn raw_encoder(&self) -> Box<RawEncoder> { UTF16Encoder::new(None::<E>) }
@@ -95,37 +95,33 @@ impl<E:Endian+Clone+'static> Encoding for UTF16Encoding<E> {
 #[derive(Clone, Copy)]
 pub struct UTF16Encoder<E>;
 
-impl<E:Endian+Clone+'static> UTF16Encoder<E> {
-    fn new(_endian: Option<E>) -> Box<RawEncoder> { box UTF16Encoder::<E> as Box<RawEncoder> }
+impl<E: Endian> UTF16Encoder<E> {
+    fn new(_endian: Option<E>) -> Box<RawEncoder> { Box::new(UTF16Encoder::<E>) }
 }
 
-impl<E:Endian+Clone+'static> RawEncoder for UTF16Encoder<E> {
+impl<E: Endian> RawEncoder for UTF16Encoder<E> {
     fn from_self(&self) -> Box<RawEncoder> { UTF16Encoder::new(None::<E>) }
 
-    fn raw_feed(&mut self, input: &str, output: &mut ByteWriter) -> (uint, Option<CodecError>) {
+    fn raw_feed(&mut self, input: &str, output: &mut ByteWriter) -> (usize, Option<CodecError>) {
         output.writer_hint(input.len() * 2);
 
-        let write_two_bytes = |&:output: &mut ByteWriter, msb: u8, lsb: u8|
+        let write_two_bytes = |&: output: &mut ByteWriter, msb: u8, lsb: u8|
             Endian::write_two_bytes(None::<E>, output, msb, lsb);
 
-        for ((i,j), ch) in input.index_iter() {
-            let ch = ch as uint;
+        for ch in input.chars() {
             match ch {
-                0x0000...0xd7ff | 0xe000...0xffff => {
+                '\u{0}'...'\u{d7ff}' | '\u{e000}'...'\u{ffff}' => {
+                    let ch = ch as u32;
                     write_two_bytes(output, (ch >> 8) as u8, (ch & 0xff) as u8);
                 }
-                0x10000...0x10ffff => {
-                    let ch = ch - 0x10000;
+                '\u{10000}'...'\u{10ffff}' => {
+                    let ch = ch as u32 - 0x10000;
                     write_two_bytes(output, (0xd8 | (ch >> 18)) as u8,
                                             ((ch >> 10) & 0xff) as u8);
                     write_two_bytes(output, (0xdc | ((ch >> 8) & 0x3)) as u8,
                                             (ch & 0xff) as u8);
                 }
-                _ => {
-                    return (i, Some(CodecError {
-                        upto: j as int, cause: "unrepresentable character".into_cow()
-                    }));
-                }
+                _ => unreachable!() // XXX Rust issue #12483, this is redundant
             }
         }
         (input.len(), None)
@@ -149,19 +145,19 @@ pub struct UTF16Decoder<E> {
     leadsurrogate: u16,
 }
 
-impl<E:Endian+Clone+'static> UTF16Decoder<E> {
+impl<E: Endian> UTF16Decoder<E> {
     pub fn new(_endian: Option<E>) -> Box<RawDecoder> {
-        box UTF16Decoder::<E> { leadbyte: 0xffff, leadsurrogate: 0xffff } as Box<RawDecoder>
+        Box::new(UTF16Decoder::<E> { leadbyte: 0xffff, leadsurrogate: 0xffff })
     }
 }
 
-impl<E:Endian+Clone+'static> RawDecoder for UTF16Decoder<E> {
+impl<E: Endian> RawDecoder for UTF16Decoder<E> {
     fn from_self(&self) -> Box<RawDecoder> { UTF16Decoder::new(None::<E>) }
 
-    fn raw_feed(&mut self, input: &[u8], output: &mut StringWriter) -> (uint, Option<CodecError>) {
+    fn raw_feed(&mut self, input: &[u8], output: &mut StringWriter) -> (usize, Option<CodecError>) {
         output.writer_hint(input.len() / 2); // when every codepoint is U+0000..007F
 
-        let concat_two_bytes = |&:lead: u16, trail: u8|
+        let concat_two_bytes = |&: lead: u16, trail: u8|
             Endian::concat_two_bytes(None::<E>, lead, trail);
 
         let mut i = 0;
@@ -179,13 +175,13 @@ impl<E:Endian+Clone+'static> RawDecoder for UTF16Decoder<E> {
                 self.leadsurrogate = 0xffff;
                 match ch {
                     0xdc00...0xdfff => {
-                        let ch = ((upper as uint - 0xd800) << 10) + (ch as uint - 0xdc00);
+                        let ch = ((upper as u32 - 0xd800) << 10) + (ch as u32 - 0xdc00);
                         output.write_char(as_char(ch + 0x10000));
                         processed = i;
                     }
                     _ => {
                         return (processed, Some(CodecError {
-                            upto: i as int - 2, cause: "invalid sequence".into_cow()
+                            upto: i as isize - 2, cause: "invalid sequence".into_cow()
                         }));
                     }
                 }
@@ -197,11 +193,11 @@ impl<E:Endian+Clone+'static> RawDecoder for UTF16Decoder<E> {
                     }
                     0xdc00...0xdfff => {
                         return (processed, Some(CodecError {
-                            upto: i as int, cause: "invalid sequence".into_cow()
+                            upto: i as isize, cause: "invalid sequence".into_cow()
                         }));
                     }
                     _ => {
-                        output.write_char(as_char(ch));
+                        output.write_char(as_char(ch as u32));
                         processed = i;
                     }
                 }
@@ -220,14 +216,14 @@ impl<E:Endian+Clone+'static> RawDecoder for UTF16Decoder<E> {
             i += 1;
             match ch {
                 0xdc00...0xdfff => {
-                    let ch = ((upper as uint - 0xd800) << 10) + (ch as uint - 0xdc00);
+                    let ch = ((upper as u32 - 0xd800) << 10) + (ch as u32 - 0xdc00);
                     output.write_char(as_char(ch + 0x10000));
                 }
                 _ => {
                     self.leadbyte = 0xffff;
                     self.leadsurrogate = 0xffff;
                     return (processed, Some(CodecError {
-                        upto: i as int - 2, cause: "invalid sequence".into_cow()
+                        upto: i as isize - 2, cause: "invalid sequence".into_cow()
                     }));
                 }
             }
@@ -254,23 +250,23 @@ impl<E:Endian+Clone+'static> RawDecoder for UTF16Decoder<E> {
                     let ch2 = concat_two_bytes(input[i-1] as u16, input[i]);
                     match ch2 {
                         0xdc00...0xdfff => {
-                            let ch = ((ch as uint - 0xd800) << 10) + (ch2 as uint - 0xdc00);
+                            let ch = ((ch as u32 - 0xd800) << 10) + (ch2 as u32 - 0xdc00);
                             output.write_char(as_char(ch + 0x10000));
                         }
                         _ => {
                             return (processed, Some(CodecError {
-                                upto: i as int - 1, cause: "invalid sequence".into_cow()
+                                upto: i as isize - 1, cause: "invalid sequence".into_cow()
                             }));
                         }
                     }
                 }
                 0xdc00...0xdfff => {
                     return (processed, Some(CodecError {
-                        upto: i as int + 1, cause: "invalid sequence".into_cow()
+                        upto: i as isize + 1, cause: "invalid sequence".into_cow()
                     }));
                 }
                 _ => {
-                    output.write_char(as_char(ch));
+                    output.write_char(as_char(ch as u32));
                 }
             }
             i += 1;

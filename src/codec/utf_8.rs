@@ -58,14 +58,14 @@ impl Encoding for UTF8Encoding {
 pub struct UTF8Encoder;
 
 impl UTF8Encoder {
-    pub fn new() -> Box<RawEncoder> { box UTF8Encoder as Box<RawEncoder> }
+    pub fn new() -> Box<RawEncoder> { Box::new(UTF8Encoder) }
 }
 
 impl RawEncoder for UTF8Encoder {
     fn from_self(&self) -> Box<RawEncoder> { UTF8Encoder::new() }
     fn is_ascii_compatible(&self) -> bool { true }
 
-    fn raw_feed(&mut self, input: &str, output: &mut ByteWriter) -> (uint, Option<CodecError>) {
+    fn raw_feed(&mut self, input: &str, output: &mut ByteWriter) -> (usize, Option<CodecError>) {
         let input: &[u8] = input.as_bytes();
         assert!(str::from_utf8(input).is_ok());
         output.write_bytes(input);
@@ -80,14 +80,14 @@ impl RawEncoder for UTF8Encoder {
 /// A decoder for UTF-8.
 #[derive(Clone, Copy)]
 pub struct UTF8Decoder {
-    queuelen: uint,
+    queuelen: usize,
     queue: [u8; 4],
     state: u8,
 }
 
 impl UTF8Decoder {
     pub fn new() -> Box<RawDecoder> {
-        box UTF8Decoder { queuelen: 0, queue: [0; 4], state: INITIAL_STATE } as Box<RawDecoder>
+        Box::new(UTF8Decoder { queuelen: 0, queue: [0; 4], state: INITIAL_STATE })
     }
 }
 
@@ -135,14 +135,14 @@ static REJECT_STATE_WITH_BACKUP: u8 = 86;
 
 macro_rules! is_reject_state(($state:expr) => ($state >= REJECT_STATE_WITH_BACKUP));
 macro_rules! next_state(($state:expr, $ch:expr) => (
-    STATE_TRANSITIONS[($state + CHAR_CATEGORY[$ch as uint]) as uint]
+    STATE_TRANSITIONS[($state + CHAR_CATEGORY[$ch as usize]) as usize]
 ));
 
 impl RawDecoder for UTF8Decoder {
     fn from_self(&self) -> Box<RawDecoder> { UTF8Decoder::new() }
     fn is_ascii_compatible(&self) -> bool { true }
 
-    fn raw_feed(&mut self, input: &[u8], output: &mut StringWriter) -> (uint, Option<CodecError>) {
+    fn raw_feed(&mut self, input: &[u8], output: &mut StringWriter) -> (usize, Option<CodecError>) {
         output.writer_hint(input.len());
 
         fn write_bytes(output: &mut StringWriter, bytes: &[u8]) {
@@ -168,22 +168,22 @@ impl RawDecoder for UTF8Decoder {
                 let upto = if state == REJECT_STATE {i + offset + 1} else {i + offset};
                 self.state = INITIAL_STATE;
                 if processed > 0 && self.queuelen > 0 { // flush `queue` outside the problem
-                    write_bytes(output, self.queue[0..self.queuelen]);
+                    write_bytes(output, &self.queue[0..self.queuelen]);
                 }
                 self.queuelen = 0;
-                write_bytes(output, input[0..processed]);
+                write_bytes(output, &input[0..processed]);
                 return (processed, Some(CodecError {
-                    upto: upto as int, cause: "invalid sequence".into_cow()
+                    upto: upto as isize, cause: "invalid sequence".into_cow()
                 }));
             }
         }
 
         self.state = state;
         if processed > 0 && self.queuelen > 0 { // flush `queue`
-            write_bytes(output, self.queue[0..self.queuelen]);
+            write_bytes(output, &self.queue[0..self.queuelen]);
             self.queuelen = 0;
         }
-        write_bytes(output, input[0..processed]);
+        write_bytes(output, &input[0..processed]);
         if processed < input.len() {
             let morequeuelen = input.len() - processed;
             for i in range(0, morequeuelen) {
@@ -794,7 +794,7 @@ mod tests {
             let s = testutils::get_external_bench_data();
             bencher.bytes = s.len() as u64;
             bencher.iter(|| test::black_box({
-                UTF8Encoding.decode(s[], DecodeReplace)
+                UTF8Encoding.decode(&s[], DecodeReplace)
             }))
         }
 
@@ -803,7 +803,7 @@ mod tests {
             let s = testutils::get_external_bench_data();
             bencher.bytes = s.len() as u64;
             bencher.iter(|| test::black_box({
-                from_utf8(s[])
+                from_utf8(&s[])
             }))
         }
 
@@ -812,7 +812,7 @@ mod tests {
             let s = testutils::get_external_bench_data();
             bencher.bytes = s.len() as u64;
             bencher.iter(|| test::black_box({
-                str::from_utf8(s[])
+                str::from_utf8(&s[])
             }))
         }
 
@@ -821,7 +821,7 @@ mod tests {
             let s = testutils::get_external_bench_data();
             bencher.bytes = s.len() as u64;
             bencher.iter(|| test::black_box({
-                String::from_utf8_lossy(s[])
+                String::from_utf8_lossy(&s[])
             }))
         }
     }

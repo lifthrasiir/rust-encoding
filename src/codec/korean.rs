@@ -35,14 +35,14 @@ impl Encoding for Windows949Encoding {
 pub struct Windows949Encoder;
 
 impl Windows949Encoder {
-    pub fn new() -> Box<RawEncoder> { box Windows949Encoder as Box<RawEncoder> }
+    pub fn new() -> Box<RawEncoder> { Box::new(Windows949Encoder) }
 }
 
 impl RawEncoder for Windows949Encoder {
     fn from_self(&self) -> Box<RawEncoder> { Windows949Encoder::new() }
     fn is_ascii_compatible(&self) -> bool { true }
 
-    fn raw_feed(&mut self, input: &str, output: &mut ByteWriter) -> (uint, Option<CodecError>) {
+    fn raw_feed(&mut self, input: &str, output: &mut ByteWriter) -> (usize, Option<CodecError>) {
         output.writer_hint(input.len());
 
         for ((i,j), ch) in input.index_iter() {
@@ -52,7 +52,7 @@ impl RawEncoder for Windows949Encoder {
                 let ptr = index::euc_kr::backward(ch as u32);
                 if ptr == 0xffff {
                     return (i, Some(CodecError {
-                        upto: j as int, cause: "unrepresentable character".into_cow()
+                        upto: j as isize, cause: "unrepresentable character".into_cow()
                     }));
                 } else {
                     output.write_byte((ptr / 190 + 0x81) as u8);
@@ -78,24 +78,26 @@ ascii_compatible_stateful_decoder! {
     internal pub fn map_two_bytes(lead: u8, trail: u8) -> u32 {
         use index_korean as index;
 
-        let lead = lead as uint;
-        let trail = trail as uint;
+        let lead = lead as u16;
+        let trail = trail as u16;
         let index = match (lead, trail) {
             (0x81...0xfe, 0x41...0xfe) => (lead - 0x81) * 190 + (trail - 0x41),
             (_, _) => 0xffff,
         };
-        index::euc_kr::forward(index as u16)
+        index::euc_kr::forward(index)
     }
 
+initial:
     // euc-kr lead = 0x00
-    initial state S0(ctx) {
+    state S0(ctx: Context) {
         case b @ 0x00...0x7f => ctx.emit(b as u32);
         case b @ 0x81...0xfe => S1(ctx, b);
         case _ => ctx.err("invalid sequence");
     }
 
+transient:
     // euc-kr lead != 0x00
-    state S1(ctx, lead: u8) {
+    state S1(ctx: Context, lead: u8) {
         case b => match map_two_bytes(lead, b) {
             0xffff => {
                 let backup = if b < 0x80 {1} else {0};
@@ -235,7 +237,7 @@ mod windows949_tests {
         let s = testutils::KOREAN_TEXT;
         bencher.bytes = s.len() as u64;
         bencher.iter(|| test::black_box({
-            Windows949Encoding.encode(s[], EncoderTrap::Strict)
+            Windows949Encoding.encode(&s[], EncoderTrap::Strict)
         }))
     }
 
@@ -245,7 +247,7 @@ mod windows949_tests {
                                           EncoderTrap::Strict).ok().unwrap();
         bencher.bytes = s.len() as u64;
         bencher.iter(|| test::black_box({
-            Windows949Encoding.decode(s[], DecoderTrap::Strict)
+            Windows949Encoding.decode(&s[], DecoderTrap::Strict)
         }))
     }
 }

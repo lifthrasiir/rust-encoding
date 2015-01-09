@@ -718,7 +718,7 @@ static FORWARD_TABLE: &'static [u16] = &[
 #[inline]
 #[stable]
 pub fn forward(code: u16) -> u32 {
-    let code = (code - 108) as uint;
+    let code = (code - 108) as usize;
     if code < 7103 {
         FORWARD_TABLE[code] as u32
     } else {
@@ -2754,9 +2754,9 @@ static BACKWARD_TABLE_UPPER: &'static [u16] = &[
 #[inline]
 #[stable]
 pub fn backward(code: u32) -> u16 {
-    let offset = (code >> 6) as uint;
-    let offset = if offset < 1022 {BACKWARD_TABLE_UPPER[offset] as uint} else {0};
-    BACKWARD_TABLE_LOWER[offset + ((code & 63) as uint)]
+    let offset = (code >> 6) as usize;
+    let offset = if offset < 1022 {BACKWARD_TABLE_UPPER[offset] as usize} else {0};
+    BACKWARD_TABLE_LOWER[offset + ((code & 63) as usize)]
 }
 
 #[cfg(test)]

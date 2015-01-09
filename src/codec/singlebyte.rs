@@ -32,7 +32,7 @@ pub struct SingleByteEncoder {
 
 impl SingleByteEncoder {
     pub fn new(index_backward: extern "Rust" fn(u32) -> u8) -> Box<RawEncoder> {
-        box SingleByteEncoder { index_backward: index_backward } as Box<RawEncoder>
+        Box::new(SingleByteEncoder { index_backward: index_backward })
     }
 }
 
@@ -40,7 +40,7 @@ impl RawEncoder for SingleByteEncoder {
     fn from_self(&self) -> Box<RawEncoder> { SingleByteEncoder::new(self.index_backward) }
     fn is_ascii_compatible(&self) -> bool { true }
 
-    fn raw_feed(&mut self, input: &str, output: &mut ByteWriter) -> (uint, Option<CodecError>) {
+    fn raw_feed(&mut self, input: &str, output: &mut ByteWriter) -> (usize, Option<CodecError>) {
         output.writer_hint(input.len());
 
         for ((i,j), ch) in input.index_iter() {
@@ -53,7 +53,7 @@ impl RawEncoder for SingleByteEncoder {
                     output.write_byte(index);
                 } else {
                     return (i, Some(CodecError {
-                        upto: j as int, cause: "unrepresentable character".into_cow()
+                        upto: j as isize, cause: "unrepresentable character".into_cow()
                     }));
                 }
             }
@@ -74,7 +74,7 @@ pub struct SingleByteDecoder {
 
 impl SingleByteDecoder {
     pub fn new(index_forward: extern "Rust" fn(u8) -> u16) -> Box<RawDecoder> {
-        box SingleByteDecoder { index_forward: index_forward } as Box<RawDecoder>
+        Box::new(SingleByteDecoder { index_forward: index_forward })
     }
 }
 
@@ -82,7 +82,7 @@ impl RawDecoder for SingleByteDecoder {
     fn from_self(&self) -> Box<RawDecoder> { SingleByteDecoder::new(self.index_forward) }
     fn is_ascii_compatible(&self) -> bool { true }
 
-    fn raw_feed(&mut self, input: &[u8], output: &mut StringWriter) -> (uint, Option<CodecError>) {
+    fn raw_feed(&mut self, input: &[u8], output: &mut StringWriter) -> (usize, Option<CodecError>) {
         output.writer_hint(input.len());
 
         let mut i = 0;
@@ -93,10 +93,10 @@ impl RawDecoder for SingleByteDecoder {
             } else {
                 let ch = (self.index_forward)(input[i]);
                 if ch != 0xffff {
-                    output.write_char(as_char(ch));
+                    output.write_char(as_char(ch as u32));
                 } else {
                     return (i, Some(CodecError {
-                        upto: i as int + 1, cause: "invalid sequence".into_cow()
+                        upto: i as isize + 1, cause: "invalid sequence".into_cow()
                     }));
                 }
             }

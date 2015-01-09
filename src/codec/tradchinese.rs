@@ -38,14 +38,14 @@ impl Encoding for BigFive2003Encoding {
 pub struct BigFive2003Encoder;
 
 impl BigFive2003Encoder {
-    pub fn new() -> Box<RawEncoder> { box BigFive2003Encoder as Box<RawEncoder> }
+    pub fn new() -> Box<RawEncoder> { Box::new(BigFive2003Encoder) }
 }
 
 impl RawEncoder for BigFive2003Encoder {
     fn from_self(&self) -> Box<RawEncoder> { BigFive2003Encoder::new() }
     fn is_ascii_compatible(&self) -> bool { true }
 
-    fn raw_feed(&mut self, input: &str, output: &mut ByteWriter) -> (uint, Option<CodecError>) {
+    fn raw_feed(&mut self, input: &str, output: &mut ByteWriter) -> (usize, Option<CodecError>) {
         output.writer_hint(input.len());
 
         for ((i,j), ch) in input.index_iter() {
@@ -56,7 +56,7 @@ impl RawEncoder for BigFive2003Encoder {
                 if ptr == 0xffff || ptr < (0xa1 - 0x81) * 157 {
                     // no HKSCS extension (XXX doesn't HKSCS include 0xFA40..0xFEFE?)
                     return (i, Some(CodecError {
-                        upto: j as int, cause: "unrepresentable character".into_cow()
+                        upto: j as isize, cause: "unrepresentable character".into_cow()
                     }));
                 }
                 let lead = ptr / 157 + 0x81;
@@ -84,8 +84,8 @@ ascii_compatible_stateful_decoder! {
     internal pub fn map_two_bytes(lead: u8, trail: u8) -> u32 {
         use index_tradchinese as index;
 
-        let lead = lead as uint;
-        let trail = trail as uint;
+        let lead = lead as u16;
+        let trail = trail as u16;
         let index = match (lead, trail) {
             (0x81...0xfe, 0x40...0x7e) | (0x81...0xfe, 0xa1...0xfe) => {
                 let trailoffset = if trail < 0x7f {0x40} else {0x62};
@@ -93,18 +93,20 @@ ascii_compatible_stateful_decoder! {
             }
             _ => 0xffff,
         };
-        index::big5::forward(index as u16) // may return two-letter replacements 0..3
+        index::big5::forward(index) // may return two-letter replacements 0..3
     }
 
+initial:
     // big5 lead = 0x00
-    initial state S0(ctx) {
+    state S0(ctx: Context) {
         case b @ 0x00...0x7f => ctx.emit(b as u32);
         case b @ 0x81...0xfe => S1(ctx, b);
         case _ => ctx.err("invalid sequence");
     }
 
+transient:
     // big5 lead != 0x00
-    state S1(ctx, lead: u8) {
+    state S1(ctx: Context, lead: u8) {
         case b => match map_two_bytes(lead, b) {
             0xffff => {
                 let backup = if b < 0x80 {1} else {0};
@@ -233,7 +235,7 @@ mod bigfive2003_tests {
         let s = testutils::TRADITIONAL_CHINESE_TEXT;
         bencher.bytes = s.len() as u64;
         bencher.iter(|| test::black_box({
-            BigFive2003Encoding.encode(s[], EncoderTrap::Strict)
+            BigFive2003Encoding.encode(&s[], EncoderTrap::Strict)
         }))
     }
 
@@ -243,7 +245,7 @@ mod bigfive2003_tests {
                                            EncoderTrap::Strict).ok().unwrap();
         bencher.bytes = s.len() as u64;
         bencher.iter(|| test::black_box({
-            BigFive2003Encoding.decode(s[], DecoderTrap::Strict)
+            BigFive2003Encoding.decode(&s[], DecoderTrap::Strict)
         }))
     }
 }

@@ -15,6 +15,7 @@ and also provides an advanced interface for error detection and recovery.
 To encode a string:
 
 ~~~~ {.rust}
+# #![allow(unstable)]
 use encoding::{Encoding, EncoderTrap};
 use encoding::all::ISO_8859_1;
 
@@ -25,6 +26,7 @@ assert_eq!(ISO_8859_1.encode("caf\u{e9}", EncoderTrap::Strict),
 To encode a string with unrepresentable characters:
 
 ~~~~ {.rust}
+# #![allow(unstable)]
 use encoding::{Encoding, EncoderTrap};
 use encoding::all::ISO_8859_2;
 
@@ -40,6 +42,7 @@ assert_eq!(ISO_8859_2.encode("Acme\u{a9}", EncoderTrap::NcrEscape),
 To decode a byte sequence:
 
 ~~~~ {.rust}
+# #![allow(unstable)]
 use encoding::{Encoding, DecoderTrap};
 use encoding::all::ISO_8859_1;
 
@@ -50,6 +53,7 @@ assert_eq!(ISO_8859_1.decode(&[99,97,102,233], DecoderTrap::Strict),
 To decode a byte sequence with invalid sequences:
 
 ~~~~ {.rust}
+# #![allow(unstable)]
 use encoding::{Encoding, DecoderTrap};
 use encoding::all::ISO_8859_6;
 
@@ -63,6 +67,7 @@ assert_eq!(ISO_8859_6.decode(&[65,99,109,101,169], DecoderTrap::Ignore),
 A practical example of custom encoder traps:
 
 ~~~~ {.rust}
+# #![allow(unstable)]
 use encoding::{Encoding, ByteWriter, EncoderTrap, DecoderTrap};
 use encoding::types::RawEncoder;
 use encoding::all::ASCII;
@@ -70,7 +75,7 @@ use encoding::all::ASCII;
 // hexadecimal numeric character reference replacement
 fn hex_ncr_escape(_encoder: &mut RawEncoder, input: &str, output: &mut ByteWriter) -> bool {
     let escapes: Vec<String> =
-        input.chars().map(|ch| format!("&#x{:x};", ch as int)).collect();
+        input.chars().map(|ch| format!("&#x{:x};", ch as isize)).collect();
     let escapes = escapes.concat();
     output.write_bytes(escapes.as_bytes());
     true
@@ -86,6 +91,7 @@ assert_eq!(ASCII.decode(encoded.as_slice(), DecoderTrap::Strict),
 Getting the encoding from the string label, as specified in WHATWG Encoding standard:
 
 ~~~~ {.rust}
+# #![allow(unstable)]
 use encoding::{Encoding, DecoderTrap};
 use encoding::label::encoding_from_whatwg_label;
 use encoding::all::WINDOWS_949;
@@ -174,7 +180,7 @@ Whenever in doubt, look at the source code and specifications for detailed expla
 
 #![feature(slicing_syntax)]
 
-#![allow(experimental)]
+#![allow(unstable)]
 
 extern crate "encoding-index-singlebyte" as index_singlebyte;
 extern crate "encoding-index-korean" as index_korean;
@@ -227,16 +233,16 @@ mod tests {
                 input, DecoderTrap::Strict, all::ISO_8859_1 as EncodingRef);
             let result = result.unwrap();
             assert_eq!(used_encoding.name(), expected_encoding);
-            assert_eq!(result[], expected_result);
+            assert_eq!(&result[], expected_result);
         }
 
-        test_one([0xEF, 0xBB, 0xBF, 0xC3, 0xA9][], "é", "utf-8");
-        test_one([0xC3, 0xA9][], "Ã©", "iso-8859-1");
+        test_one(&[0xEF, 0xBB, 0xBF, 0xC3, 0xA9][], "é", "utf-8");
+        test_one(&[0xC3, 0xA9][], "Ã©", "iso-8859-1");
 
-        test_one([0xFE, 0xFF, 0x00, 0xE9][], "é", "utf-16be");
-        test_one([0x00, 0xE9][], "\x00é", "iso-8859-1");
+        test_one(&[0xFE, 0xFF, 0x00, 0xE9][], "é", "utf-16be");
+        test_one(&[0x00, 0xE9][], "\x00é", "iso-8859-1");
 
-        test_one([0xFF, 0xFE, 0xE9, 0x00][], "é", "utf-16le");
-        test_one([0xE9, 0x00][], "é\x00", "iso-8859-1");
+        test_one(&[0xFF, 0xFE, 0xE9, 0x00][], "é", "utf-16le");
+        test_one(&[0xE9, 0x00][], "é\x00", "iso-8859-1");
     }
 }

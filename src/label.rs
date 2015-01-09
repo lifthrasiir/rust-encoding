@@ -12,7 +12,7 @@ use types::EncodingRef;
 /// Implements "get an encoding" algorithm: http://encoding.spec.whatwg.org/#decode
 #[stable]
 pub fn encoding_from_whatwg_label(label: &str) -> Option<EncodingRef> {
-    match label.trim_matches([' ', '\n', '\r', '\t', '\x0C'][]).to_ascii_lowercase()[] {
+    match &label.trim_matches(&[' ', '\n', '\r', '\t', '\x0C'][]).to_ascii_lowercase()[] {
         "unicode-1-1-utf-8" |
         "utf-8" |
         "utf8" =>
@@ -277,7 +277,7 @@ pub fn encoding_from_whatwg_label(label: &str) -> Option<EncodingRef> {
 /// http://msdn.microsoft.com/en-us/library/windows/desktop/dd317756%28v=vs.85%29.aspx
 /// Sometimes it can return a *superset* of the requested encoding, e.g. for several CJK encodings.
 #[experimental]
-pub fn encoding_from_windows_code_page(cp: uint) -> Option<EncodingRef> {
+pub fn encoding_from_windows_code_page(cp: usize) -> Option<EncodingRef> {
     match cp {
         65001 => Some(all::UTF_8 as EncodingRef),
         866 => Some(all::IBM866 as EncodingRef),

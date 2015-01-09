@@ -2,6 +2,8 @@
 // Copyright (c) 2014-2015, Kang Seonghoon.
 // See README.md and LICENSE.txt for details.
 
+#![allow(unstable)]
+
 extern crate encoding;
 extern crate getopts;
 
@@ -63,12 +65,12 @@ fn main() {
     };
 
     let mut input = match matches.free.first().map(|s| s.as_slice()) {
-        Some("-") | None => box io::stdin() as Box<Reader>,
-        Some(f) => box io::File::open(&Path::new(f)) as Box<Reader>,
+        Some("-") | None => Box::new(io::stdin()) as Box<Reader>,
+        Some(f) => Box::new(io::File::open(&Path::new(f))) as Box<Reader>,
     };
     let mut output = match matches.opt_str("o").as_ref().map(|s| s.as_slice()) {
-        Some("-") | None => box io::stdout() as Box<Writer>,
-        Some(f) => box io::File::create(&Path::new(f)) as Box<Writer>,
+        Some("-") | None => Box::new(io::stdout()) as Box<Writer>,
+        Some(f) => Box::new(io::File::create(&Path::new(f))) as Box<Writer>,
     };
 
     // XXX should really use the incremental interface

@@ -7,42 +7,42 @@
 macro_rules! assert_feed_ok(
     ($this:expr, $processed:expr, $unprocessed:expr, $output:expr) => ({
         let processed = $processed;
-        let processed = $this.test_norm_input(processed[]);
+        let processed = $this.test_norm_input(&processed[]);
         let unprocessed = $unprocessed;
-        let unprocessed = $this.test_norm_input(unprocessed[]);
+        let unprocessed = $this.test_norm_input(&unprocessed[]);
         let output = $output;
-        let output = $this.test_norm_output(output[]);
+        let output = $this.test_norm_output(&output[]);
         let input = $this.test_concat(processed, unprocessed);
-        let (nprocessed, err, buf) = $this.test_feed(input[]);
+        let (nprocessed, err, buf) = $this.test_feed(&input[]);
         let upto = err.map(|e| e.upto);
         assert!(processed.len() == nprocessed && None == upto,
-                "raw_feed should return {}, but instead returned {}",
-                (processed.len(), None::<int>), (nprocessed, upto));
-        assert!(output == buf[],
-                "raw_feed should push {}, but instead pushed {}", output, buf[]);
+                "raw_feed should return {:?}, but instead returned {:?}",
+                (processed.len(), None::<isize>), (nprocessed, upto));
+        assert!(output == buf,
+                "raw_feed should push {:?}, but instead pushed {:?}", output, buf);
     })
 );
 
 macro_rules! assert_feed_err(
     ($this:expr, $backup:expr, $processed:expr, $problem:expr, $remaining:expr, $output:expr) => ({
         let processed = $processed;
-        let processed = $this.test_norm_input(processed[]);
+        let processed = $this.test_norm_input(&processed[]);
         let problem = $problem;
-        let problem = $this.test_norm_input(problem[]);
+        let problem = $this.test_norm_input(&problem[]);
         let remaining = $remaining;
-        let remaining = $this.test_norm_input(remaining[]);
+        let remaining = $this.test_norm_input(&remaining[]);
         let output = $output;
-        let output = $this.test_norm_output(output[]);
-        let input = $this.test_concat($this.test_concat(processed, problem)[], remaining);
-        let backup: int = $backup;
-        let (nprocessed, err, buf) = $this.test_feed(input[-backup as uint..]);
+        let output = $this.test_norm_output(&output[]);
+        let input = $this.test_concat(&$this.test_concat(processed, problem)[], remaining);
+        let backup: isize = $backup;
+        let (nprocessed, err, buf) = $this.test_feed(&input[-backup as usize..]);
         let upto = err.map(|e| e.upto);
-        let expectedupto = processed.len() as int + problem.len() as int + backup;
+        let expectedupto = processed.len() as isize + problem.len() as isize + backup;
         assert!(processed.len() == nprocessed && Some(expectedupto) == upto,
-                "raw_feed should return {}, but instead returned {}",
+                "raw_feed should return {:?}, but instead returned {:?}",
                 (processed.len(), Some(expectedupto)), (nprocessed, upto));
-        assert!(output == buf[],
-                "raw_feed should push {}, but instead pushed {}", output, buf[]);
+        assert!(output == buf,
+                "raw_feed should push {:?}, but instead pushed {:?}", output, buf);
     });
     ($this:expr, $processed:expr, $problem:expr, $remaining:expr, $output:expr) => (
         assert_feed_err!($this, 0, $processed, $problem, $remaining, $output)
@@ -52,27 +52,27 @@ macro_rules! assert_feed_err(
 macro_rules! assert_finish_ok(
     ($this:expr, $output:expr) => ({
         let output = $output;
-        let output = $this.test_norm_output(output[]);
+        let output = $this.test_norm_output(&output[]);
         let (err, buf) = $this.test_finish();
         let upto = err.map(|e| e.upto);
         assert!(None == upto,
-                "raw_finish should return {}, but instead returned {}", None::<int>, upto);
-        assert!(output == buf[],
-                "raw_finish should push {}, but instead pushed {}", output, buf[]);
+                "raw_finish should return {:?}, but instead returned {:?}", None::<isize>, upto);
+        assert!(output == buf,
+                "raw_finish should push {:?}, but instead pushed {:?}", output, buf);
     })
 );
 
 macro_rules! assert_finish_err(
     ($this:expr, $backup:expr, $output:expr) => ({
         let output = $output;
-        let output = $this.test_norm_output(output[]);
+        let output = $this.test_norm_output(&output[]);
         let (err, buf) = $this.test_finish();
-        let backup: int = $backup;
+        let backup: isize = $backup;
         let upto = err.map(|e| e.upto);
         assert!(Some(backup) == upto,
-                "raw_finish should return {}, but instead returned {}", Some(backup), upto);
-        assert!(output == buf[],
-                "raw_finish should push {}, but instead pushed {}", output, buf[]);
+                "raw_finish should return {:?}, but instead returned {:?}", Some(backup), upto);
+        assert!(output == buf,
+                "raw_finish should push {:?}, but instead pushed {:?}", output, buf);
     });
     ($this:expr, $output:expr) => (
         assert_finish_err!($this, 0, $output)

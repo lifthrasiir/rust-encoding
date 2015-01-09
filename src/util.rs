@@ -4,28 +4,28 @@
 
 //! Internal utilities.
 
-use std::{str, mem};
+use std::{str, char, mem};
 use std::borrow::IntoCow;
 use std::default::Default;
-use std::num::ToPrimitive;
 use types;
 
 /// Unchecked conversion to `char`.
-pub fn as_char<T:ToPrimitive>(ch: T) -> char {
-    unsafe { mem::transmute(ch.to_u32().unwrap()) }
+pub fn as_char(ch: u32) -> char {
+    debug_assert!(char::from_u32(ch).is_some());
+    unsafe { mem::transmute(ch) }
 }
 
 /// External iterator for a string's characters with its corresponding byte offset range.
 pub struct StrCharIndexIterator<'r> {
-    index: uint,
+    index: usize,
     string: &'r str,
 }
 
 impl<'r> Iterator for StrCharIndexIterator<'r> {
-    type Item = ((uint,uint), char);
+    type Item = ((usize,usize), char);
 
     #[inline]
-    fn next(&mut self) -> Option<((uint,uint), char)> {
+    fn next(&mut self) -> Option<((usize,usize), char)> {
         if self.index < self.string.len() {
             let str::CharRange {ch, next} = self.string.char_range_at(self.index);
             let prev = self.index;
@@ -54,7 +54,7 @@ pub struct StatefulDecoderHelper<'a, St> {
     /// The current buffer.
     pub buf: &'a [u8],
     /// The current index to the buffer.
-    pub pos: uint,
+    pub pos: usize,
     /// The output buffer.
     pub output: &'a mut (types::StringWriter + 'a),
     /// The last codec error. The caller will later collect this.
@@ -99,7 +99,7 @@ impl<'a, St:Default> StatefulDecoderHelper<'a, St> {
     /// If this is the last expr in the rules, also resets back to the initial state.
     #[inline(always)]
     pub fn err(&mut self, msg: &'static str) -> St {
-        self.err = Some(types::CodecError { upto: self.pos as int, cause: msg.into_cow() });
+        self.err = Some(types::CodecError { upto: self.pos as isize, cause: msg.into_cow() });
         Default::default()
     }
 
@@ -109,8 +109,8 @@ impl<'a, St:Default> StatefulDecoderHelper<'a, St> {
     /// This should be used to implement "prepending byte to the stream" in the Encoding spec,
     /// which corresponds to `ctx.backup_and_err(1, ...)`.
     #[inline(always)]
-    pub fn backup_and_err(&mut self, backup: uint, msg: &'static str) -> St {
-        let upto = self.pos as int - backup as int;
+    pub fn backup_and_err(&mut self, backup: usize, msg: &'static str) -> St {
+        let upto = self.pos as isize - backup as isize;
         self.err = Some(types::CodecError { upto: upto, cause: msg.into_cow() });
         Default::default()
     }
@@ -124,16 +124,19 @@ macro_rules! stateful_decoder(
         module $stmod:ident; // should be unique from other existing identifiers
         ascii_compatible $asciicompat:expr;
         $(internal $item:item)* // will only be visible from state functions
-        initial state $inist:ident($inictx:ident) {
-            $(case $($inilhs:pat)|+ => $($inirhs:expr),+;)+
+    initial:
+        state $inist:ident($inictx:ident: Context) {
+            $(case $($inilhs:pat),+ => $($inirhs:expr),+;)+
             final => $($inifin:expr),+;
         }
-        $(checkpoint state $ckst:ident($ckctx:ident $(, $ckarg:ident: $ckty:ty)*) {
-            $(case $($cklhs:pat)|+ => $($ckrhs:expr),+;)+
+    checkpoint:
+        $(state $ckst:ident($ckctx:ident: Context $(, $ckarg:ident: $ckty:ty)*) {
+            $(case $($cklhs:pat),+ => $($ckrhs:expr),+;)+
             final => $($ckfin:expr),+;
         })*
-        $(state $st:ident($ctx:ident $(, $arg:ident: $ty:ty)*) {
-            $(case $($lhs:pat)|+ => $($rhs:expr),+;)+
+    transient:
+        $(state $st:ident($ctx:ident: Context $(, $arg:ident: $ty:ty)*) {
+            $(case $($lhs:pat),+ => $($rhs:expr),+;)+
             final => $($fin:expr),+;
         })*
     ) => (
@@ -223,7 +226,7 @@ macro_rules! stateful_decoder(
 
         impl $dec {
             pub fn new() -> Box<RawDecoder> {
-                box $dec { st: $stmod::$inist } as Box<RawDecoder>
+                Box::new($dec { st: $stmod::$inist })
             }
         }
 
@@ -232,7 +235,7 @@ macro_rules! stateful_decoder(
             fn is_ascii_compatible(&self) -> bool { $asciicompat }
 
             fn raw_feed(&mut self, input: &[u8],
-                        output: &mut StringWriter) -> (uint, Option<CodecError>) {
+                        output: &mut StringWriter) -> (usize, Option<CodecError>) {
                 use self::$stmod::{start, transient};
 
                 output.writer_hint(input.len());
@@ -308,11 +311,13 @@ macro_rules! ascii_compatible_stateful_decoder(
         struct $dec:ident;
         module $stmod:ident; // should be unique from other existing identifiers
         $(internal $item:item)* // will only be visible from state functions
-        initial state $inist:ident($inictx:ident) {
-            $(case $($inilhs:pat)|+ => $($inirhs:expr),+;)+
+    initial:
+        state $inist:ident($inictx:ident: Context) {
+            $(case $($inilhs:pat),+ => $($inirhs:expr),+;)+
         }
-        $(state $st:ident($ctx:ident $(, $arg:ident: $ty:ty)*) {
-            $(case $($lhs:pat)|+ => $($rhs:expr),+;)+
+    transient:
+        $(state $st:ident($ctx:ident: Context $(, $arg:ident: $ty:ty)*) {
+            $(case $($lhs:pat),+ => $($rhs:expr),+;)+
         })*
     ) => (
         stateful_decoder!(
@@ -321,12 +326,15 @@ macro_rules! ascii_compatible_stateful_decoder(
             module $stmod;
             ascii_compatible true;
             $(internal $item)*
-            initial state $inist($inictx) {
-                $(case $($inilhs)|+ => $($inirhs),+;)+
+        initial:
+            state $inist($inictx: Context) {
+                $(case $($inilhs),+ => $($inirhs),+;)+
                 final => $inictx.reset();
             }
-            $(state $st($ctx $(, $arg: $ty)*) {
-                $(case $($lhs)|+ => $($rhs),+;)+
+        checkpoint:
+        transient:
+            $(state $st($ctx: Context $(, $arg: $ty)*) {
+                $(case $($lhs),+ => $($rhs),+;)+
                 final => $ctx.err("incomplete sequence");
             })*
         );
