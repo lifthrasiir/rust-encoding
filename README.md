@@ -1,4 +1,4 @@
-[Encoding][doc] 0.2.18
+[Encoding][doc] 0.2.19
 ======================
 
 [![Encoding on Travis CI][travis-image]][travis]

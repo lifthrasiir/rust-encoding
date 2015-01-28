@@ -162,7 +162,8 @@ pub static INVALID_UTF8_TEXT: &'static [u8] = include_bytes!("examples/UTF-8-tes
 /// This can be overriden with an environment variable `EXTERNAL_BENCH_DATA`,
 /// or it will use a built-in sample data (of about 100KB).
 pub fn get_external_bench_data() -> Vec<u8> {
-    use std::{io, os};
+    use std::old_io as io;
+    use std::os;
 
     // An HTML file derived from the Outer Space Treaty of 1967, in six available languages.
     // http://www.unoosa.org/oosa/SpaceLaw/outerspt.html

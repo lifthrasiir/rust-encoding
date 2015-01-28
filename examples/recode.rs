@@ -7,7 +7,8 @@
 extern crate encoding;
 extern crate getopts;
 
-use std::{io, os};
+use std::old_io as io;
+use std::os;
 use encoding::{EncoderTrap, DecoderTrap};
 use encoding::label::encoding_from_whatwg_label;
 use getopts::{optopt, optflag};
@@ -82,6 +83,6 @@ fn main() {
         Ok(s) => s,
         Err(e) => panic!("encoder error: {}", e),
     };
-    output.write(encoded.as_slice()).unwrap();
+    output.write_all(encoded.as_slice()).unwrap();
 }
 

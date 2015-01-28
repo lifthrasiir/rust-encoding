@@ -4,7 +4,7 @@
 
 /*!
 
-# Encoding 0.2.18
+# Encoding 0.2.19
 
 Character encoding support for Rust. (also known as `rust-encoding`)
 It is based on [WHATWG Encoding Standard](http://encoding.spec.whatwg.org/),
