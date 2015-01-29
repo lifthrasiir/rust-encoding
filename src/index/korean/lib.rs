@@ -5,7 +5,7 @@
 
 //! Korean index tables for [rust-encoding](https://github.com/lifthrasiir/rust-encoding).
 
-#![cfg_attr(test, allow(unstable))]
+#![cfg_attr(test, feature(test))]
 
 #[cfg(test)]
 #[macro_use]

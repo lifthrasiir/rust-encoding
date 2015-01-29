@@ -4,7 +4,7 @@
 
 /*!
 
-# Encoding 0.2.19
+# Encoding 0.2.20
 
 Character encoding support for Rust. (also known as `rust-encoding`)
 It is based on [WHATWG Encoding Standard](http://encoding.spec.whatwg.org/),
@@ -15,7 +15,6 @@ and also provides an advanced interface for error detection and recovery.
 To encode a string:
 
 ~~~~ {.rust}
-# #![allow(unstable)]
 use encoding::{Encoding, EncoderTrap};
 use encoding::all::ISO_8859_1;
 
@@ -26,7 +25,6 @@ assert_eq!(ISO_8859_1.encode("caf\u{e9}", EncoderTrap::Strict),
 To encode a string with unrepresentable characters:
 
 ~~~~ {.rust}
-# #![allow(unstable)]
 use encoding::{Encoding, EncoderTrap};
 use encoding::all::ISO_8859_2;
 
@@ -42,7 +40,6 @@ assert_eq!(ISO_8859_2.encode("Acme\u{a9}", EncoderTrap::NcrEscape),
 To decode a byte sequence:
 
 ~~~~ {.rust}
-# #![allow(unstable)]
 use encoding::{Encoding, DecoderTrap};
 use encoding::all::ISO_8859_1;
 
@@ -53,7 +50,6 @@ assert_eq!(ISO_8859_1.decode(&[99,97,102,233], DecoderTrap::Strict),
 To decode a byte sequence with invalid sequences:
 
 ~~~~ {.rust}
-# #![allow(unstable)]
 use encoding::{Encoding, DecoderTrap};
 use encoding::all::ISO_8859_6;
 
@@ -67,7 +63,6 @@ assert_eq!(ISO_8859_6.decode(&[65,99,109,101,169], DecoderTrap::Ignore),
 A practical example of custom encoder traps:
 
 ~~~~ {.rust}
-# #![allow(unstable)]
 use encoding::{Encoding, ByteWriter, EncoderTrap, DecoderTrap};
 use encoding::types::RawEncoder;
 use encoding::all::ASCII;
@@ -83,15 +78,14 @@ fn hex_ncr_escape(_encoder: &mut RawEncoder, input: &str, output: &mut ByteWrite
 static HEX_NCR_ESCAPE: EncoderTrap = EncoderTrap::Call(hex_ncr_escape);
 
 let orig = "Hello, 世界!".to_string();
-let encoded = ASCII.encode(orig.as_slice(), HEX_NCR_ESCAPE).unwrap();
-assert_eq!(ASCII.decode(encoded.as_slice(), DecoderTrap::Strict),
+let encoded = ASCII.encode(&orig[], HEX_NCR_ESCAPE).unwrap();
+assert_eq!(ASCII.decode(&encoded[], DecoderTrap::Strict),
            Ok("Hello, &#x4e16;&#x754c;!".to_string()));
 ~~~~
 
 Getting the encoding from the string label, as specified in WHATWG Encoding standard:
 
 ~~~~ {.rust}
-# #![allow(unstable)]
 use encoding::{Encoding, DecoderTrap};
 use encoding::label::encoding_from_whatwg_label;
 use encoding::all::WINDOWS_949;
@@ -178,9 +172,8 @@ Whenever in doubt, look at the source code and specifications for detailed expla
 
 */
 
-#![feature(slicing_syntax)]
-
-#![allow(unstable)]
+#![feature(core, collections)] // lib stability features as per RFC #507
+#![cfg_attr(test, feature(path, os, io, test))] // ditto
 
 extern crate "encoding-index-singlebyte" as index_singlebyte;
 extern crate "encoding-index-korean" as index_korean;

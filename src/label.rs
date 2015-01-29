@@ -4,15 +4,17 @@
 
 //! An interface for retrieving an encoding (or a set of encodings) from a string/numeric label.
 
-use std::ascii::AsciiExt;
 use all;
 use types::EncodingRef;
 
 /// Returns an encoding from given label, defined in the WHATWG Encoding standard, if any.
-/// Implements "get an encoding" algorithm: http://encoding.spec.whatwg.org/#decode
+/// Implements "get an encoding" algorithm: http://encoding.spec.whatwg.org/#concept-encoding-get
 #[stable]
 pub fn encoding_from_whatwg_label(label: &str) -> Option<EncodingRef> {
-    match &label.trim_matches(&[' ', '\n', '\r', '\t', '\x0C'][]).to_ascii_lowercase()[] {
+    let label = label.trim_matches(&[' ', '\n', '\r', '\t', '\x0C'][]);
+    let label: String =
+        label.chars().map(|c| match c { 'A'...'Z' => (c as u8 + 32) as char, _ => c }).collect();
+    match &label[] {
         "unicode-1-1-utf-8" |
         "utf-8" |
         "utf8" =>
@@ -276,7 +278,7 @@ pub fn encoding_from_whatwg_label(label: &str) -> Option<EncodingRef> {
 /// Returns an encoding from Windows code page number.
 /// http://msdn.microsoft.com/en-us/library/windows/desktop/dd317756%28v=vs.85%29.aspx
 /// Sometimes it can return a *superset* of the requested encoding, e.g. for several CJK encodings.
-#[experimental]
+#[unstable]
 pub fn encoding_from_windows_code_page(cp: usize) -> Option<EncodingRef> {
     match cp {
         65001 => Some(all::UTF_8 as EncodingRef),

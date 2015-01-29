@@ -54,7 +54,7 @@
 use std::string::CowString;
 
 /// Error information from either encoder or decoder.
-#[experimental]
+#[unstable]
 pub struct CodecError {
     /// The byte position of the first remaining byte, with respect to the *current* input.
     /// For the `finish` call, this should be no more than zero (since there is no input).
@@ -95,7 +95,7 @@ impl ByteWriter for Vec<u8> {
     }
 
     fn write_bytes(&mut self, v: &[u8]) {
-        self.push_all(v);
+        self.extend(v.iter().cloned());
     }
 }
 
@@ -134,7 +134,7 @@ impl StringWriter for String {
 
 /// Encoder converting a Unicode string into a byte sequence.
 /// This is a lower level interface, and normally `Encoding::encode` should be used instead.
-#[experimental]
+#[unstable]
 pub trait RawEncoder: 'static {
     /// Creates a fresh `RawEncoder` instance which parameters are same as `self`.
     fn from_self(&self) -> Box<RawEncoder>;
@@ -191,7 +191,7 @@ pub trait RawEncoder: 'static {
 
 /// Decoder converting a byte sequence into a Unicode string.
 /// This is a lower level interface, and normally `Encoding::decode` should be used instead.
-#[experimental]
+#[unstable]
 pub trait RawDecoder: 'static {
     /// Creates a fresh `RawDecoder` instance which parameters are same as `self`.
     fn from_self(&self) -> Box<RawDecoder>;
@@ -266,11 +266,11 @@ pub trait Encoding {
     fn whatwg_name(&self) -> Option<&'static str> { None }
 
     /// Creates a new encoder.
-    #[experimental]
+    #[unstable]
     fn raw_encoder(&self) -> Box<RawEncoder>;
 
     /// Creates a new decoder.
-    #[experimental]
+    #[unstable]
     fn raw_decoder(&self) -> Box<RawDecoder>;
 
     /// An easy-to-use interface to `RawEncoder`.

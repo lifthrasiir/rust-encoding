@@ -2,7 +2,7 @@
 // Copyright (c) 2014-2015, Kang Seonghoon.
 // See README.md and LICENSE.txt for details.
 
-#![allow(unstable)]
+#![feature(core, os, io, path, collections)] // lib stability features as per RFC #507
 
 extern crate encoding;
 extern crate getopts;
@@ -11,41 +11,39 @@ use std::old_io as io;
 use std::os;
 use encoding::{EncoderTrap, DecoderTrap};
 use encoding::label::encoding_from_whatwg_label;
-use getopts::{optopt, optflag};
+use getopts::Options;
 
 fn main() {
     let args = os::args();
 
-    let opts = [
-        optopt("f", "from-code", "set input encoding", "NAME"),
-        optopt("t", "to-code", "set output encoding", "NAME"),
-        optopt("e", "error-policy",
-               "set error policy (one of strict, ignore, replace, ncr-escape)", "POLICY"),
-        optflag("c", "", "same as `--error-policy=ignore`"),
-        optopt("o", "output", "output file", "FILE"),
-        optflag("h", "help", "print this help menu"),
-    ];
+    let mut opts = Options::new();
+    opts.optopt("f", "from-code", "set input encoding", "NAME");
+    opts.optopt("t", "to-code", "set output encoding", "NAME");
+    opts.optopt("e", "error-policy",
+                "set error policy (one of strict, ignore, replace, ncr-escape)", "POLICY");
+    opts.optflag("c", "", "same as `--error-policy=ignore`");
+    opts.optopt("o", "output", "output file", "FILE");
+    opts.optflag("h", "help", "print this help menu");
 
-    let matches = match getopts::getopts(args.tail(), opts.as_slice()) {
+    let matches = match opts.parse(args.tail()) {
         Ok(m) => m,
         Err(e) => panic!(e.to_string()),
     };
     if matches.opt_present("h") {
-        println!("{}", getopts::usage("Converts the character encoding using rust-encoding.",
-                                      opts.as_slice()));
+        println!("{}", opts.usage("Converts the character encoding using rust-encoding."));
         return;
     }
 
     let inencname = matches.opt_str("f");
     let outencname = matches.opt_str("t");
-    let inenc = match inencname.as_ref().map(|s| s.as_slice()) {
+    let inenc = match inencname.as_ref().map(|s| &s[]) {
         Some(name) => match encoding_from_whatwg_label(name) {
             Some(enc) => enc,
             None => panic!("invalid input encoding name {}", name),
         },
         None => encoding::all::UTF_8 as encoding::EncodingRef,
     };
-    let outenc = match outencname.as_ref().map(|s| s.as_slice()) {
+    let outenc = match outencname.as_ref().map(|s| &s[]) {
         Some(name) => match encoding_from_whatwg_label(name) {
             Some(enc) => enc,
             None => panic!("invalid output encoding name {}", name),
@@ -57,7 +55,7 @@ fn main() {
     if matches.opt_present("c") {
         policy = Some("ignore".to_string());
     }
-    let (intrap, outtrap) = match policy.as_ref().map(|s| s.as_slice()) {
+    let (intrap, outtrap) = match policy.as_ref().map(|s| &s[]) {
         Some("strict") | None => (DecoderTrap::Strict, EncoderTrap::Strict),
         Some("ignore") => (DecoderTrap::Ignore, EncoderTrap::Ignore),
         Some("replace") => (DecoderTrap::Replace, EncoderTrap::Replace),
@@ -65,24 +63,24 @@ fn main() {
         Some(s) => panic!("invalid error policy {}", s),
     };
 
-    let mut input = match matches.free.first().map(|s| s.as_slice()) {
+    let mut input = match matches.free.first().map(|s| &s[]) {
         Some("-") | None => Box::new(io::stdin()) as Box<Reader>,
         Some(f) => Box::new(io::File::open(&Path::new(f))) as Box<Reader>,
     };
-    let mut output = match matches.opt_str("o").as_ref().map(|s| s.as_slice()) {
+    let mut output = match matches.opt_str("o").as_ref().map(|s| &s[]) {
         Some("-") | None => Box::new(io::stdout()) as Box<Writer>,
         Some(f) => Box::new(io::File::create(&Path::new(f))) as Box<Writer>,
     };
 
     // XXX should really use the incremental interface
-    let decoded = match inenc.decode(input.read_to_end().unwrap().as_slice(), intrap) {
+    let decoded = match inenc.decode(&input.read_to_end().unwrap()[], intrap) {
         Ok(s) => s,
         Err(e) => panic!("decoder error: {}", e),
     };
-    let encoded = match outenc.encode(decoded.as_slice(), outtrap) {
+    let encoded = match outenc.encode(&decoded[], outtrap) {
         Ok(s) => s,
         Err(e) => panic!("encoder error: {}", e),
     };
-    output.write_all(encoded.as_slice()).unwrap();
+    output.write_all(&encoded[]).unwrap();
 }
 
