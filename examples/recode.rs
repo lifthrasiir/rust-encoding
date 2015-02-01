@@ -4,6 +4,7 @@
 
 #![feature(core, os, io, path, collections)] // lib stability features as per RFC #507
 
+extern crate core;
 extern crate encoding;
 extern crate getopts;
 
