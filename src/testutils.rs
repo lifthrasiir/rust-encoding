@@ -1,5 +1,5 @@
 // This is a part of rust-encoding.
-// Copyright (c) 2013-2014, Kang Seonghoon.
+// Copyright (c) 2013-2015, Kang Seonghoon.
 // See README.md and LICENSE.txt for details.
 
 //! Macros and utilities for testing.
@@ -163,19 +163,19 @@ pub static INVALID_UTF8_TEXT: &'static [u8] = include_bytes!("examples/UTF-8-tes
 /// or it will use a built-in sample data (of about 100KB).
 pub fn get_external_bench_data() -> Vec<u8> {
     use std::old_io as io;
-    use std::os;
+    use std::env;
 
     // An HTML file derived from the Outer Space Treaty of 1967, in six available languages.
     // http://www.unoosa.org/oosa/SpaceLaw/outerspt.html
     static LONGER_TEXT: &'static [u8] = include_bytes!("examples/outer-space-treaty.html");
 
-    match os::getenv("EXTERNAL_BENCH_DATA") {
-        Some(path) => {
+    match env::var_string("EXTERNAL_BENCH_DATA") {
+        Ok(path) => {
             let path = Path::new(path);
             let mut file = io::File::open(&path).ok().expect("cannot read an external bench data");
             file.read_to_end().ok().expect("cannot read an external bench data")
         }
-        None => {
+        Err(..) => {
             LONGER_TEXT.to_vec()
         }
     }

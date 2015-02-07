@@ -2,20 +2,20 @@
 // Copyright (c) 2014-2015, Kang Seonghoon.
 // See README.md and LICENSE.txt for details.
 
-#![feature(core, os, io, path, collections)] // lib stability features as per RFC #507
+#![feature(core, env, io, path, collections)] // lib stability features as per RFC #507
 
 extern crate core;
 extern crate encoding;
 extern crate getopts;
 
 use std::old_io as io;
-use std::os;
+use std::env;
 use encoding::{EncoderTrap, DecoderTrap};
 use encoding::label::encoding_from_whatwg_label;
 use getopts::Options;
 
 fn main() {
-    let args = os::args();
+    let args: Vec<_> = env::args().collect();
 
     let mut opts = Options::new();
     opts.optopt("f", "from-code", "set input encoding", "NAME");
