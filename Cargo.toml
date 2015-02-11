@@ -1,6 +1,6 @@
 [package]
 name = "encoding"
-version = "0.2.21"
+version = "0.2.22"
 authors = ["Kang Seonghoon <public+rust@mearie.org>"]
 
 description = "Character encoding support for Rust"
@@ -43,5 +43,5 @@ version = "~1.20141219.1"
 path = "src/index/tradchinese"
 
 [dev-dependencies]
-getopts = "0.2.3" # for examples
+getopts = "0.2.4" # for examples
 
