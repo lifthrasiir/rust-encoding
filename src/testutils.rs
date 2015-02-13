@@ -169,7 +169,7 @@ pub fn get_external_bench_data() -> Vec<u8> {
     // http://www.unoosa.org/oosa/SpaceLaw/outerspt.html
     static LONGER_TEXT: &'static [u8] = include_bytes!("examples/outer-space-treaty.html");
 
-    match env::var_string("EXTERNAL_BENCH_DATA") {
+    match env::var("EXTERNAL_BENCH_DATA") {
         Ok(path) => {
             let path = Path::new(path);
             let mut file = io::File::open(&path).ok().expect("cannot read an external bench data");
