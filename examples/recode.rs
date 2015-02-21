@@ -2,7 +2,7 @@
 // Copyright (c) 2014-2015, Kang Seonghoon.
 // See README.md and LICENSE.txt for details.
 
-#![feature(core, env, io, path, collections)] // lib stability features as per RFC #507
+#![feature(core, env, old_io, old_path, collections)] // lib stability features as per RFC #507
 
 extern crate core;
 extern crate encoding;
@@ -37,14 +37,14 @@ fn main() {
 
     let inencname = matches.opt_str("f");
     let outencname = matches.opt_str("t");
-    let inenc = match inencname.as_ref().map(|s| &s[]) {
+    let inenc = match inencname.as_ref().map(|s| &s[..]) {
         Some(name) => match encoding_from_whatwg_label(name) {
             Some(enc) => enc,
             None => panic!("invalid input encoding name {}", name),
         },
         None => encoding::all::UTF_8 as encoding::EncodingRef,
     };
-    let outenc = match outencname.as_ref().map(|s| &s[]) {
+    let outenc = match outencname.as_ref().map(|s| &s[..]) {
         Some(name) => match encoding_from_whatwg_label(name) {
             Some(enc) => enc,
             None => panic!("invalid output encoding name {}", name),
@@ -56,7 +56,7 @@ fn main() {
     if matches.opt_present("c") {
         policy = Some("ignore".to_string());
     }
-    let (intrap, outtrap) = match policy.as_ref().map(|s| &s[]) {
+    let (intrap, outtrap) = match policy.as_ref().map(|s| &s[..]) {
         Some("strict") | None => (DecoderTrap::Strict, EncoderTrap::Strict),
         Some("ignore") => (DecoderTrap::Ignore, EncoderTrap::Ignore),
         Some("replace") => (DecoderTrap::Replace, EncoderTrap::Replace),
@@ -64,24 +64,24 @@ fn main() {
         Some(s) => panic!("invalid error policy {}", s),
     };
 
-    let mut input = match matches.free.first().map(|s| &s[]) {
+    let mut input = match matches.free.first().map(|s| &s[..]) {
         Some("-") | None => Box::new(io::stdin()) as Box<Reader>,
         Some(f) => Box::new(io::File::open(&Path::new(f))) as Box<Reader>,
     };
-    let mut output = match matches.opt_str("o").as_ref().map(|s| &s[]) {
+    let mut output = match matches.opt_str("o").as_ref().map(|s| &s[..]) {
         Some("-") | None => Box::new(io::stdout()) as Box<Writer>,
         Some(f) => Box::new(io::File::create(&Path::new(f))) as Box<Writer>,
     };
 
     // XXX should really use the incremental interface
-    let decoded = match inenc.decode(&input.read_to_end().unwrap()[], intrap) {
+    let decoded = match inenc.decode(&input.read_to_end().unwrap(), intrap) {
         Ok(s) => s,
         Err(e) => panic!("decoder error: {}", e),
     };
-    let encoded = match outenc.encode(&decoded[], outtrap) {
+    let encoded = match outenc.encode(&decoded, outtrap) {
         Ok(s) => s,
         Err(e) => panic!("encoder error: {}", e),
     };
-    output.write_all(&encoded[]).unwrap();
+    output.write_all(&encoded).unwrap();
 }
 

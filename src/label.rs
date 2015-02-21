@@ -11,10 +11,10 @@ use types::EncodingRef;
 /// Implements "get an encoding" algorithm: http://encoding.spec.whatwg.org/#concept-encoding-get
 #[stable]
 pub fn encoding_from_whatwg_label(label: &str) -> Option<EncodingRef> {
-    let label = label.trim_matches(&[' ', '\n', '\r', '\t', '\x0C'][]);
+    let label = label.trim_matches(&[' ', '\n', '\r', '\t', '\x0C'][..]);
     let label: String =
         label.chars().map(|c| match c { 'A'...'Z' => (c as u8 + 32) as char, _ => c }).collect();
-    match &label[] {
+    match &label[..] {
         "unicode-1-1-utf-8" |
         "utf-8" |
         "utf8" =>

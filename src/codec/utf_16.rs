@@ -5,6 +5,7 @@
 //! UTF-16.
 
 use std::borrow::IntoCow;
+use std::marker::PhantomData;
 use util::as_char;
 use types::*;
 
@@ -22,34 +23,32 @@ pub struct Big;
 
 /// An internal trait used to customize UTF-16 implementations.
 trait Endian: Clone + 'static {
-    fn name(_endian: Option<Self>) -> &'static str;
-    fn whatwg_name(_endian: Option<Self>) -> Option<&'static str>;
-    fn write_two_bytes(_endian: Option<Self>, output: &mut ByteWriter, msb: u8, lsb: u8);
-    fn concat_two_bytes(_endian: Option<Self>, lead: u16, trail: u8) -> u16;
+    fn name() -> &'static str;
+    fn whatwg_name() -> Option<&'static str>;
+    fn write_two_bytes(output: &mut ByteWriter, msb: u8, lsb: u8);
+    fn concat_two_bytes(lead: u16, trail: u8) -> u16;
 }
 
 impl Endian for Little {
-    fn name(_endian: Option<Little>) -> &'static str { "utf-16le" }
-    fn whatwg_name(_endian: Option<Little>) -> Option<&'static str> {
-        Some("utf-16") // WHATWG compatibility
-    }
-    fn write_two_bytes(_endian: Option<Little>, output: &mut ByteWriter, msb: u8, lsb: u8) {
+    fn name() -> &'static str { "utf-16le" }
+    fn whatwg_name() -> Option<&'static str> { Some("utf-16") } // WHATWG compatibility
+    fn write_two_bytes(output: &mut ByteWriter, msb: u8, lsb: u8) {
         output.write_byte(lsb);
         output.write_byte(msb);
     }
-    fn concat_two_bytes(_endian: Option<Little>, lead: u16, trail: u8) -> u16 {
+    fn concat_two_bytes(lead: u16, trail: u8) -> u16 {
         lead | ((trail as u16) << 8)
     }
 }
 
 impl Endian for Big {
-    fn name(_endian: Option<Big>) -> &'static str { "utf-16be" }
-    fn whatwg_name(_endian: Option<Big>) -> Option<&'static str> { Some("utf-16be") }
-    fn write_two_bytes(_endian: Option<Big>, output: &mut ByteWriter, msb: u8, lsb: u8) {
+    fn name() -> &'static str { "utf-16be" }
+    fn whatwg_name() -> Option<&'static str> { Some("utf-16be") }
+    fn write_two_bytes(output: &mut ByteWriter, msb: u8, lsb: u8) {
         output.write_byte(msb);
         output.write_byte(lsb);
     }
-    fn concat_two_bytes(_endian: Option<Big>, lead: u16, trail: u8) -> u16 {
+    fn concat_two_bytes(lead: u16, trail: u8) -> u16 {
         (lead << 8) | trail as u16
     }
 }
@@ -70,18 +69,25 @@ impl Endian for Big {
  * which should be either `Little` (little endian) or `Big` (big endian).
  */
 #[derive(Clone, Copy)]
-pub struct UTF16Encoding<E>;
+pub struct UTF16Encoding<E> {
+    _marker: PhantomData<E>
+}
 
-/// UTF-16 in little endian.
+/// A type for UTF-16 in little endian.
 pub type UTF16LEEncoding = UTF16Encoding<Little>;
-/// UTF-16 in big endian.
+/// A type for UTF-16 in big endian.
 pub type UTF16BEEncoding = UTF16Encoding<Big>;
 
+/// An instance for UTF-16 in little endian.
+pub const UTF_16LE_ENCODING: UTF16LEEncoding = UTF16Encoding { _marker: PhantomData };
+/// An instance for UTF-16 in big endian.
+pub const UTF_16BE_ENCODING: UTF16BEEncoding = UTF16Encoding { _marker: PhantomData };
+
 impl<E: Endian> Encoding for UTF16Encoding<E> {
-    fn name(&self) -> &'static str { Endian::name(None::<E>) }
-    fn whatwg_name(&self) -> Option<&'static str> { Endian::whatwg_name(None::<E>) }
-    fn raw_encoder(&self) -> Box<RawEncoder> { UTF16Encoder::new(None::<E>) }
-    fn raw_decoder(&self) -> Box<RawDecoder> { UTF16Decoder::new(None::<E>) }
+    fn name(&self) -> &'static str { <E as Endian>::name() }
+    fn whatwg_name(&self) -> Option<&'static str> { <E as Endian>::whatwg_name() }
+    fn raw_encoder(&self) -> Box<RawEncoder> { UTF16Encoder::<E>::new() }
+    fn raw_decoder(&self) -> Box<RawDecoder> { UTF16Decoder::<E>::new() }
 }
 
 /**
@@ -93,20 +99,24 @@ impl<E: Endian> Encoding for UTF16Encoding<E> {
  * which should be either `Little` (little endian) or `Big` (big endian).
  */
 #[derive(Clone, Copy)]
-pub struct UTF16Encoder<E>;
+pub struct UTF16Encoder<E> {
+    _marker: PhantomData<E>
+}
 
 impl<E: Endian> UTF16Encoder<E> {
-    fn new(_endian: Option<E>) -> Box<RawEncoder> { Box::new(UTF16Encoder::<E>) }
+    fn new() -> Box<RawEncoder> {
+        Box::new(UTF16Encoder::<E> { _marker: PhantomData })
+    }
 }
 
 impl<E: Endian> RawEncoder for UTF16Encoder<E> {
-    fn from_self(&self) -> Box<RawEncoder> { UTF16Encoder::new(None::<E>) }
+    fn from_self(&self) -> Box<RawEncoder> { UTF16Encoder::<E>::new() }
 
     fn raw_feed(&mut self, input: &str, output: &mut ByteWriter) -> (usize, Option<CodecError>) {
         output.writer_hint(input.len() * 2);
 
         let write_two_bytes = |output: &mut ByteWriter, msb: u8, lsb: u8|
-            Endian::write_two_bytes(None::<E>, output, msb, lsb);
+            <E as Endian>::write_two_bytes(output, msb, lsb);
 
         for ch in input.chars() {
             match ch {
@@ -143,22 +153,24 @@ impl<E: Endian> RawEncoder for UTF16Encoder<E> {
 pub struct UTF16Decoder<E> {
     leadbyte: u16,
     leadsurrogate: u16,
+    _marker: PhantomData<E>
 }
 
 impl<E: Endian> UTF16Decoder<E> {
-    pub fn new(_endian: Option<E>) -> Box<RawDecoder> {
-        Box::new(UTF16Decoder::<E> { leadbyte: 0xffff, leadsurrogate: 0xffff })
+    pub fn new() -> Box<RawDecoder> {
+        Box::new(UTF16Decoder::<E> { leadbyte: 0xffff, leadsurrogate: 0xffff,
+                                     _marker: PhantomData })
     }
 }
 
 impl<E: Endian> RawDecoder for UTF16Decoder<E> {
-    fn from_self(&self) -> Box<RawDecoder> { UTF16Decoder::new(None::<E>) }
+    fn from_self(&self) -> Box<RawDecoder> { UTF16Decoder::<E>::new() }
 
     fn raw_feed(&mut self, input: &[u8], output: &mut StringWriter) -> (usize, Option<CodecError>) {
         output.writer_hint(input.len() / 2); // when every codepoint is U+0000..007F
 
         let concat_two_bytes = |lead: u16, trail: u8|
-            Endian::concat_two_bytes(None::<E>, lead, trail);
+            <E as Endian>::concat_two_bytes(lead, trail);
 
         let mut i = 0;
         let mut processed = 0;
@@ -293,10 +305,8 @@ mod tests {
     // little endian and big endian is symmetric to each other, there's no need to test both.
     // since big endian is easier to inspect we test UTF_16BE only.
 
-    use super::{UTF16Encoding, UTF16BEEncoding};
+    use super::UTF_16BE_ENCODING as UTF_16BE;
     use types::*;
-
-    static UTF_16BE: UTF16BEEncoding = UTF16Encoding;
 
     #[test]
     fn test_encoder_valid() {

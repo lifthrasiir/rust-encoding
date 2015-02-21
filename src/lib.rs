@@ -4,7 +4,7 @@
 
 /*!
 
-# Encoding 0.2.23
+# Encoding 0.2.24
 
 Character encoding support for Rust. (also known as `rust-encoding`)
 It is based on [WHATWG Encoding Standard](http://encoding.spec.whatwg.org/),
@@ -78,8 +78,8 @@ fn hex_ncr_escape(_encoder: &mut RawEncoder, input: &str, output: &mut ByteWrite
 static HEX_NCR_ESCAPE: EncoderTrap = EncoderTrap::Call(hex_ncr_escape);
 
 let orig = "Hello, 世界!".to_string();
-let encoded = ASCII.encode(&orig[], HEX_NCR_ESCAPE).unwrap();
-assert_eq!(ASCII.decode(&encoded[], DecoderTrap::Strict),
+let encoded = ASCII.encode(&orig, HEX_NCR_ESCAPE).unwrap();
+assert_eq!(ASCII.decode(&encoded, DecoderTrap::Strict),
            Ok("Hello, &#x4e16;&#x754c;!".to_string()));
 ~~~~
 
@@ -173,7 +173,7 @@ Whenever in doubt, look at the source code and specifications for detailed expla
 */
 
 #![feature(core, collections)] // lib stability features as per RFC #507
-#![cfg_attr(test, feature(path, env, io, test))] // ditto
+#![cfg_attr(test, feature(env, old_io, old_path, test))] // ditto
 
 extern crate "encoding-index-singlebyte" as index_singlebyte;
 extern crate "encoding-index-korean" as index_korean;
@@ -226,16 +226,16 @@ mod tests {
                 input, DecoderTrap::Strict, all::ISO_8859_1 as EncodingRef);
             let result = result.unwrap();
             assert_eq!(used_encoding.name(), expected_encoding);
-            assert_eq!(&result[], expected_result);
+            assert_eq!(&result[..], expected_result);
         }
 
-        test_one(&[0xEF, 0xBB, 0xBF, 0xC3, 0xA9][], "é", "utf-8");
-        test_one(&[0xC3, 0xA9][], "Ã©", "iso-8859-1");
+        test_one(&[0xEF, 0xBB, 0xBF, 0xC3, 0xA9], "é", "utf-8");
+        test_one(&[0xC3, 0xA9], "Ã©", "iso-8859-1");
 
-        test_one(&[0xFE, 0xFF, 0x00, 0xE9][], "é", "utf-16be");
-        test_one(&[0x00, 0xE9][], "\x00é", "iso-8859-1");
+        test_one(&[0xFE, 0xFF, 0x00, 0xE9], "é", "utf-16be");
+        test_one(&[0x00, 0xE9], "\x00é", "iso-8859-1");
 
-        test_one(&[0xFF, 0xFE, 0xE9, 0x00][], "é", "utf-16le");
-        test_one(&[0xE9, 0x00][], "é\x00", "iso-8859-1");
+        test_one(&[0xFF, 0xFE, 0xE9, 0x00], "é", "utf-16le");
+        test_one(&[0xE9, 0x00], "é\x00", "iso-8859-1");
     }
 }

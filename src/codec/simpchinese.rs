@@ -308,7 +308,7 @@ mod gb18030_tests {
         let s = testutils::SIMPLIFIED_CHINESE_TEXT;
         bencher.bytes = s.len() as u64;
         bencher.iter(|| test::black_box({
-            GB18030Encoding.encode(&s[], EncoderTrap::Strict)
+            GB18030Encoding.encode(&s, EncoderTrap::Strict)
         }))
     }
 
@@ -318,7 +318,7 @@ mod gb18030_tests {
                                        EncoderTrap::Strict).ok().unwrap();
         bencher.bytes = s.len() as u64;
         bencher.iter(|| test::black_box({
-            GB18030Encoding.decode(&s[], DecoderTrap::Strict)
+            GB18030Encoding.decode(&s, DecoderTrap::Strict)
         }))
     }
 }
@@ -601,7 +601,7 @@ mod hz_tests {
         let s = testutils::SIMPLIFIED_CHINESE_TEXT;
         bencher.bytes = s.len() as u64;
         bencher.iter(|| test::black_box({
-            HZEncoding.encode(&s[], EncoderTrap::Strict)
+            HZEncoding.encode(&s, EncoderTrap::Strict)
         }))
     }
 
@@ -611,7 +611,7 @@ mod hz_tests {
                                   EncoderTrap::Strict).ok().unwrap();
         bencher.bytes = s.len() as u64;
         bencher.iter(|| test::black_box({
-            HZEncoding.decode(&s[], DecoderTrap::Strict)
+            HZEncoding.decode(&s, DecoderTrap::Strict)
         }))
     }
 }

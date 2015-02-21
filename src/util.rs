@@ -5,6 +5,7 @@
 //! Internal utilities.
 
 use std::{str, char, mem};
+use std::marker::PhantomData;
 use std::borrow::IntoCow;
 use std::default::Default;
 use types;
@@ -59,9 +60,18 @@ pub struct StatefulDecoderHelper<'a, St> {
     pub output: &'a mut (types::StringWriter + 'a),
     /// The last codec error. The caller will later collect this.
     pub err: Option<types::CodecError>,
+    /// A marker for the phantom type parameter `St`.
+    _marker: PhantomData<St>,
 }
 
-impl<'a, St:Default> StatefulDecoderHelper<'a, St> {
+impl<'a, St: Default> StatefulDecoderHelper<'a, St> {
+    /// Makes a new decoder context out of given buffer and output callback.
+    #[inline(always)]
+    pub fn new(buf: &'a [u8],
+               output: &'a mut (types::StringWriter + 'a)) -> StatefulDecoderHelper<'a, St> {
+        StatefulDecoderHelper { buf: buf, pos: 0, output: output, err: None, _marker: PhantomData }
+    }
+
     /// Reads one byte from the buffer if any.
     #[inline(always)]
     pub fn read(&mut self) -> Option<u8> {
@@ -240,9 +250,7 @@ macro_rules! stateful_decoder(
 
                 output.writer_hint(input.len());
 
-                let mut ctx = ::util::StatefulDecoderHelper {
-                    buf: input, pos: 0, output: output, err: None
-                };
+                let mut ctx = ::util::StatefulDecoderHelper::new(input, output);
                 let mut processed = 0;
                 let mut st = self.st;
 
@@ -286,9 +294,7 @@ macro_rules! stateful_decoder(
 
             fn raw_finish(&mut self, output: &mut StringWriter) -> Option<CodecError> {
                 #![allow(unused_mut, unused_variables)]
-                let mut ctx = ::util::StatefulDecoderHelper {
-                    buf: &[], pos: 0, output: output, err: None
-                };
+                let mut ctx = ::util::StatefulDecoderHelper::new(&[], output);
                 self.st = match ::std::mem::replace(&mut self.st, $stmod::$inist) {
                     $stmod::$inist => { let $inictx = &mut ctx; $($inifin);+ },
                     $(

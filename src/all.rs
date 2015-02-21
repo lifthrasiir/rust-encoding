@@ -68,8 +68,8 @@ singlebyte!(#[stable] var=WINDOWS_1258, mod=index::windows_1258, name|whatwg="wi
 singlebyte!(#[stable] var=MAC_CYRILLIC, mod=index::x_mac_cyrillic,
                       name="mac-cyrillic", whatwg=Some("x-mac-cyrillic"));
 unique!(#[stable] var=UTF_8, mod=codec::utf_8, val=UTF8Encoding);
-unique!(#[stable] var=UTF_16LE, mod=codec::utf_16, ty=UTF16LEEncoding, val=UTF16Encoding);
-unique!(#[stable] var=UTF_16BE, mod=codec::utf_16, ty=UTF16BEEncoding, val=UTF16Encoding);
+unique!(#[stable] var=UTF_16LE, mod=codec::utf_16, ty=UTF16LEEncoding, val=UTF_16LE_ENCODING);
+unique!(#[stable] var=UTF_16BE, mod=codec::utf_16, ty=UTF16BEEncoding, val=UTF_16BE_ENCODING);
 unique!(#[stable] var=WINDOWS_949, mod=codec::korean, val=Windows949Encoding);
 unique!(#[unstable] var=EUC_JP, mod=codec::japanese, val=EUCJPEncoding);
 unique!(#[unstable] var=WINDOWS_31J, mod=codec::japanese, val=Windows31JEncoding);

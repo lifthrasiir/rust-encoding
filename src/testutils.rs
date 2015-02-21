@@ -7,13 +7,13 @@
 macro_rules! assert_feed_ok(
     ($this:expr, $processed:expr, $unprocessed:expr, $output:expr) => ({
         let processed = $processed;
-        let processed = $this.test_norm_input(&processed[]);
+        let processed = $this.test_norm_input(&processed);
         let unprocessed = $unprocessed;
-        let unprocessed = $this.test_norm_input(&unprocessed[]);
+        let unprocessed = $this.test_norm_input(&unprocessed);
         let output = $output;
-        let output = $this.test_norm_output(&output[]);
+        let output = $this.test_norm_output(&output);
         let input = $this.test_concat(processed, unprocessed);
-        let (nprocessed, err, buf) = $this.test_feed(&input[]);
+        let (nprocessed, err, buf) = $this.test_feed(&input);
         let upto = err.map(|e| e.upto);
         assert!(processed.len() == nprocessed && None == upto,
                 "raw_feed should return {:?}, but instead returned {:?}",
@@ -26,14 +26,14 @@ macro_rules! assert_feed_ok(
 macro_rules! assert_feed_err(
     ($this:expr, $backup:expr, $processed:expr, $problem:expr, $remaining:expr, $output:expr) => ({
         let processed = $processed;
-        let processed = $this.test_norm_input(&processed[]);
+        let processed = $this.test_norm_input(&processed);
         let problem = $problem;
-        let problem = $this.test_norm_input(&problem[]);
+        let problem = $this.test_norm_input(&problem);
         let remaining = $remaining;
-        let remaining = $this.test_norm_input(&remaining[]);
+        let remaining = $this.test_norm_input(&remaining);
         let output = $output;
-        let output = $this.test_norm_output(&output[]);
-        let input = $this.test_concat(&$this.test_concat(processed, problem)[], remaining);
+        let output = $this.test_norm_output(&output);
+        let input = $this.test_concat(&$this.test_concat(processed, problem), remaining);
         let backup: isize = $backup;
         let (nprocessed, err, buf) = $this.test_feed(&input[-backup as usize..]);
         let upto = err.map(|e| e.upto);
@@ -52,7 +52,7 @@ macro_rules! assert_feed_err(
 macro_rules! assert_finish_ok(
     ($this:expr, $output:expr) => ({
         let output = $output;
-        let output = $this.test_norm_output(&output[]);
+        let output = $this.test_norm_output(&output);
         let (err, buf) = $this.test_finish();
         let upto = err.map(|e| e.upto);
         assert!(None == upto,
@@ -65,7 +65,7 @@ macro_rules! assert_finish_ok(
 macro_rules! assert_finish_err(
     ($this:expr, $backup:expr, $output:expr) => ({
         let output = $output;
-        let output = $this.test_norm_output(&output[]);
+        let output = $this.test_norm_output(&output);
         let (err, buf) = $this.test_finish();
         let backup: isize = $backup;
         let upto = err.map(|e| e.upto);

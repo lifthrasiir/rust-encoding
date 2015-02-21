@@ -389,7 +389,7 @@ mod eucjp_tests {
         let s = testutils::JAPANESE_TEXT;
         bencher.bytes = s.len() as u64;
         bencher.iter(|| test::black_box({
-            EUCJPEncoding.encode(&s[], EncoderTrap::Strict)
+            EUCJPEncoding.encode(&s, EncoderTrap::Strict)
         }))
     }
 
@@ -399,7 +399,7 @@ mod eucjp_tests {
                                      EncoderTrap::Strict).ok().unwrap();
         bencher.bytes = s.len() as u64;
         bencher.iter(|| test::black_box({
-            EUCJPEncoding.decode(&s[], DecoderTrap::Strict)
+            EUCJPEncoding.decode(&s, DecoderTrap::Strict)
         }))
     }
 }
@@ -689,7 +689,7 @@ mod windows31j_tests {
         let s = testutils::JAPANESE_TEXT;
         bencher.bytes = s.len() as u64;
         bencher.iter(|| test::black_box({
-            Windows31JEncoding.encode(&s[], EncoderTrap::Strict)
+            Windows31JEncoding.encode(&s, EncoderTrap::Strict)
         }))
     }
 
@@ -699,7 +699,7 @@ mod windows31j_tests {
                                           EncoderTrap::Strict).ok().unwrap();
         bencher.bytes = s.len() as u64;
         bencher.iter(|| test::black_box({
-            Windows31JEncoding.decode(&s[], DecoderTrap::Strict)
+            Windows31JEncoding.decode(&s, DecoderTrap::Strict)
         }))
     }
 }
@@ -955,15 +955,15 @@ mod iso2022jp_tests {
         // - C: U+FF88 HALFWIDTH KATAKANA LETTER NE (requires Katakana state)
         // - D is omitted as the encoder does not support JIS X 0212.
         // a (3,2) De Bruijn near-sequence "ABCACBA" is used to test all possible cases.
-        static AD: &'static str = "\x20";
-        static BD: &'static str = "\u{30cd}";
-        static CD: &'static str = "\u{ff88}";
-        static AE: &'static [u8] = &[0x1b, 0x28, 0x42, 0x20];
-        static BE: &'static [u8] = &[0x1b, 0x24, 0x42, 0x25, 0x4d];
-        static CE: &'static [u8] = &[0x1b, 0x28, 0x49, 0x48];
+        const AD: &'static str = "\x20";
+        const BD: &'static str = "\u{30cd}";
+        const CD: &'static str = "\u{ff88}";
+        const AE: &'static [u8] = &[0x1b, 0x28, 0x42, 0x20];
+        const BE: &'static [u8] = &[0x1b, 0x24, 0x42, 0x25, 0x4d];
+        const CE: &'static [u8] = &[0x1b, 0x28, 0x49, 0x48];
         let mut e = ISO2022JPEncoding.raw_encoder();
-        let decoded: String = ["\x20",    BD, CD, AD, CD, BD, AD].concat();
-        let encoded: Vec<_> = [&[0x20][], BE, CE, AE, CE, BE, AE].concat();
+        let decoded: String = ["\x20",      BD, CD, AD, CD, BD, AD].concat();
+        let encoded: Vec<_> = [&[0x20][..], BE, CE, AE, CE, BE, AE].concat();
         assert_feed_ok!(e, decoded, "", encoded);
         assert_finish_ok!(e, []);
     }
@@ -1024,18 +1024,18 @@ mod iso2022jp_tests {
         // - C: U+FF88 HALFWIDTH KATAKANA LETTER NE (requires Katakana state)
         // - D: U+793B CJK UNIFIED IDEOGRAPH-793B (requires JIS X 0212 Lead state)
         // a (4,2) De Bruijn sequence "AABBCCACBADDBDCDA" is used to test all possible cases.
-        static AD: &'static str = "\x20";
-        static BD: &'static str = "\u{30cd}";
-        static CD: &'static str = "\u{ff88}";
-        static DD: &'static str = "\u{793b}";
-        static AE: &'static [u8] = &[0x1b, 0x28, 0x42,       0x20];
-        static BE: &'static [u8] = &[0x1b, 0x24, 0x42,       0x25, 0x4d];
-        static CE: &'static [u8] = &[0x1b, 0x28, 0x49,       0x48];
-        static DE: &'static [u8] = &[0x1b, 0x24, 0x28, 0x44, 0x50, 0x4b];
+        const AD: &'static str = "\x20";
+        const BD: &'static str = "\u{30cd}";
+        const CD: &'static str = "\u{ff88}";
+        const DD: &'static str = "\u{793b}";
+        const AE: &'static [u8] = &[0x1b, 0x28, 0x42,       0x20];
+        const BE: &'static [u8] = &[0x1b, 0x24, 0x42,       0x25, 0x4d];
+        const CE: &'static [u8] = &[0x1b, 0x28, 0x49,       0x48];
+        const DE: &'static [u8] = &[0x1b, 0x24, 0x28, 0x44, 0x50, 0x4b];
         let mut d = ISO2022JPEncoding.raw_decoder();
-        let decoded: String = ["\x20",   AD,BD,BD,CD,CD,AD,CD,BD,AD,DD,DD,BD,DD,CD,DD,AD].concat();
-        let encoded: Vec<_> = [&[0x20][],AE,BE,BE,CE,CE,AE,CE,BE,AE,DE,DE,BE,DE,CE,DE,AE].concat();
-        assert_feed_ok!(d, encoded, [], decoded);
+        let dec: String = ["\x20",     AD,BD,BD,CD,CD,AD,CD,BD,AD,DD,DD,BD,DD,CD,DD,AD].concat();
+        let enc: Vec<_> = [&[0x20][..],AE,BE,BE,CE,CE,AE,CE,BE,AE,DE,DE,BE,DE,CE,DE,AE].concat();
+        assert_feed_ok!(d, enc, [], dec);
         assert_finish_ok!(d, "");
     }
 
@@ -1124,13 +1124,13 @@ mod iso2022jp_tests {
         assert_feed_ok!(d, [], [0x1b, 0x28], "");
         assert_finish_err!(d, ""); // no backup
 
-        assert_eq!(ISO2022JPEncoding.decode(&[0x1b][], DecoderTrap::Replace),
+        assert_eq!(ISO2022JPEncoding.decode(&[0x1b], DecoderTrap::Replace),
                    Ok("\u{fffd}".to_string()));
-        assert_eq!(ISO2022JPEncoding.decode(&[0x1b, 0x24][], DecoderTrap::Replace),
+        assert_eq!(ISO2022JPEncoding.decode(&[0x1b, 0x24], DecoderTrap::Replace),
                    Ok("\u{fffd}".to_string()));
-        assert_eq!(ISO2022JPEncoding.decode(&[0x1b, 0x24, 0x28][], DecoderTrap::Replace),
+        assert_eq!(ISO2022JPEncoding.decode(&[0x1b, 0x24, 0x28], DecoderTrap::Replace),
                    Ok("\u{fffd}\x28".to_string()));
-        assert_eq!(ISO2022JPEncoding.decode(&[0x1b, 0x28][], DecoderTrap::Replace),
+        assert_eq!(ISO2022JPEncoding.decode(&[0x1b, 0x28], DecoderTrap::Replace),
                    Ok("\u{fffd}".to_string()));
     }
 
@@ -1253,7 +1253,7 @@ mod iso2022jp_tests {
         let s = testutils::JAPANESE_TEXT;
         bencher.bytes = s.len() as u64;
         bencher.iter(|| test::black_box({
-            ISO2022JPEncoding.encode(&s[], EncoderTrap::Strict)
+            ISO2022JPEncoding.encode(&s, EncoderTrap::Strict)
         }))
     }
 
@@ -1263,7 +1263,7 @@ mod iso2022jp_tests {
                                          EncoderTrap::Strict).ok().unwrap();
         bencher.bytes = s.len() as u64;
         bencher.iter(|| test::black_box({
-            ISO2022JPEncoding.decode(&s[], DecoderTrap::Strict)
+            ISO2022JPEncoding.decode(&s, DecoderTrap::Strict)
         }))
     }
 }
