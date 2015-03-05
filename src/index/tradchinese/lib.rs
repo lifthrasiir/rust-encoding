@@ -6,6 +6,7 @@
 //! Traditional Chinese index tables for
 //! [rust-encoding](https://github.com/lifthrasiir/rust-encoding).
 
+#![feature(core)]
 #![cfg_attr(test, feature(test))]
 
 #[cfg(test)]

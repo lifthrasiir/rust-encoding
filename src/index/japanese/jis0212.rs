@@ -718,7 +718,7 @@ static FORWARD_TABLE: &'static [u16] = &[
 #[inline]
 #[stable]
 pub fn forward(code: u16) -> u32 {
-    let code = (code - 108) as usize;
+    let code = (code as usize).wrapping_sub(108);
     if code < 7103 {
         FORWARD_TABLE[code] as u32
     } else {

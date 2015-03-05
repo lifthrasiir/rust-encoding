@@ -201,7 +201,7 @@ def generate_multi_byte_index(crate, name):
         print >>f, '#[stable]'
         print >>f, 'pub fn forward(code: u16) -> u32 {'
         if minkey != 0:
-            print >>f, '    let code = (code - %d) as usize;' % minkey
+            print >>f, '    let code = (code as usize).wrapping_sub(%d);' % minkey
         else:
             print >>f, '    let code = code as usize;'
         print >>f, '    if code < %d {' % (maxkey - minkey)

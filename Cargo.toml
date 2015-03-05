@@ -1,6 +1,6 @@
 [package]
 name = "encoding"
-version = "0.2.24"
+version = "0.2.25"
 authors = ["Kang Seonghoon <public+rust@mearie.org>"]
 
 description = "Character encoding support for Rust"
@@ -31,7 +31,7 @@ version = "~1.20141219.1"
 path = "src/index/korean"
 
 [dependencies.encoding-index-japanese]
-version = "~1.20141219.1"
+version = "~1.20141219.2"
 path = "src/index/japanese"
 
 [dependencies.encoding-index-simpchinese]
@@ -39,7 +39,7 @@ version = "~1.20141219.1"
 path = "src/index/simpchinese"
 
 [dependencies.encoding-index-tradchinese]
-version = "~1.20141219.1"
+version = "~1.20141219.2"
 path = "src/index/tradchinese"
 
 [dev-dependencies]

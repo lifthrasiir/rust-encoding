@@ -2,7 +2,7 @@
 // Copyright (c) 2014-2015, Kang Seonghoon.
 // See README.md and LICENSE.txt for details.
 
-#![feature(core, env, old_io, old_path, collections)] // lib stability features as per RFC #507
+#![feature(core, old_io, old_path, collections)] // lib stability features as per RFC #507
 
 extern crate core;
 extern crate encoding;

@@ -1,4 +1,4 @@
-[Encoding][doc] 0.2.24
+[Encoding][doc] 0.2.25
 ======================
 
 [![Encoding on Travis CI][travis-image]][travis]
@@ -82,8 +82,8 @@ fn hex_ncr_escape(_encoder: &mut RawEncoder, input: &str, output: &mut ByteWrite
 static HEX_NCR_ESCAPE: EncoderTrap = EncoderTrap::Call(hex_ncr_escape);
 
 let orig = "Hello, 世界!".to_string();
-let encoded = ASCII.encode(&orig[], HEX_NCR_ESCAPE).unwrap();
-assert_eq!(ASCII.decode(&encoded[], DecoderTrap::Strict),
+let encoded = ASCII.encode(&orig, HEX_NCR_ESCAPE).unwrap();
+assert_eq!(ASCII.decode(&encoded, DecoderTrap::Strict),
            Ok("Hello, &#x4e16;&#x754c;!".to_string()));
 ~~~~
 

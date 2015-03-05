@@ -1910,7 +1910,7 @@ static FORWARD_TABLE_MORE: &'static [u32] = &[
 #[inline]
 #[stable]
 pub fn forward(code: u16) -> u32 {
-    let code = (code - 942) as usize;
+    let code = (code as usize).wrapping_sub(942);
     if code < 18840 {
         (FORWARD_TABLE[code] as u32) | (((FORWARD_TABLE_MORE[code >> 5] >> (code & 31)) & 1) << 17)
     } else {
