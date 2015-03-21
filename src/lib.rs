@@ -4,7 +4,7 @@
 
 /*!
 
-# Encoding 0.2.25
+# Encoding 0.2.26
 
 Character encoding support for Rust. (also known as `rust-encoding`)
 It is based on [WHATWG Encoding Standard](http://encoding.spec.whatwg.org/),
@@ -172,8 +172,8 @@ Whenever in doubt, look at the source code and specifications for detailed expla
 
 */
 
-#![feature(core, collections)] // lib stability features as per RFC #507
-#![cfg_attr(test, feature(old_io, old_path, test))] // ditto
+#![feature(str_char)] // lib stability features as per RFC #507
+#![cfg_attr(test, feature(core, collections, test))] // ditto
 
 extern crate "encoding-index-singlebyte" as index_singlebyte;
 extern crate "encoding-index-korean" as index_korean;

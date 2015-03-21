@@ -1,6 +1,6 @@
 [package]
 name = "encoding"
-version = "0.2.25"
+version = "0.2.26"
 authors = ["Kang Seonghoon <public+rust@mearie.org>"]
 
 description = "Character encoding support for Rust"

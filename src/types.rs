@@ -546,7 +546,7 @@ mod tests {
     }
 
     #[test]
-    #[should_fail]
+    #[should_panic]
     fn test_reencoding_trap_can_fail() {
         static FAIL: &'static MyEncoding = &MyEncoding { flag: false, prohibit: '&', prepend: "" };
 
