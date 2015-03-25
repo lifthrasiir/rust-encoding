@@ -8,6 +8,7 @@
 
 #![feature(core)]
 #![cfg_attr(test, feature(test))]
+#![cfg_attr(test, feature(core))]
 
 #[cfg(test)]
 #[macro_use]
