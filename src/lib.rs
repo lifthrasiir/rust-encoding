@@ -172,14 +172,15 @@ Whenever in doubt, look at the source code and specifications for detailed expla
 
 */
 
+#![feature(into_cow)]
 #![feature(str_char)] // lib stability features as per RFC #507
 #![cfg_attr(test, feature(core, collections, test))] // ditto
 
-extern crate "encoding-index-singlebyte" as index_singlebyte;
-extern crate "encoding-index-korean" as index_korean;
-extern crate "encoding-index-japanese" as index_japanese;
-extern crate "encoding-index-simpchinese" as index_simpchinese;
-extern crate "encoding-index-tradchinese" as index_tradchinese;
+extern crate encoding_index_singlebyte as index_singlebyte;
+extern crate encoding_index_korean as index_korean;
+extern crate encoding_index_japanese as index_japanese;
+extern crate encoding_index_simpchinese as index_simpchinese;
+extern crate encoding_index_tradchinese as index_tradchinese;
 
 #[cfg(test)] extern crate test;
 

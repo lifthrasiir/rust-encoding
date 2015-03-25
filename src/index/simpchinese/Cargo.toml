@@ -9,7 +9,7 @@ readme = "../../../README.md"
 license = "CC0-1.0"
 
 [lib]
-name = "encoding-index-simpchinese"
+name = "encoding_index_simpchinese"
 path = "lib.rs"
 
 [dependencies.encoding_index_tests]
