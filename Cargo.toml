@@ -1,6 +1,6 @@
 [package]
 name = "encoding"
-version = "0.2.26"
+version = "0.2.27"
 authors = ["Kang Seonghoon <public+rust@mearie.org>"]
 
 description = "Character encoding support for Rust"
@@ -23,25 +23,25 @@ name = "encoding"
 # so we should use tilde requirements here.
 
 [dependencies.encoding-index-singlebyte]
-version = "~1.20141219.1"
+version = "~1.20141219.2"
 path = "src/index/singlebyte"
 
 [dependencies.encoding-index-korean]
-version = "~1.20141219.1"
+version = "~1.20141219.2"
 path = "src/index/korean"
 
 [dependencies.encoding-index-japanese]
-version = "~1.20141219.2"
+version = "~1.20141219.3"
 path = "src/index/japanese"
 
 [dependencies.encoding-index-simpchinese]
-version = "~1.20141219.1"
+version = "~1.20141219.2"
 path = "src/index/simpchinese"
 
 [dependencies.encoding-index-tradchinese]
-version = "~1.20141219.2"
+version = "~1.20141219.3"
 path = "src/index/tradchinese"
 
 [dev-dependencies]
-getopts = "0.2.4" # for examples
+getopts = "0.2.5" # for examples
 

@@ -8,6 +8,7 @@ Björn Steinbrink <bsteinbr@gmail.com>
 Brian Koropoff <bkoropoff@gmail.com>
 Clark Gaebel <cgaebel@mozilla.com>
 D.K <dan.kozlowski@gmail.com>
+Filipe Gonçalves <filipe@codinghighway.com>
 Florian Gilcher <florian.gilcher@asquera.de>
 Frank Denis <github@pureftpd.org>
 Jack Moffitt <jack@metajack.im>

@@ -1,6 +1,6 @@
 [package]
 name = "encoding-index-simpchinese"
-version = "1.20141219.1"
+version = "1.20141219.2"
 authors = ["Kang Seonghoon <public+rust@mearie.org>"]
 
 description = "Index tables for simplified Chinese character encodings"
