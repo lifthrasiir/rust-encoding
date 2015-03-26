@@ -9,7 +9,7 @@ readme = "../../../README.md"
 license = "CC0-1.0"
 
 [lib]
-name = "encoding-index-singlebyte"
+name = "encoding_index_singlebyte"
 path = "lib.rs"
 
 [dependencies.encoding_index_tests]

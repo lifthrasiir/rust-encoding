@@ -9,7 +9,7 @@ readme = "../../../README.md"
 license = "CC0-1.0"
 
 [lib]
-name = "encoding-index-korean"
+name = "encoding_index_korean"
 path = "lib.rs"
 
 [dependencies.encoding_index_tests]
