@@ -6,7 +6,7 @@
 
 use std::{str, char, mem};
 use std::marker::PhantomData;
-use std::borrow::IntoCow;
+use std::convert::Into;
 use std::default::Default;
 use types;
 
@@ -109,7 +109,7 @@ impl<'a, St: Default> StatefulDecoderHelper<'a, St> {
     /// If this is the last expr in the rules, also resets back to the initial state.
     #[inline(always)]
     pub fn err(&mut self, msg: &'static str) -> St {
-        self.err = Some(types::CodecError { upto: self.pos as isize, cause: msg.into_cow() });
+        self.err = Some(types::CodecError { upto: self.pos as isize, cause: msg.into() });
         Default::default()
     }
 
@@ -121,7 +121,7 @@ impl<'a, St: Default> StatefulDecoderHelper<'a, St> {
     #[inline(always)]
     pub fn backup_and_err(&mut self, backup: usize, msg: &'static str) -> St {
         let upto = self.pos as isize - backup as isize;
-        self.err = Some(types::CodecError { upto: upto, cause: msg.into_cow() });
+        self.err = Some(types::CodecError { upto: upto, cause: msg.into() });
         Default::default()
     }
 }

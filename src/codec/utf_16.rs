@@ -4,7 +4,7 @@
 
 //! UTF-16.
 
-use std::borrow::IntoCow;
+use std::convert::Into;
 use std::marker::PhantomData;
 use util::as_char;
 use types::*;
@@ -193,7 +193,7 @@ impl<E: Endian> RawDecoder for UTF16Decoder<E> {
                     }
                     _ => {
                         return (processed, Some(CodecError {
-                            upto: i as isize - 2, cause: "invalid sequence".into_cow()
+                            upto: i as isize - 2, cause: "invalid sequence".into()
                         }));
                     }
                 }
@@ -205,7 +205,7 @@ impl<E: Endian> RawDecoder for UTF16Decoder<E> {
                     }
                     0xdc00...0xdfff => {
                         return (processed, Some(CodecError {
-                            upto: i as isize, cause: "invalid sequence".into_cow()
+                            upto: i as isize, cause: "invalid sequence".into()
                         }));
                     }
                     _ => {
@@ -235,7 +235,7 @@ impl<E: Endian> RawDecoder for UTF16Decoder<E> {
                     self.leadbyte = 0xffff;
                     self.leadsurrogate = 0xffff;
                     return (processed, Some(CodecError {
-                        upto: i as isize - 2, cause: "invalid sequence".into_cow()
+                        upto: i as isize - 2, cause: "invalid sequence".into()
                     }));
                 }
             }
@@ -267,14 +267,14 @@ impl<E: Endian> RawDecoder for UTF16Decoder<E> {
                         }
                         _ => {
                             return (processed, Some(CodecError {
-                                upto: i as isize - 1, cause: "invalid sequence".into_cow()
+                                upto: i as isize - 1, cause: "invalid sequence".into()
                             }));
                         }
                     }
                 }
                 0xdc00...0xdfff => {
                     return (processed, Some(CodecError {
-                        upto: i as isize + 1, cause: "invalid sequence".into_cow()
+                        upto: i as isize + 1, cause: "invalid sequence".into()
                     }));
                 }
                 _ => {
@@ -293,7 +293,7 @@ impl<E: Endian> RawDecoder for UTF16Decoder<E> {
         self.leadbyte = 0xffff;
         self.leadsurrogate = 0xffff;
         if leadbyte != 0xffff || leadsurrogate != 0xffff {
-            Some(CodecError { upto: 0, cause: "incomplete sequence".into_cow() })
+            Some(CodecError { upto: 0, cause: "incomplete sequence".into() })
         } else {
             None
         }

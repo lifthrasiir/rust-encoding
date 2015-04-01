@@ -4,7 +4,7 @@
 
 //! Legacy Japanese encodings based on JIS X 0208 and JIS X 0212.
 
-use std::borrow::IntoCow;
+use std::convert::Into;
 use util::StrCharIndex;
 use index_japanese as index;
 use types::*;
@@ -63,7 +63,7 @@ impl RawEncoder for EUCJPEncoder {
                     let ptr = index::jis0208::backward(ch as u32);
                     if ptr == 0xffff {
                         return (i, Some(CodecError {
-                            upto: j as isize, cause: "unrepresentable character".into_cow()
+                            upto: j as isize, cause: "unrepresentable character".into()
                         }));
                     } else {
                         let lead = ptr / 94 + 0xa1;
@@ -457,7 +457,7 @@ impl RawEncoder for Windows31JEncoder {
                     let ptr = index::jis0208::backward_remapped(ch as u32);
                     if ptr == 0xffff {
                         return (i, Some(CodecError {
-                            upto: j as isize, cause: "unrepresentable character".into_cow(),
+                            upto: j as isize, cause: "unrepresentable character".into(),
                         }));
                     } else {
                         let lead = ptr / 188;
@@ -776,7 +776,7 @@ impl RawEncoder for ISO2022JPEncoder {
                     if ptr == 0xffff {
                         self.st = st; // do NOT reset the state!
                         return (i, Some(CodecError {
-                            upto: j as isize, cause: "unrepresentable character".into_cow()
+                            upto: j as isize, cause: "unrepresentable character".into()
                         }));
                     } else {
                         ensure_Lead!();

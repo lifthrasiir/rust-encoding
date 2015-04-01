@@ -25,7 +25,7 @@
 //! UTF-8, the universal encoding.
 
 use std::{str, mem};
-use std::borrow::IntoCow;
+use std::convert::Into;
 use types::*;
 
 /**
@@ -173,7 +173,7 @@ impl RawDecoder for UTF8Decoder {
                 self.queuelen = 0;
                 write_bytes(output, &input[0..processed]);
                 return (processed, Some(CodecError {
-                    upto: upto as isize, cause: "invalid sequence".into_cow()
+                    upto: upto as isize, cause: "invalid sequence".into()
                 }));
             }
         }
@@ -200,7 +200,7 @@ impl RawDecoder for UTF8Decoder {
         self.state = INITIAL_STATE;
         self.queuelen = 0;
         if state != ACCEPT_STATE {
-            Some(CodecError { upto: 0, cause: "incomplete sequence".into_cow() })
+            Some(CodecError { upto: 0, cause: "incomplete sequence".into() })
         } else {
             assert!(queuelen == 0);
             None

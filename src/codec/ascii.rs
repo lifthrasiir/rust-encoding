@@ -5,7 +5,7 @@
 //! 7-bit ASCII encoding.
 
 use std::{str, mem};
-use std::borrow::IntoCow;
+use std::convert::Into;
 use types::*;
 
 /**
@@ -43,7 +43,7 @@ impl RawEncoder for ASCIIEncoder {
                 output.write_bytes(&input.as_bytes()[..first_error]);
                 let str::CharRange {ch: _, next} = input.char_range_at(first_error);
                 (first_error, Some(CodecError {
-                    upto: next as isize, cause: "unrepresentable character".into_cow()
+                    upto: next as isize, cause: "unrepresentable character".into()
                 }))
             }
             None => {
@@ -81,7 +81,7 @@ impl RawDecoder for ASCIIDecoder {
             Some(first_error) => {
                 write_ascii_bytes(output, &input[..first_error]);
                 (first_error, Some(CodecError {
-                    upto: first_error as isize + 1, cause: "invalid sequence".into_cow()
+                    upto: first_error as isize + 1, cause: "invalid sequence".into()
                 }))
             }
             None => {

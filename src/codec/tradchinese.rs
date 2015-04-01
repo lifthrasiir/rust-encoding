@@ -4,7 +4,7 @@
 
 //! Legacy traditional Chinese encodings.
 
-use std::borrow::IntoCow;
+use std::convert::Into;
 use util::StrCharIndex;
 use index_tradchinese as index;
 use types::*;
@@ -56,7 +56,7 @@ impl RawEncoder for BigFive2003Encoder {
                 if ptr == 0xffff || ptr < (0xa1 - 0x81) * 157 {
                     // no HKSCS extension (XXX doesn't HKSCS include 0xFA40..0xFEFE?)
                     return (i, Some(CodecError {
-                        upto: j as isize, cause: "unrepresentable character".into_cow()
+                        upto: j as isize, cause: "unrepresentable character".into()
                     }));
                 }
                 let lead = ptr / 157 + 0x81;

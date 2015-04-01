@@ -4,7 +4,7 @@
 
 //! Legacy Korean encodings based on KS X 1001.
 
-use std::borrow::IntoCow;
+use std::convert::Into;
 use util::StrCharIndex;
 use index_korean as index;
 use types::*;
@@ -52,7 +52,7 @@ impl RawEncoder for Windows949Encoder {
                 let ptr = index::euc_kr::backward(ch as u32);
                 if ptr == 0xffff {
                     return (i, Some(CodecError {
-                        upto: j as isize, cause: "unrepresentable character".into_cow()
+                        upto: j as isize, cause: "unrepresentable character".into()
                     }));
                 } else {
                     output.write_byte((ptr / 190 + 0x81) as u8);
