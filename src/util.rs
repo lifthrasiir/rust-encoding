@@ -19,7 +19,7 @@ pub fn as_char(ch: u32) -> char {
 /// External iterator for a string's characters with its corresponding byte offset range.
 pub struct StrCharIndexIterator<'r> {
     index: usize,
-    string: &'r str,
+    chars: str::Chars<'r>,
 }
 
 impl<'r> Iterator for StrCharIndexIterator<'r> {
@@ -27,9 +27,9 @@ impl<'r> Iterator for StrCharIndexIterator<'r> {
 
     #[inline]
     fn next(&mut self) -> Option<((usize,usize), char)> {
-        if self.index < self.string.len() {
-            let str::CharRange {ch, next} = self.string.char_range_at(self.index);
+        if let Some(ch) = self.chars.next() {
             let prev = self.index;
+            let next = prev + ch.len_utf8();
             self.index = next;
             Some(((prev, next), ch))
         } else {
@@ -46,7 +46,7 @@ pub trait StrCharIndex<'r> {
 impl<'r> StrCharIndex<'r> for &'r str {
     /// Iterates over each character with corresponding byte offset range.
     fn index_iter(&self) -> StrCharIndexIterator<'r> {
-        StrCharIndexIterator { index: 0, string: *self }
+        StrCharIndexIterator { index: 0, chars: self.chars() }
     }
 }
 
