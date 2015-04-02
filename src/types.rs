@@ -471,7 +471,7 @@ mod tests {
     use super::*;
     use super::EncoderTrap::NcrEscape;
     use util::StrCharIndex;
-    use std::borrow::IntoCow;
+    use std::convert::Into;
 
     // a contrived encoding example: same as ASCII, but inserts `prepend` between each character
     // within two "e"s (so that `widespread` becomes `wide*s*p*r*ead` and `eeeeasel` becomes
@@ -498,7 +498,7 @@ mod tests {
                     }
                 } else {
                     return (i, Some(CodecError { upto: j as isize,
-                                                 cause: "!!!".into_cow() }));
+                                                 cause: "!!!".into() }));
                 }
             }
             (input.len(), None)

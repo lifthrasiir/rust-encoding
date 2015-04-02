@@ -4,7 +4,7 @@
 
 //! Legacy simplified Chinese encodings based on GB 2312 and GB 18030.
 
-use std::borrow::IntoCow;
+use std::convert::Into;
 use util::StrCharIndex;
 use index_simpchinese as index;
 use types::*;
@@ -377,7 +377,7 @@ impl RawEncoder for HZEncoder {
                 if ptr == 0xffff {
                     self.escaped = escaped; // do NOT reset the state!
                     return (i, Some(CodecError {
-                        upto: j as isize, cause: "unrepresentable character".into_cow()
+                        upto: j as isize, cause: "unrepresentable character".into()
                     }));
                 } else {
                     let lead = ptr / 190;
@@ -385,7 +385,7 @@ impl RawEncoder for HZEncoder {
                     if lead < 0x21 - 1 || trail < 0x21 + 0x3f { // GBK extension, ignored
                         self.escaped = escaped; // do NOT reset the state!
                         return (i, Some(CodecError {
-                            upto: j as isize, cause: "unrepresentable character".into_cow()
+                            upto: j as isize, cause: "unrepresentable character".into()
                         }));
                     } else {
                         ensure_escaped!();

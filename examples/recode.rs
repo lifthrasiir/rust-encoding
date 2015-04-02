@@ -2,9 +2,6 @@
 // Copyright (c) 2014-2015, Kang Seonghoon.
 // See README.md and LICENSE.txt for details.
 
-#![feature(core, collections)] // lib stability features as per RFC #507
-
-extern crate core;
 extern crate encoding;
 extern crate getopts;
 
@@ -28,7 +25,7 @@ fn main() {
     opts.optopt("o", "output", "output file", "FILE");
     opts.optflag("h", "help", "print this help menu");
 
-    let matches = match opts.parse(args.tail()) {
+    let matches = match opts.parse(&args[1..]) {
         Ok(m) => m,
         Err(e) => panic!(e.to_string()),
     };

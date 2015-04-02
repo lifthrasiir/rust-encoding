@@ -4,7 +4,7 @@
 
 //! Common codec implementation for single-byte encodings.
 
-use std::borrow::IntoCow;
+use std::convert::Into;
 use util::{as_char, StrCharIndex};
 use types::*;
 
@@ -53,7 +53,7 @@ impl RawEncoder for SingleByteEncoder {
                     output.write_byte(index);
                 } else {
                     return (i, Some(CodecError {
-                        upto: j as isize, cause: "unrepresentable character".into_cow()
+                        upto: j as isize, cause: "unrepresentable character".into()
                     }));
                 }
             }
@@ -96,7 +96,7 @@ impl RawDecoder for SingleByteDecoder {
                     output.write_char(as_char(ch as u32));
                 } else {
                     return (i, Some(CodecError {
-                        upto: i as isize + 1, cause: "invalid sequence".into_cow()
+                        upto: i as isize + 1, cause: "invalid sequence".into()
                     }));
                 }
             }

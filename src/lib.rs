@@ -172,9 +172,8 @@ Whenever in doubt, look at the source code and specifications for detailed expla
 
 */
 
-#![feature(into_cow)]
-#![feature(str_char)] // lib stability features as per RFC #507
-#![cfg_attr(test, feature(core, collections, test))] // ditto
+#![feature(convert)]
+#![cfg_attr(test, feature(core, collections, test))] // lib stability features as per RFC #507
 
 extern crate encoding_index_singlebyte as index_singlebyte;
 extern crate encoding_index_korean as index_korean;

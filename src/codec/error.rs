@@ -4,8 +4,7 @@
 
 //! A placeholder encoding that returns encoder/decoder error for every case.
 
-use std::str;
-use std::borrow::IntoCow;
+use std::convert::Into;
 use types::*;
 
 /// An encoding that returns encoder/decoder error for every case.
@@ -30,10 +29,9 @@ impl RawEncoder for ErrorEncoder {
     fn from_self(&self) -> Box<RawEncoder> { ErrorEncoder::new() }
 
     fn raw_feed(&mut self, input: &str, _output: &mut ByteWriter) -> (usize, Option<CodecError>) {
-        if input.len() > 0 {
-            let str::CharRange {ch: _, next} = input.char_range_at(0);
-            (0, Some(CodecError { upto: next as isize,
-                                  cause: "unrepresentable character".into_cow() }))
+        if let Some(ch) = input.chars().next() {
+            (0, Some(CodecError { upto: ch.len_utf8() as isize,
+                                  cause: "unrepresentable character".into() }))
         } else {
             (0, None)
         }
@@ -58,7 +56,7 @@ impl RawDecoder for ErrorDecoder {
     fn raw_feed(&mut self,
                 input: &[u8], _output: &mut StringWriter) -> (usize, Option<CodecError>) {
         if input.len() > 0 {
-            (0, Some(CodecError { upto: 1, cause: "invalid sequence".into_cow() }))
+            (0, Some(CodecError { upto: 1, cause: "invalid sequence".into() }))
         } else {
             (0, None)
         }

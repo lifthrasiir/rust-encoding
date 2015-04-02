@@ -5,8 +5,7 @@
 
 //! Japanese index tables for [rust-encoding](https://github.com/lifthrasiir/rust-encoding).
 
-#![feature(core)]
-#![cfg_attr(test, feature(test))]
+#![cfg_attr(test, feature(core, test))]
 
 #[cfg(test)]
 #[macro_use]
