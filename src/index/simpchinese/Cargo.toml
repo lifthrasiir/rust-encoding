@@ -1,6 +1,6 @@
 [package]
 name = "encoding-index-simpchinese"
-version = "1.20141219.2"
+version = "1.20141219.4"
 authors = ["Kang Seonghoon <public+rust@mearie.org>"]
 
 description = "Index tables for simplified Chinese character encodings"
@@ -14,5 +14,5 @@ path = "lib.rs"
 
 [dependencies.encoding_index_tests]
 # TODO consider using dev-dependencies instead (Cargo issue #860)
-version = "0.1.3"
+version = "0.1.4"
 path = "../tests"

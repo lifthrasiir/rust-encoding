@@ -14,7 +14,29 @@ and also provides an advanced interface for error detection and recovery.
 
 [doc]: https://lifthrasiir.github.io/rust-encoding/
 
-## Simple Usage
+## Usage
+
+Put this in your `Cargo.toml`:
+
+```toml
+[dependencies]
+encoding = "0.2"
+```
+
+Or in the case you are using Rust 1.0 beta, pin the exact version:
+
+```toml
+[dependencies]
+encoding = "=0.2.28"
+```
+
+And this in your crate root:
+
+```rust
+extern crate encoding;
+```
+
+## Overview
 
 To encode a string:
 
@@ -106,7 +128,7 @@ assert_eq!(WINDOWS_949.decode(broken, DecoderTrap::Replace),
            Ok("\u{c6b0}\u{c640}\u{fffd}\u{c559}".to_string()));
 ~~~~
 
-## Detailed Usage
+## Types and Stuffs
 
 There are three main entry points to Encoding.
 
