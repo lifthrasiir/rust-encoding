@@ -9,7 +9,7 @@ use util::{as_char, StrCharIndex};
 use types::*;
 
 /// A common framework for single-byte encodings based on ASCII.
-#[derive(Copy)]
+#[derive(Copy, Clone)]
 pub struct SingleByteEncoding {
     pub name: &'static str,
     pub whatwg_name: Option<&'static str>,

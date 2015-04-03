@@ -18,7 +18,7 @@ macro_rules! assert_feed_ok(
         assert!(processed.len() == nprocessed && None == upto,
                 "raw_feed should return {:?}, but instead returned {:?}",
                 (processed.len(), None::<isize>), (nprocessed, upto));
-        assert!(output == buf,
+        assert!(&output[..] == &buf[..],
                 "raw_feed should push {:?}, but instead pushed {:?}", output, buf);
     })
 );
@@ -41,7 +41,7 @@ macro_rules! assert_feed_err(
         assert!(processed.len() == nprocessed && Some(expectedupto) == upto,
                 "raw_feed should return {:?}, but instead returned {:?}",
                 (processed.len(), Some(expectedupto)), (nprocessed, upto));
-        assert!(output == buf,
+        assert!(&output[..] == &buf[..],
                 "raw_feed should push {:?}, but instead pushed {:?}", output, buf);
     });
     ($this:expr, $processed:expr, $problem:expr, $remaining:expr, $output:expr) => (
@@ -57,7 +57,7 @@ macro_rules! assert_finish_ok(
         let upto = err.map(|e| e.upto);
         assert!(None == upto,
                 "raw_finish should return {:?}, but instead returned {:?}", None::<isize>, upto);
-        assert!(output == buf,
+        assert!(&output[..] == &buf[..],
                 "raw_finish should push {:?}, but instead pushed {:?}", output, buf);
     })
 );

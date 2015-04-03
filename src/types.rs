@@ -393,6 +393,17 @@ impl DecoderTrap {
     }
 }
 
+impl Clone for DecoderTrap {
+    fn clone(&self) -> DecoderTrap {
+        match *self {
+            DecoderTrap::Strict => DecoderTrap::Strict,
+            DecoderTrap::Replace => DecoderTrap::Replace,
+            DecoderTrap::Ignore => DecoderTrap::Ignore,
+            DecoderTrap::Call(f) => DecoderTrap::Call(f),
+        }
+    }
+}
+
 #[stable]
 #[derive(Copy)]
 pub enum EncoderTrap {
@@ -444,6 +455,18 @@ impl EncoderTrap {
                 reencode(encoder, &escapes, output, "NcrEscape")
             },
             EncoderTrap::Call(func) => func(encoder, input, output),
+        }
+    }
+}
+
+impl Clone for EncoderTrap {
+    fn clone(&self) -> EncoderTrap {
+        match *self {
+            EncoderTrap::Strict => EncoderTrap::Strict,
+            EncoderTrap::Replace => EncoderTrap::Replace,
+            EncoderTrap::Ignore => EncoderTrap::Ignore,
+            EncoderTrap::NcrEscape => EncoderTrap::NcrEscape,
+            EncoderTrap::Call(f) => EncoderTrap::Call(f),
         }
     }
 }

@@ -43,5 +43,5 @@ version = "~1.20141219.3"
 path = "src/index/tradchinese"
 
 [dev-dependencies]
-getopts = "0.2.5" # for examples
+getopts = "*" # for examples
 
