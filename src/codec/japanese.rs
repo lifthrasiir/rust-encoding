@@ -165,7 +165,6 @@ transient:
 mod eucjp_tests {
     extern crate test;
     use super::EUCJPEncoding;
-    use std::iter::range_inclusive;
     use testutils;
     use types::*;
 
@@ -242,13 +241,13 @@ mod eucjp_tests {
 
     #[test]
     fn test_decoder_invalid_lone_lead_immediate_test_finish() {
-        for i in range_inclusive(0x8eu8, 0x8f) {
+        for i in 0x8e..0x90 {
             let mut d = EUCJPEncoding.raw_decoder();
             assert_feed_ok!(d, [], [i], ""); // wait for a trail
             assert_finish_err!(d, "");
         }
 
-        for i in range_inclusive(0xa1u8, 0xfe) {
+        for i in 0xa1..0xff {
             let mut d = EUCJPEncoding.raw_decoder();
             assert_feed_ok!(d, [], [i], ""); // wait for a trail
             assert_finish_err!(d, "");
@@ -256,10 +255,10 @@ mod eucjp_tests {
 
         // immediate failures
         let mut d = EUCJPEncoding.raw_decoder();
-        for i in range_inclusive(0x80u8, 0x8d) {
+        for i in 0x80..0x8e {
             assert_feed_err!(d, [], [i], [], "");
         }
-        for i in range_inclusive(0x90u8, 0xa0) {
+        for i in 0x90..0xa1 {
             assert_feed_err!(d, [], [i], [], "");
         }
         assert_feed_err!(d, [], [0xff], [], "");
@@ -268,7 +267,8 @@ mod eucjp_tests {
 
     #[test]
     fn test_decoder_invalid_lone_lead_followed_by_space() {
-        for i in range_inclusive(0x80u8, 0xff) {
+        for i in 0x80..0x100 {
+            let i = i as u8;
             let mut d = EUCJPEncoding.raw_decoder();
             assert_feed_err!(d, [], [i], [0x20], "");
             assert_finish_ok!(d, "");
@@ -277,7 +277,8 @@ mod eucjp_tests {
 
     #[test]
     fn test_decoder_invalid_lead_followed_by_invalid_trail() {
-        for i in range_inclusive(0x80u8, 0xff) {
+        for i in 0x80..0x100 {
+            let i = i as u8;
             let mut d = EUCJPEncoding.raw_decoder();
             assert_feed_err!(d, [], [i], [0x80], "");
             assert_feed_err!(d, [], [i], [0xff], "");
@@ -287,7 +288,7 @@ mod eucjp_tests {
 
     #[test]
     fn test_decoder_invalid_lone_lead_for_0212_immediate_test_finish() {
-        for i in range_inclusive(0xa1u8, 0xfe) {
+        for i in 0xa1..0xff {
             let mut d = EUCJPEncoding.raw_decoder();
             assert_feed_ok!(d, [], [0x8f, i], ""); // wait for a trail
             assert_finish_err!(d, "");
@@ -296,7 +297,7 @@ mod eucjp_tests {
 
     #[test]
     fn test_decoder_invalid_lone_lead_for_0212_immediate_test_finish_partial() {
-        for i in range_inclusive(0xa1u8, 0xfe) {
+        for i in 0xa1..0xff {
             let mut d = EUCJPEncoding.raw_decoder();
             assert_feed_ok!(d, [], [0x8f], "");
             assert_feed_ok!(d, [], [i], ""); // wait for a trail
@@ -306,13 +307,13 @@ mod eucjp_tests {
 
     #[test]
     fn test_decoder_invalid_trail_for_0201() {
-        for i in range_inclusive(0u8, 0xa0) {
+        for i in 0..0xa1 {
             let mut d = EUCJPEncoding.raw_decoder();
             assert_feed_err!(d, [], [0x8e], [i], "");
             assert_finish_ok!(d, "");
         }
 
-        for i in range_inclusive(0xe0u8, 0xfe) {
+        for i in 0xe0..0xff {
             let mut d = EUCJPEncoding.raw_decoder();
             assert_feed_err!(d, [], [0x8e, i], [], "");
             assert_finish_ok!(d, "");
@@ -321,14 +322,14 @@ mod eucjp_tests {
 
     #[test]
     fn test_decoder_invalid_trail_for_0201_partial() {
-        for i in range_inclusive(0u8, 0xa0) {
+        for i in 0..0xa1 {
             let mut d = EUCJPEncoding.raw_decoder();
             assert_feed_ok!(d, [], [0x8e], "");
             assert_feed_err!(d, [], [], [i], "");
             assert_finish_ok!(d, "");
         }
 
-        for i in range_inclusive(0xe0u8, 0xfe) {
+        for i in 0xe0..0xff {
             let mut d = EUCJPEncoding.raw_decoder();
             assert_feed_ok!(d, [], [0x8e], "");
             assert_feed_err!(d, [], [i], [], "");
@@ -338,7 +339,7 @@ mod eucjp_tests {
 
     #[test]
     fn test_decoder_invalid_middle_for_0212() {
-        for i in range_inclusive(0u8, 0xa0) {
+        for i in 0..0xa1 {
             let mut d = EUCJPEncoding.raw_decoder();
             assert_feed_err!(d, [], [0x8f], [i], "");
             assert_finish_ok!(d, "");
@@ -347,7 +348,7 @@ mod eucjp_tests {
 
     #[test]
     fn test_decoder_invalid_middle_for_0212_partial() {
-        for i in range_inclusive(0u8, 0xa0) {
+        for i in 0..0xa1 {
             let mut d = EUCJPEncoding.raw_decoder();
             assert_feed_ok!(d, [], [0x8f], "");
             assert_feed_err!(d, [], [], [i], "");
@@ -357,7 +358,7 @@ mod eucjp_tests {
 
     #[test]
     fn test_decoder_invalid_trail_for_0212() {
-        for i in range_inclusive(0u8, 0xa0) {
+        for i in 0..0xa1 {
             let mut d = EUCJPEncoding.raw_decoder();
             assert_feed_err!(d, [], [0x8f, 0xa1], [i], "");
             assert_finish_ok!(d, "");
@@ -366,7 +367,7 @@ mod eucjp_tests {
 
     #[test]
     fn test_decoder_invalid_trail_for_0212_partial() {
-        for i in range_inclusive(0u8, 0xa0) {
+        for i in 0..0xa1 {
             let mut d = EUCJPEncoding.raw_decoder();
             assert_feed_ok!(d, [], [0x8f], "");
             assert_feed_ok!(d, [], [0xa1], "");
@@ -526,7 +527,6 @@ transient:
 mod windows31j_tests {
     extern crate test;
     use super::Windows31JEncoding;
-    use std::iter::range_inclusive;
     use testutils;
     use types::*;
 
@@ -599,13 +599,13 @@ mod windows31j_tests {
 
     #[test]
     fn test_decoder_invalid_lone_lead_immediate_test_finish() {
-        for i in range_inclusive(0x81u8, 0x9f) {
+        for i in 0x81..0xa0 {
             let mut d = Windows31JEncoding.raw_decoder();
             assert_feed_ok!(d, [], [i], ""); // wait for a trail
             assert_finish_err!(d, "");
         }
 
-        for i in range_inclusive(0xe0u8, 0xfc) {
+        for i in 0xe0..0xfd {
             let mut d = Windows31JEncoding.raw_decoder();
             assert_feed_ok!(d, [], [i], ""); // wait for a trail
             assert_finish_err!(d, "");
@@ -622,13 +622,13 @@ mod windows31j_tests {
 
     #[test]
     fn test_decoder_invalid_lone_lead_followed_by_space() {
-        for i in range_inclusive(0x81u8, 0x9f) {
+        for i in 0x81..0xa0 {
             let mut d = Windows31JEncoding.raw_decoder();
             assert_feed_err!(d, [], [i], [0x20], "");
             assert_finish_ok!(d, "");
         }
 
-        for i in range_inclusive(0xe0u8, 0xfc) {
+        for i in 0xe0..0xfd {
             let mut d = Windows31JEncoding.raw_decoder();
             assert_feed_err!(d, [], [i], [0x20], "");
             assert_finish_ok!(d, "");
@@ -637,7 +637,7 @@ mod windows31j_tests {
 
     #[test]
     fn test_decoder_invalid_lead_followed_by_invalid_trail() {
-        for i in range_inclusive(0x81u8, 0x9f) {
+        for i in 0x81..0xa0 {
             let mut d = Windows31JEncoding.raw_decoder();
             assert_feed_err!(d, [], [i], [0x3f], "");
             assert_feed_err!(d, [], [i], [0x7f], "");
@@ -647,7 +647,7 @@ mod windows31j_tests {
             assert_finish_ok!(d, "");
         }
 
-        for i in range_inclusive(0xe0u8, 0xfc) {
+        for i in 0xe0..0xfd {
             let mut d = Windows31JEncoding.raw_decoder();
             assert_feed_err!(d, [], [i], [0x3f], "");
             assert_feed_err!(d, [], [i], [0x7f], "");
@@ -660,14 +660,14 @@ mod windows31j_tests {
 
     #[test]
     fn test_decoder_invalid_lead_followed_by_invalid_trail_partial() {
-        for i in range_inclusive(0x81u8, 0x9f) {
+        for i in 0x81..0xa0 {
             let mut d = Windows31JEncoding.raw_decoder();
             assert_feed_ok!(d, [], [i], "");
             assert_feed_err!(d, [], [], [0xff], "");
             assert_finish_ok!(d, "");
         }
 
-        for i in range_inclusive(0xe0u8, 0xfc) {
+        for i in 0xe0..0xfd {
             let mut d = Windows31JEncoding.raw_decoder();
             assert_feed_ok!(d, [], [i], "");
             assert_feed_err!(d, [], [], [0xff], "");

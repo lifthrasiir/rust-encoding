@@ -13,11 +13,11 @@ macro_rules! single_byte_tests {
         mod tests {
             extern crate test;
             use $parentmod::{forward, backward};
-            use std::iter::range_inclusive;
 
             #[test]
             fn test_correct_table() {
-                for i in range_inclusive(0x80u8, 0xff) {
+                for i in 0x80..0x100 {
+                    let i = i as u8;
                     let j = forward(i);
                     if j != 0xffff { assert_eq!(backward(j as u32), i); }
                 }
@@ -26,8 +26,8 @@ macro_rules! single_byte_tests {
             #[bench]
             fn bench_forward_sequential_128(bencher: &mut test::Bencher) {
                 bencher.iter(|| {
-                    for i in range_inclusive(0x80u8, 0xff) {
-                        test::black_box(forward(i));
+                    for i in 0x80..0x100 {
+                        test::black_box(forward(i as u8));
                     }
                 })
             }
@@ -52,9 +52,9 @@ macro_rules! multi_byte_tests {
     (make shared tests and benches with dups = $dups:expr) => ( // internal macro
         #[test]
         fn test_correct_table() {
-            use std::iter::range_inclusive;
             static DUPS: &'static [u16] = &$dups;
-            for i in range_inclusive(0u16, 0xffff) {
+            for i in 0..0x10000 {
+                let i = i as u16;
                 if DUPS.contains(&i) { continue; }
                 let j = forward(i);
                 if j != 0xffff { assert_eq!(backward(j), i); }

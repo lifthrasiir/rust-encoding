@@ -240,8 +240,8 @@ pub trait RawDecoder: 'static {
     #[cfg(test)]
     fn test_concat(&self, a: &[u8], b: &[u8]) -> Vec<u8> {
         let mut v = Vec::with_capacity(a.len() + b.len());
-        v.push_all(a);
-        v.push_all(b);
+        v.extend(a.iter().cloned());
+        v.extend(b.iter().cloned());
         v
     }
 }

@@ -345,7 +345,7 @@ mod tests {
 
     #[test]
     fn test_invalid_continuation() {
-        for c in 0x80u8..0xc0 {
+        for c in 0x80..0xc0 {
             let mut d = UTF8Encoding.raw_decoder();
             assert_feed_err!(d, [], [c], [], "");
             assert_finish_ok!(d, "");
@@ -403,7 +403,7 @@ mod tests {
 
     #[test]
     fn test_invalid_start_immediate_test_finish() {
-        for c in 0xf5u16..0x100 {
+        for c in 0xf5..0x100 {
             let c = c as u8;
             let mut d = UTF8Encoding.raw_decoder();
             assert_feed_err!(d, [], [c], [], "");
@@ -413,7 +413,7 @@ mod tests {
 
     #[test]
     fn test_invalid_start_followed_by_space() {
-        for c in 0xf5u16..0x100 {
+        for c in 0xf5..0x100 {
             let c = c as u8;
 
             let mut d = UTF8Encoding.raw_decoder();
@@ -429,7 +429,7 @@ mod tests {
 
     #[test]
     fn test_invalid_lone_start_immediate_test_finish() {
-        for c in 0xc2u8..0xf5 {
+        for c in 0xc2..0xf5 {
             let mut d = UTF8Encoding.raw_decoder();
             assert_feed_ok!(d, [], [c], ""); // wait for cont. bytes
             assert_finish_err!(d, "");
@@ -438,7 +438,7 @@ mod tests {
 
     #[test]
     fn test_invalid_lone_start_followed_by_space() {
-        for c in 0xc2u8..0xf5 {
+        for c in 0xc2..0xf5 {
             let mut d = UTF8Encoding.raw_decoder();
             assert_feed_err!(d, [], [c], [0x20], "");
             assert_finish_ok!(d, "");
@@ -452,7 +452,7 @@ mod tests {
 
     #[test]
     fn test_invalid_incomplete_three_byte_seq_followed_by_space() {
-        for b in 0xe0u8..0xf5 {
+        for b in 0xe0..0xf5 {
             let c = if b == 0xe0 || b == 0xf0 {0xa0} else {0x80};
 
             let mut d = UTF8Encoding.raw_decoder();
@@ -479,7 +479,7 @@ mod tests {
 
     #[test]
     fn test_invalid_incomplete_four_byte_seq_followed_by_space() {
-        for a in 0xf0u8..0xf5 {
+        for a in 0xf0..0xf5 {
             let b = if a == 0xf0 {0xa0} else {0x80};
             let c = 0x80;
 

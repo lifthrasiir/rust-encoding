@@ -112,7 +112,6 @@ transient:
 mod windows949_tests {
     extern crate test;
     use super::Windows949Encoding;
-    use std::iter::range_inclusive;
     use testutils;
     use types::*;
 
@@ -164,7 +163,7 @@ mod windows949_tests {
 
     #[test]
     fn test_decoder_invalid_lone_lead_immediate_test_finish() {
-        for i in range_inclusive(0x81u8, 0xfe) {
+        for i in 0x81..0xff {
             let mut d = Windows949Encoding.raw_decoder();
             assert_feed_ok!(d, [], [i], ""); // wait for a trail
             assert_finish_err!(d, "");
@@ -179,7 +178,8 @@ mod windows949_tests {
 
     #[test]
     fn test_decoder_invalid_lone_lead_followed_by_space() {
-        for i in range_inclusive(0x80u8, 0xff) {
+        for i in 0x80..0x100 {
+            let i = i as u8;
             let mut d = Windows949Encoding.raw_decoder();
             assert_feed_err!(d, [], [i], [0x20], "");
             assert_finish_ok!(d, "");
@@ -190,7 +190,7 @@ mod windows949_tests {
     fn test_decoder_invalid_lead_followed_by_invalid_trail() {
         // should behave similarly to Big5.
         // https://www.w3.org/Bugs/Public/show_bug.cgi?id=16691
-        for i in range_inclusive(0x81u8, 0xfe) {
+        for i in 0x81..0xff {
             let mut d = Windows949Encoding.raw_decoder();
             assert_feed_err!(d, [], [i, 0x80], [0x20], "");
             assert_feed_err!(d, [], [i, 0xff], [0x20], "");
