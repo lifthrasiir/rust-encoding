@@ -331,6 +331,9 @@ pub trait Encoding {
     }
 
     /// Decode into a `StringWriter`.
+    ///
+    /// This does *not* handle partial characters at the beginning or end of `input`!
+    /// Use `RawDecoder` for incremental decoding.
     #[unstable]
     fn decode_to(&self, input: &[u8], trap: DecoderTrap, ret: &mut StringWriter)
         -> Result<(), Cow<'static, str>>
