@@ -16,6 +16,7 @@ Jason Ozias <jason.g.ozias@gmail.com>
 Jason Ozias <jason.ozias@ipaper.com>
 Joonas Javanainen <joonas.javanainen@gmail.com>
 Joshua DeSeno <jdeseno@gmail.com>
+Keegan McAllister <kmcallister@mozilla.com>
 Ken Tossell <ken@tossell.net>
 Kyle Dewey <kyledewey@cs.ucsb.edu>
 Manish Goregaokar <manishsmail@gmail.com>

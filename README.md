@@ -1,4 +1,4 @@
-[Encoding][doc] 0.2.28
+[Encoding][doc] 0.2.29
 ======================
 
 [![Encoding on Travis CI][travis-image]][travis]
@@ -84,6 +84,22 @@ assert_eq!(ISO_8859_6.decode(&[65,99,109,101,169], DecoderTrap::Replace),
            Ok("Acme\u{fffd}".to_string()));
 assert_eq!(ISO_8859_6.decode(&[65,99,109,101,169], DecoderTrap::Ignore),
            Ok("Acme".to_string()));
+~~~~
+
+To encode or decode the input into the already allocated buffer:
+
+~~~~ {.rust}
+use encoding::{Encoding, EncoderTrap, DecoderTrap};
+use encoding::all::{ISO_8859_2, ISO_8859_6};
+
+let mut bytes = Vec::new();
+let mut chars = String::new();
+
+assert!(ISO_8859_2.encode_to("Acme\u{a9}", EncoderTrap::Ignore, &mut bytes).is_ok());
+assert!(ISO_8859_6.decode_to(&[65,99,109,101,169], DecoderTrap::Replace, &mut chars).is_ok());
+
+assert_eq!(bytes, [65,99,109,101]);
+assert_eq!(chars, "Acme\u{fffd}");
 ~~~~
 
 A practical example of custom encoder traps:
