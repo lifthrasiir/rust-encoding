@@ -279,34 +279,42 @@ pub trait Encoding {
     /// or a failure to return the error.
     #[stable]
     fn encode(&self, input: &str, trap: EncoderTrap) -> Result<Vec<u8>, Cow<'static, str>> {
+        let mut ret = Vec::new();
+        self.encode_to(input, trap, &mut ret).map(|_| ret)
+    }
+
+    /// Encode into a `ByteWriter`.
+    #[unstable]
+    fn encode_to(&self, input: &str, trap: EncoderTrap, ret: &mut ByteWriter)
+        -> Result<(), Cow<'static, str>>
+    {
         // we don't need to keep `unprocessed` here;
         // `raw_feed` should process as much input as possible.
         let mut encoder = self.raw_encoder();
         let mut remaining = 0;
-        let mut ret = Vec::new();
 
         loop {
-            let (offset, err) = encoder.raw_feed(&input[remaining..], &mut ret);
+            let (offset, err) = encoder.raw_feed(&input[remaining..], ret);
             let unprocessed = remaining + offset;
             match err {
                 Some(err) => {
                     remaining = (remaining as isize + err.upto) as usize;
-                    if !trap.trap(&mut *encoder, &input[unprocessed..remaining], &mut ret) {
+                    if !trap.trap(&mut *encoder, &input[unprocessed..remaining], ret) {
                         return Err(err.cause);
                     }
                 }
                 None => {
                     remaining = input.len();
-                    match encoder.raw_finish(&mut ret) {
+                    match encoder.raw_finish(ret) {
                         Some(err) => {
                             remaining = (remaining as isize + err.upto) as usize;
-                            if !trap.trap(&mut *encoder, &input[unprocessed..remaining], &mut ret) {
+                            if !trap.trap(&mut *encoder, &input[unprocessed..remaining], ret) {
                                 return Err(err.cause);
                             }
                         }
                         None => {}
                     }
-                    if remaining >= input.len() { return Ok(ret); }
+                    if remaining >= input.len() { return Ok(()); }
                 }
             }
         }
@@ -318,34 +326,45 @@ pub trait Encoding {
     /// or a failure to return the error.
     #[stable]
     fn decode(&self, input: &[u8], trap: DecoderTrap) -> Result<String, Cow<'static, str>> {
+        let mut ret = String::new();
+        self.decode_to(input, trap, &mut ret).map(|_| ret)
+    }
+
+    /// Decode into a `StringWriter`.
+    ///
+    /// This does *not* handle partial characters at the beginning or end of `input`!
+    /// Use `RawDecoder` for incremental decoding.
+    #[unstable]
+    fn decode_to(&self, input: &[u8], trap: DecoderTrap, ret: &mut StringWriter)
+        -> Result<(), Cow<'static, str>>
+    {
         // we don't need to keep `unprocessed` here;
         // `raw_feed` should process as much input as possible.
         let mut decoder = self.raw_decoder();
         let mut remaining = 0;
-        let mut ret = String::new();
 
         loop {
-            let (offset, err) = decoder.raw_feed(&input[remaining..], &mut ret);
+            let (offset, err) = decoder.raw_feed(&input[remaining..], ret);
             let unprocessed = remaining + offset;
             match err {
                 Some(err) => {
                     remaining = (remaining as isize + err.upto) as usize;
-                    if !trap.trap(&mut *decoder, &input[unprocessed..remaining], &mut ret) {
+                    if !trap.trap(&mut *decoder, &input[unprocessed..remaining], ret) {
                         return Err(err.cause);
                     }
                 }
                 None => {
                     remaining = input.len();
-                    match decoder.raw_finish(&mut ret) {
+                    match decoder.raw_finish(ret) {
                         Some(err) => {
                             remaining = (remaining as isize + err.upto) as usize;
-                            if !trap.trap(&mut *decoder, &input[unprocessed..remaining], &mut ret) {
+                            if !trap.trap(&mut *decoder, &input[unprocessed..remaining], ret) {
                                 return Err(err.cause);
                             }
                         }
                         None => {}
                     }
-                    if remaining >= input.len() { return Ok(ret); }
+                    if remaining >= input.len() { return Ok(()); }
                 }
             }
         }
@@ -383,7 +402,8 @@ pub enum DecoderTrap {
 impl DecoderTrap {
     /// Handles a decoder error. May write to the output writer.
     /// Returns true only when it is fine to keep going.
-    fn trap(&self, decoder: &mut RawDecoder, input: &[u8], output: &mut StringWriter) -> bool {
+    #[unstable]
+    pub fn trap(&self, decoder: &mut RawDecoder, input: &[u8], output: &mut StringWriter) -> bool {
         match *self {
             DecoderTrap::Strict     => false,
             DecoderTrap::Replace    => { output.write_char('\u{fffd}'); true },
@@ -429,7 +449,8 @@ pub enum EncoderTrap {
 impl EncoderTrap {
     /// Handles an encoder error. May write to the output writer.
     /// Returns true only when it is fine to keep going.
-    fn trap(&self, encoder: &mut RawEncoder, input: &str, output: &mut ByteWriter) -> bool {
+    #[unstable]
+    pub fn trap(&self, encoder: &mut RawEncoder, input: &str, output: &mut ByteWriter) -> bool {
         fn reencode(encoder: &mut RawEncoder, input: &str, output: &mut ByteWriter,
                     trapname: &str) -> bool {
             if encoder.is_ascii_compatible() { // optimization!
