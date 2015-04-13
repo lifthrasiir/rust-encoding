@@ -1,4 +1,4 @@
-[Encoding][doc] 0.2.29
+[Encoding][doc] 0.2.30
 ======================
 
 [![Encoding on Travis CI][travis-image]][travis]
@@ -30,7 +30,7 @@ Or in the case you are using Rust 1.0 beta, pin the exact version:
 encoding = "=0.2.28"
 ```
 
-And this in your crate root:
+Then put this in your crate root:
 
 ```rust
 extern crate encoding;

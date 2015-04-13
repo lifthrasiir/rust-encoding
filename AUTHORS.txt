@@ -4,6 +4,7 @@ and also the following people (in ascending order):
 Aaron Weiss <aaronweiss74@gmail.com>
 Alex Crichton <alex@alexcrichton.com>
 Andrew Cann <shum@canndrew.org>
+Aneesh Agrawal <aneeshusa@gmail.com>
 Björn Steinbrink <bsteinbr@gmail.com>
 Brian Koropoff <bkoropoff@gmail.com>
 Clark Gaebel <cgaebel@mozilla.com>
