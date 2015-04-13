@@ -324,6 +324,7 @@ pub fn encoding_from_windows_code_page(cp: usize) -> Option<EncodingRef> {
 #[cfg(test)]
 mod tests {
     extern crate test;
+    use all;
     use super::encoding_from_whatwg_label;
 
     #[test]
@@ -336,6 +337,15 @@ mod tests {
         assert!(encoding_from_whatwg_label("greek").is_some());
         assert!(encoding_from_whatwg_label("gree\u{212A}").is_none(),
                 "Case-insensitive matching should be ASCII only. Kelvin sign does not match k.");
+
+        // checks if the `whatwg_name` method returns the label that resolves back to that encoding
+        for encoding in all::encodings() {
+            if let Some(whatwg_name) = encoding.whatwg_name() {
+                if whatwg_name == "replacement" { continue; }
+                assert_eq!(encoding_from_whatwg_label(whatwg_name).and_then(|e| e.whatwg_name()),
+                           Some(whatwg_name));
+            }
+        }
     }
 
     #[bench]

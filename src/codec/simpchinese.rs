@@ -449,7 +449,7 @@ pub struct HZEncoding;
 
 impl Encoding for HZEncoding {
     fn name(&self) -> &'static str { "hz" }
-    fn whatwg_name(&self) -> Option<&'static str> { Some("hz-gb-2312") }
+    fn whatwg_name(&self) -> Option<&'static str> { None }
     fn raw_encoder(&self) -> Box<RawEncoder> { HZEncoder::new() }
     fn raw_decoder(&self) -> Box<RawDecoder> { HZDecoder::new() }
 }
