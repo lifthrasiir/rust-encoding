@@ -31,7 +31,7 @@ trait Endian: Clone + 'static {
 
 impl Endian for Little {
     fn name() -> &'static str { "utf-16le" }
-    fn whatwg_name() -> Option<&'static str> { Some("utf-16") } // WHATWG compatibility
+    fn whatwg_name() -> Option<&'static str> { Some("utf-16le") }
     fn write_two_bytes(output: &mut ByteWriter, msb: u8, lsb: u8) {
         output.write_byte(lsb);
         output.write_byte(msb);
