@@ -5,19 +5,46 @@
 //! Legacy simplified Chinese encodings based on GB 2312 and GB 18030.
 
 use std::convert::Into;
+use std::marker::PhantomData;
 use util::StrCharIndex;
 use index_simpchinese as index;
 use types::*;
 
+/// An implementation type for GBK.
+///
+/// Can be used as a type parameter to `GBEncoding` and `GBEncoder`.
+/// (GB18030Decoder is shared by both.)
+#[derive(Clone, Copy)]
+pub struct GBK;
+
+/// An implementation type for GB18030.
+///
+/// Can be used as a type parameter to `GBEncoding` and `GBEncoder.'
+/// (GB18030Decoder is shared by both.)
+#[derive(Clone, Copy)]
+pub struct GB18030;
+
+/// An internal trait used to customize GBK and GB18030 implementations.
+trait GBType: Clone + 'static {
+    fn name() -> &'static str;
+    fn whatwg_name() -> Option<&'static str>;
+    fn initial_gbk_flag() -> bool;
+}
+
+impl GBType for GBK {
+    fn name() -> &'static str { "gbk" }
+    fn whatwg_name() -> Option<&'static str> { Some("gbk") }
+    fn initial_gbk_flag() -> bool { true }
+}
+
+impl GBType for GB18030 {
+    fn name() -> &'static str { "gb18030" }
+    fn whatwg_name() -> Option<&'static str> { Some("gb18030") }
+    fn initial_gbk_flag() -> bool { false }
+}
+
 /**
- * GB 18030-2005.
- *
- * This is a simplified Chinese encoding which extends GBK 1.0 to a pan-Unicode encoding.
- * It assigns four-byte sequences to every Unicode codepoint missing from the GBK area,
- * lexicographically ordered with occasional "gaps" for codepoints in the GBK area.
- * Due to this compatibility decision,
- * there is no simple relationship between these four-byte sequences and Unicode codepoints,
- * though there *exists* a relatively simple mapping algorithm with a small lookup table.
+ * GBK and GB 18030-2005.
  *
  * The original GBK 1.0 region spans `[81-FE] [40-7E 80-FE]`, and is derived from
  * several different revisions of a family of encodings named "GBK":
@@ -31,38 +58,83 @@ use types::*;
  *   was standardized into GBK 1.0.
  * - Finally, GB 18030 added four-byte sequences to GBK for becoming a pan-Unicode encoding,
  *   while adding new characters to the (former) GBK region again.
+ *
+ * GB 18030-2005 is a simplified Chinese encoding which extends GBK 1.0 to a pan-Unicode encoding.
+ * It assigns four-byte sequences to every Unicode codepoint missing from the GBK area,
+ * lexicographically ordered with occasional "gaps" for codepoints in the GBK area.
+ * Due to this compatibility decision,
+ * there is no simple relationship between these four-byte sequences and Unicode codepoints,
+ * though there *exists* a relatively simple mapping algorithm with a small lookup table.
+ *
+ * ## Specialization
+ *
+ * This type is specialized with GBType `T`,
+ * which should be either `GBK` or `GB18030`.
  */
 #[derive(Clone, Copy)]
-pub struct GB18030Encoding;
+pub struct GBEncoding<T> {
+    _marker: PhantomData<T>
+}
 
-impl Encoding for GB18030Encoding {
-    fn name(&self) -> &'static str { "gb18030" }
-    fn whatwg_name(&self) -> Option<&'static str> { Some("gb18030") }
-    fn raw_encoder(&self) -> Box<RawEncoder> { GB18030Encoder::new() }
+/// A type for GBK.
+pub type GBKEncoding = GBEncoding<GBK>;
+/// A type for GB18030.
+pub type GB18030Encoding = GBEncoding<GB18030>;
+
+/// An instance for GBK.
+pub const GBK_ENCODING: GBKEncoding = GBEncoding { _marker: PhantomData };
+/// An instance for GB18030.
+pub const GB18030_ENCODING: GB18030Encoding = GBEncoding { _marker: PhantomData };
+
+impl<T: GBType> Encoding for GBEncoding<T> {
+    fn name(&self) -> &'static str { <T as GBType>::name() }
+    fn whatwg_name(&self) -> Option<&'static str> { <T as GBType>::whatwg_name() }
+    fn raw_encoder(&self) -> Box<RawEncoder> { GBEncoder::<T>::new() }
     fn raw_decoder(&self) -> Box<RawDecoder> { GB18030Decoder::new() }
 }
 
-/// An encoder for GB 18030.
+/**
+ *  An encoder for GBK and GB18030.
+ *
+ * ## Specialization
+ *
+ * This type is specialized with GBType `T`,
+ * which should be either `GBK` or `GB18030`.
+ */
 #[derive(Clone, Copy)]
-pub struct GB18030Encoder;
-
-impl GB18030Encoder {
-    pub fn new() -> Box<RawEncoder> { Box::new(GB18030Encoder) }
+pub struct GBEncoder<T> {
+    _marker: PhantomData<T>
 }
 
-impl RawEncoder for GB18030Encoder {
-    fn from_self(&self) -> Box<RawEncoder> { GB18030Encoder::new() }
+impl<T: GBType> GBEncoder<T> {
+    pub fn new() -> Box<RawEncoder> {
+        Box::new(GBEncoder::<T> { _marker: PhantomData })
+    }
+}
+
+impl<T: GBType> RawEncoder for GBEncoder<T> {
+    fn from_self(&self) -> Box<RawEncoder> { GBEncoder::<T>::new() }
     fn is_ascii_compatible(&self) -> bool { true }
 
     fn raw_feed(&mut self, input: &str, output: &mut ByteWriter) -> (usize, Option<CodecError>) {
         output.writer_hint(input.len());
 
-        for ch in input.chars() {
+        let gbk_flag = <T as GBType>::initial_gbk_flag();
+        for (offset, ch) in input.char_indices() {
             if ch < '\u{80}' {
                 output.write_byte(ch as u8);
+            } else if gbk_flag && ch == '\u{20AC}' {
+                output.write_byte('\u{80}' as u8)
             } else {
                 let ptr = index::gb18030::backward(ch as u32);
                 if ptr == 0xffff {
+                    if gbk_flag {
+                      let error = CodecError {
+                          upto: offset as isize + 1,
+                          cause: "gbk doesn't support gb18030 extensions".into()
+                      };
+                      return (offset, Some(error))
+                    }
                     let ptr = index::gb18030_ranges::backward(ch as u32);
                     assert!(ptr != 0xffffffff);
                     let (ptr, byte4) = (ptr / 10, ptr % 10);
@@ -90,7 +162,7 @@ impl RawEncoder for GB18030Encoder {
 }
 
 ascii_compatible_stateful_decoder! {
-    #[doc="A decoder for GB 18030."]
+    #[doc="A decoder for GB 18030 (also used by GBK)."]
     #[derive(Clone, Copy)]
     struct GB18030Decoder;
 
@@ -158,13 +230,13 @@ transient:
 #[cfg(test)]
 mod gb18030_tests {
     extern crate test;
-    use super::GB18030Encoding;
+    use super::GB18030_ENCODING;
     use testutils;
     use types::*;
 
     #[test]
     fn test_encoder_valid() {
-        let mut e = GB18030Encoding.raw_encoder();
+        let mut e = GB18030_ENCODING.raw_encoder();
         assert_feed_ok!(e, "A", "", [0x41]);
         assert_feed_ok!(e, "BC", "", [0x42, 0x43]);
         assert_feed_ok!(e, "", "", []);
@@ -185,7 +257,7 @@ mod gb18030_tests {
 
     #[test]
     fn test_decoder_valid() {
-        let mut d = GB18030Encoding.raw_decoder();
+        let mut d = GB18030_ENCODING.raw_decoder();
         assert_feed_ok!(d, [0x41], [], "A");
         assert_feed_ok!(d, [0x42, 0x43], [], "BC");
         assert_feed_ok!(d, [], [], "");
@@ -206,7 +278,7 @@ mod gb18030_tests {
 
     #[test]
     fn test_decoder_valid_partial() {
-        let mut d = GB18030Encoding.raw_decoder();
+        let mut d = GB18030_ENCODING.raw_decoder();
         assert_feed_ok!(d, [], [0xa1], "");
         assert_feed_ok!(d, [0xa1], [], "\u{3000}");
         assert_feed_ok!(d, [], [0x81], "");
@@ -233,26 +305,26 @@ mod gb18030_tests {
 
     #[test]
     fn test_decoder_invalid_partial() {
-        let mut d = GB18030Encoding.raw_decoder();
+        let mut d = GB18030_ENCODING.raw_decoder();
         assert_feed_ok!(d, [], [0xa1], "");
         assert_finish_err!(d, "");
 
-        let mut d = GB18030Encoding.raw_decoder();
+        let mut d = GB18030_ENCODING.raw_decoder();
         assert_feed_ok!(d, [], [0x81], "");
         assert_finish_err!(d, "");
 
-        let mut d = GB18030Encoding.raw_decoder();
+        let mut d = GB18030_ENCODING.raw_decoder();
         assert_feed_ok!(d, [], [0x81, 0x30], "");
         assert_finish_err!(d, "");
 
-        let mut d = GB18030Encoding.raw_decoder();
+        let mut d = GB18030_ENCODING.raw_decoder();
         assert_feed_ok!(d, [], [0x81, 0x30, 0x81], "");
         assert_finish_err!(d, "");
     }
 
     #[test]
     fn test_decoder_invalid_out_of_range() {
-        let mut d = GB18030Encoding.raw_decoder();
+        let mut d = GB18030_ENCODING.raw_decoder();
         assert_feed_err!(d, [], [0xff], [], "");
         assert_feed_err!(d, [], [0x81], [0x00], "");
         assert_feed_err!(d, [], [0x81], [0x7f], "");
@@ -272,12 +344,12 @@ mod gb18030_tests {
         // U+10FFFF (E3 32 9A 35) is the last Unicode codepoint, E3 32 9A 36 is invalid.
         // note that since the 2nd to 4th bytes may coincide with ASCII, bytes 32 9A 36 is
         // not considered to be in the problem. this is compatible to WHATWG Encoding standard.
-        let mut d = GB18030Encoding.raw_decoder();
+        let mut d = GB18030_ENCODING.raw_decoder();
         assert_feed_ok!(d, [], [0xe3], "");
         assert_feed_err!(d, [], [], [0x32, 0x9a, 0x36], "");
         assert_finish_ok!(d, "");
 
-        let mut d = GB18030Encoding.raw_decoder();
+        let mut d = GB18030_ENCODING.raw_decoder();
         assert_feed_ok!(d, [], [0xe3], "");
         assert_feed_ok!(d, [], [0x32, 0x9a], "");
         assert_feed_err!(d, -2, [], [], [0x32, 0x9a, 0x36], "");
@@ -286,13 +358,13 @@ mod gb18030_tests {
 
     #[test]
     fn test_decoder_feed_after_finish() {
-        let mut d = GB18030Encoding.raw_decoder();
+        let mut d = GB18030_ENCODING.raw_decoder();
         assert_feed_ok!(d, [0xd2, 0xbb], [0xd2], "\u{4e00}");
         assert_finish_err!(d, "");
         assert_feed_ok!(d, [0xd2, 0xbb], [], "\u{4e00}");
         assert_finish_ok!(d, "");
 
-        let mut d = GB18030Encoding.raw_decoder();
+        let mut d = GB18030_ENCODING.raw_decoder();
         assert_feed_ok!(d, [0x98, 0x35, 0xee, 0x37], [0x98, 0x35, 0xee], "\u{2a6a5}");
         assert_finish_err!(d, "");
         assert_feed_ok!(d, [0x98, 0x35, 0xee, 0x37], [0x98, 0x35], "\u{2a6a5}");
@@ -308,17 +380,17 @@ mod gb18030_tests {
         let s = testutils::SIMPLIFIED_CHINESE_TEXT;
         bencher.bytes = s.len() as u64;
         bencher.iter(|| test::black_box({
-            GB18030Encoding.encode(&s, EncoderTrap::Strict)
+            GB18030_ENCODING.encode(&s, EncoderTrap::Strict)
         }))
     }
 
     #[bench]
     fn bench_decode_short_text(bencher: &mut test::Bencher) {
-        let s = GB18030Encoding.encode(testutils::SIMPLIFIED_CHINESE_TEXT,
+        let s = GB18030_ENCODING.encode(testutils::SIMPLIFIED_CHINESE_TEXT,
                                        EncoderTrap::Strict).ok().unwrap();
         bencher.bytes = s.len() as u64;
         bencher.iter(|| test::black_box({
-            GB18030Encoding.decode(&s, DecoderTrap::Strict)
+            GB18030_ENCODING.decode(&s, DecoderTrap::Strict)
         }))
     }
 }
