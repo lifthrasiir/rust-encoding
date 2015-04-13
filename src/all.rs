@@ -74,7 +74,8 @@ unique!(#[stable] var=WINDOWS_949, mod=codec::korean, val=Windows949Encoding);
 unique!(#[unstable] var=EUC_JP, mod=codec::japanese, val=EUCJPEncoding);
 unique!(#[unstable] var=WINDOWS_31J, mod=codec::japanese, val=Windows31JEncoding);
 unique!(#[unstable] var=ISO_2022_JP, mod=codec::japanese, val=ISO2022JPEncoding);
-unique!(#[stable] var=GB18030, mod=codec::simpchinese, val=GB18030Encoding);
+unique!(#[stable] var=GBK, mod=codec::simpchinese, ty=GBKEncoding, val=GBK_ENCODING);
+unique!(#[stable] var=GB18030, mod=codec::simpchinese, ty=GB18030Encoding, val=GB18030_ENCODING);
 unique!(#[unstable] var=HZ, mod=codec::simpchinese, val=HZEncoding);
 unique!(#[unstable] var=BIG5_2003, mod=codec::tradchinese, val=BigFive2003Encoding);
 

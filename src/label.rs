@@ -217,13 +217,14 @@ pub fn encoding_from_whatwg_label(label: &str) -> Option<EncodingRef> {
         "chinese" |
         "csgb2312" |
         "csiso58gb231280" |
-        "gb18030" |
         "gb2312" |
         "gb_2312" |
         "gb_2312-80" |
         "gbk" |
         "iso-ir-58" |
         "x-gbk" =>
+            Some(all::GBK as EncodingRef),
+        "gb18030" =>
             Some(all::GB18030 as EncodingRef),
         "big5" |
         "big5-hkscs" |
