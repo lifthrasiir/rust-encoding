@@ -120,7 +120,7 @@ impl<T: GBType> RawEncoder for GBEncoder<T> {
         output.writer_hint(input.len());
 
         let gbk_flag = <T as GBType>::initial_gbk_flag();
-        for (offset, ch) in input.char_indices() {
+        for ((i, j), ch) in input.index_iter() {
             if ch < '\u{80}' {
                 output.write_byte(ch as u8);
             } else if gbk_flag && ch == '\u{20AC}' {
@@ -129,11 +129,10 @@ impl<T: GBType> RawEncoder for GBEncoder<T> {
                 let ptr = index::gb18030::backward(ch as u32);
                 if ptr == 0xffff {
                     if gbk_flag {
-                      let error = CodecError {
-                          upto: offset as isize + 1,
-                          cause: "gbk doesn't support gb18030 extensions".into()
-                      };
-                      return (offset, Some(error))
+                        return (i, Some(CodecError {
+                            upto: j as isize,
+                            cause: "gbk doesn't support gb18030 extensions".into()
+                        }));
                     }
                     let ptr = index::gb18030_ranges::backward(ch as u32);
                     assert!(ptr != 0xffffffff);
@@ -235,7 +234,7 @@ mod gb18030_tests {
     use types::*;
 
     #[test]
-    fn test_encoder_valid() {
+    fn test_encoder() {
         let mut e = GB18030_ENCODING.raw_encoder();
         assert_feed_ok!(e, "A", "", [0x41]);
         assert_feed_ok!(e, "BC", "", [0x42, 0x43]);
@@ -391,6 +390,47 @@ mod gb18030_tests {
         bencher.bytes = s.len() as u64;
         bencher.iter(|| test::black_box({
             GB18030_ENCODING.decode(&s, DecoderTrap::Strict)
+        }))
+    }
+}
+
+#[cfg(test)]
+mod gbk_tests {
+    extern crate test;
+    use super::GBK_ENCODING;
+    use testutils;
+    use types::*;
+
+    // GBK and GB 18030 share the same decoder logic.
+
+    #[test]
+    fn test_encoder() {
+        let mut e = GBK_ENCODING.raw_encoder();
+        assert_feed_ok!(e, "A", "", [0x41]);
+        assert_feed_ok!(e, "BC", "", [0x42, 0x43]);
+        assert_feed_ok!(e, "", "", []);
+        assert_feed_ok!(e, "\u{4e2d}\u{534e}\u{4eba}\u{6c11}\u{5171}\u{548c}\u{56fd}", "",
+                        [0xd6, 0xd0, 0xbb, 0xaa, 0xc8, 0xcb, 0xc3, 0xf1,
+                         0xb9, 0xb2, 0xba, 0xcd, 0xb9, 0xfa]);
+        assert_feed_ok!(e, "1\u{20ac}/m", "", [0x31, 0x80, 0x2f, 0x6d]);
+        assert_feed_ok!(e, "\u{ff21}\u{ff22}\u{ff23}", "", [0xa3, 0xc1, 0xa3, 0xc2, 0xa3, 0xc3]);
+        assert_feed_err!(e, "", "\u{80}", "", []);
+        assert_feed_err!(e, "", "\u{81}", "", []);
+        assert_feed_err!(e, "", "\u{a3}", "", []);
+        assert_feed_ok!(e, "\u{a4}", "", [0xa1, 0xe8]);
+        assert_feed_err!(e, "", "\u{a5}", "", []);
+        assert_feed_err!(e, "", "\u{10ffff}", "", []);
+        assert_feed_err!(e, "", "\u{2a6a5}", "\u{3007}", []);
+        assert_feed_err!(e, "\u{3007}", "\u{2a6a5}", "", [0xa9, 0x96]);
+        assert_finish_ok!(e, []);
+    }
+
+    #[bench]
+    fn bench_encode_short_text(bencher: &mut test::Bencher) {
+        let s = testutils::SIMPLIFIED_CHINESE_TEXT;
+        bencher.bytes = s.len() as u64;
+        bencher.iter(|| test::black_box({
+            GBK_ENCODING.encode(&s, EncoderTrap::Strict)
         }))
     }
 }
