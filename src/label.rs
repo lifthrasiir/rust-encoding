@@ -225,8 +225,6 @@ pub fn encoding_from_whatwg_label(label: &str) -> Option<EncodingRef> {
         "iso-ir-58" |
         "x-gbk" =>
             Some(all::GB18030 as EncodingRef),
-        "hz-gb-2312" =>
-            Some(all::HZ as EncodingRef),
         "big5" |
         "big5-hkscs" |
         "cn-big5" |
@@ -260,6 +258,7 @@ pub fn encoding_from_whatwg_label(label: &str) -> Option<EncodingRef> {
         "windows-949" =>
             Some(all::WINDOWS_949 as EncodingRef),
         "csiso2022kr" |
+        "hz-gb-2312" |
         "iso-2022-kr" |
         "iso-2022-cn" |
         "iso-2022-cn-ext" =>
