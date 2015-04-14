@@ -25,7 +25,6 @@ static FORWARD_TABLE: &'static [u16] = &[
 
 /// Returns the index code point for pointer `code` in this index.
 #[inline]
-#[stable]
 pub fn forward(code: u8) -> u16 {
     FORWARD_TABLE[(code - 0x80) as usize]
 }
@@ -63,7 +62,6 @@ static BACKWARD_TABLE_UPPER: &'static [u16] = &[
 
 /// Returns the index pointer for code point `code` in this index.
 #[inline]
-#[stable]
 pub fn backward(code: u32) -> u8 {
     let offset = (code >> 6) as usize;
     let offset = if offset < 131 {BACKWARD_TABLE_UPPER[offset] as usize} else {0};

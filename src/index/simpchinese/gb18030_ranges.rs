@@ -55,7 +55,6 @@ static BACKWARD_TABLE: &'static [u32] = &[
 
 /// Returns the index code point for pointer `code` in this index.
 #[inline]
-#[stable]
 pub fn forward(code: u32) -> u32 {
     if (code > 39419 && code < 189000) || code > 1237575 { return 0xffffffff; }
     let mut i = if code >= BACKWARD_TABLE[127] {81} else {0};
@@ -71,7 +70,6 @@ pub fn forward(code: u32) -> u32 {
 
 /// Returns the index pointer for code point `code` in this index.
 #[inline]
-#[stable]
 pub fn backward(code: u32) -> u32 {
     if code < 128 { return 0xffffffff; }
     let mut i = if code >= FORWARD_TABLE[127] {81} else {0};

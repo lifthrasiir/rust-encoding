@@ -89,7 +89,6 @@ def generate_single_byte_index(crate, name):
         print >>f
         print >>f, '/// Returns the index code point for pointer `code` in this index.'
         print >>f, '#[inline]'
-        print >>f, '#[stable]'
         print >>f, 'pub fn forward(code: u8) -> u16 {'
         print >>f, '    FORWARD_TABLE[(code - 0x80) as usize]'
         print >>f, '}'
@@ -104,7 +103,6 @@ def generate_single_byte_index(crate, name):
         print >>f
         print >>f, '/// Returns the index pointer for code point `code` in this index.'
         print >>f, '#[inline]'
-        print >>f, '#[stable]'
         print >>f, 'pub fn backward(code: u32) -> u8 {'
         print >>f, '    let offset = (code >> %d) as usize;' % triebits
         print >>f, '    let offset = if offset < %d {BACKWARD_TABLE_UPPER[offset] as usize} else {0};' % len(upper)
@@ -198,7 +196,6 @@ def generate_multi_byte_index(crate, name):
         print >>f
         print >>f, '/// Returns the index code point for pointer `code` in this index.'
         print >>f, '#[inline]'
-        print >>f, '#[stable]'
         print >>f, 'pub fn forward(code: u16) -> u32 {'
         if minkey != 0:
             print >>f, '    let code = (code as usize).wrapping_sub(%d);' % minkey
@@ -230,7 +227,6 @@ def generate_multi_byte_index(crate, name):
         print >>f
         print >>f, '/// Returns the index pointer for code point `code` in this index.'
         print >>f, '#[inline]'
-        print >>f, '#[stable]'
         print >>f, 'pub fn backward(code: u32) -> u16 {'
         print >>f, '    let offset = (code >> %d) as usize;' % triebits
         print >>f, '    let offset = if offset < %d {BACKWARD_TABLE_UPPER[offset] as usize} else {0};' % len(upper)
@@ -241,7 +237,6 @@ def generate_multi_byte_index(crate, name):
             assert name == 'jis0208'
             print >>f, '/// Returns the index shift_jis pointer for code point `code`.'
             print >>f, '#[inline]'
-            print >>f, '#[stable]'
             print >>f, 'pub fn backward_remapped(code: u32) -> u16 {'
             print >>f, '    let value = backward(code);'
             print >>f, '    if %d <= value && value <= %d {' % (REMAP_MIN, REMAP_MAX)
@@ -306,7 +301,6 @@ def generate_multi_byte_range_lbound_index(crate, name):
         print >>f
         print >>f, '/// Returns the index code point for pointer `code` in this index.'
         print >>f, '#[inline]'
-        print >>f, '#[stable]'
         print >>f, 'pub fn forward(code: u32) -> u32 {'
         if minkey > 0:
             print >>f, '    if code < %d { return 0xffffffff; }' % minkey
@@ -322,7 +316,6 @@ def generate_multi_byte_range_lbound_index(crate, name):
         print >>f
         print >>f, '/// Returns the index pointer for code point `code` in this index.'
         print >>f, '#[inline]'
-        print >>f, '#[stable]'
         print >>f, 'pub fn backward(code: u32) -> u32 {'
         if minvalue > 0:
             print >>f, '    if code < %d { return 0xffffffff; }' % minvalue

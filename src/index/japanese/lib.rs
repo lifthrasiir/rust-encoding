@@ -16,7 +16,7 @@ extern crate encoding_index_tests;
 /// From the Encoding Standard:
 ///
 /// > This is the JIS X 0208 standard including formerly proprietary extensions from IBM and NEC.
-#[stable] pub mod jis0208;
+pub mod jis0208;
 
 /// JIS X 0212.
 ///
@@ -24,5 +24,5 @@ extern crate encoding_index_tests;
 ///
 /// > This is the JIS X 0212 standard.
 /// > It is only used by the euc-jp decoder due to lack of widespread support elsewhere.
-#[stable] pub mod jis0212;
+pub mod jis0212;
 

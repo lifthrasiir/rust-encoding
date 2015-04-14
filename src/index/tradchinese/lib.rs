@@ -18,5 +18,5 @@ extern crate encoding_index_tests;
 ///
 /// > This matches the Big5 standard
 /// > in combination with the Hong Kong Supplementary Character Set and other common extensions.
-#[stable] pub mod big5;
+pub mod big5;
 

@@ -54,7 +54,6 @@
 use std::borrow::Cow;
 
 /// Error information from either encoder or decoder.
-#[unstable]
 pub struct CodecError {
     /// The byte position of the first remaining byte, with respect to the *current* input.
     /// For the `finish` call, this should be no more than zero (since there is no input).
@@ -68,7 +67,6 @@ pub struct CodecError {
 }
 
 /// Byte writer used by encoders. In most cases this will be an owned vector of `u8`.
-#[unstable]
 pub trait ByteWriter {
     /// Hints an expected lower bound on the length (in bytes) of the output
     /// until the next call to `writer_hint`,
@@ -100,7 +98,6 @@ impl ByteWriter for Vec<u8> {
 }
 
 /// String writer used by decoders. In most cases this will be an owned string.
-#[unstable]
 pub trait StringWriter {
     /// Hints an expected lower bound on the length (in bytes) of the output
     /// until the next call to `writer_hint`,
@@ -134,7 +131,6 @@ impl StringWriter for String {
 
 /// Encoder converting a Unicode string into a byte sequence.
 /// This is a lower level interface, and normally `Encoding::encode` should be used instead.
-#[unstable]
 pub trait RawEncoder: 'static {
     /// Creates a fresh `RawEncoder` instance which parameters are same as `self`.
     fn from_self(&self) -> Box<RawEncoder>;
@@ -191,7 +187,6 @@ pub trait RawEncoder: 'static {
 
 /// Decoder converting a byte sequence into a Unicode string.
 /// This is a lower level interface, and normally `Encoding::decode` should be used instead.
-#[unstable]
 pub trait RawDecoder: 'static {
     /// Creates a fresh `RawDecoder` instance which parameters are same as `self`.
     fn from_self(&self) -> Box<RawDecoder>;
@@ -248,43 +243,35 @@ pub trait RawDecoder: 'static {
 
 /// A trait object using dynamic dispatch which is a sendable reference to the encoding,
 /// for code where the encoding is not known at compile-time.
-#[stable]
 pub type EncodingRef = &'static (Encoding + Send + Sync);
 
 /// Character encoding.
-#[stable]
 pub trait Encoding {
     /// Returns the canonical name of given encoding.
     /// This name is guaranteed to be unique across built-in encodings,
     /// but it is not normative and would be at most arbitrary.
-    #[stable]
     fn name(&self) -> &'static str;
 
     /// Returns a name of given encoding defined in the WHATWG Encoding standard, if any.
     /// This name often differs from `name` due to the compatibility reason.
-    #[unstable]
     fn whatwg_name(&self) -> Option<&'static str> { None }
 
     /// Creates a new encoder.
-    #[unstable]
     fn raw_encoder(&self) -> Box<RawEncoder>;
 
     /// Creates a new decoder.
-    #[unstable]
     fn raw_decoder(&self) -> Box<RawDecoder>;
 
     /// An easy-to-use interface to `RawEncoder`.
     /// On the encoder error `trap` is called,
     /// which may return a replacement sequence to continue processing,
     /// or a failure to return the error.
-    #[stable]
     fn encode(&self, input: &str, trap: EncoderTrap) -> Result<Vec<u8>, Cow<'static, str>> {
         let mut ret = Vec::new();
         self.encode_to(input, trap, &mut ret).map(|_| ret)
     }
 
     /// Encode into a `ByteWriter`.
-    #[unstable]
     fn encode_to(&self, input: &str, trap: EncoderTrap, ret: &mut ByteWriter)
         -> Result<(), Cow<'static, str>>
     {
@@ -324,7 +311,6 @@ pub trait Encoding {
     /// On the decoder error `trap` is called,
     /// which may return a replacement string to continue processing,
     /// or a failure to return the error.
-    #[stable]
     fn decode(&self, input: &[u8], trap: DecoderTrap) -> Result<String, Cow<'static, str>> {
         let mut ret = String::new();
         self.decode_to(input, trap, &mut ret).map(|_| ret)
@@ -334,7 +320,6 @@ pub trait Encoding {
     ///
     /// This does *not* handle partial characters at the beginning or end of `input`!
     /// Use `RawDecoder` for incremental decoding.
-    #[unstable]
     fn decode_to(&self, input: &[u8], trap: DecoderTrap, ret: &mut StringWriter)
         -> Result<(), Cow<'static, str>>
     {
@@ -372,17 +357,14 @@ pub trait Encoding {
 }
 
 /// A type of the bare function in `EncoderTrap` values.
-#[unstable]
 pub type EncoderTrapFunc =
     extern "Rust" fn(encoder: &mut RawEncoder, input: &str, output: &mut ByteWriter) -> bool;
 
 /// A type of the bare function in `DecoderTrap` values.
-#[unstable]
 pub type DecoderTrapFunc =
     extern "Rust" fn(decoder: &mut RawDecoder, input: &[u8], output: &mut StringWriter) -> bool;
 
 /// Trap, which handles decoder errors.
-#[stable]
 #[derive(Copy)]
 pub enum DecoderTrap {
     /// Immediately fails on errors.
@@ -396,13 +378,12 @@ pub enum DecoderTrap {
     /// Calls given function to handle decoder errors.
     /// The function is given the current decoder, input and output writer,
     /// and should return true only when it is fine to keep going.
-    #[unstable] Call(DecoderTrapFunc),
+    Call(DecoderTrapFunc),
 }
 
 impl DecoderTrap {
     /// Handles a decoder error. May write to the output writer.
     /// Returns true only when it is fine to keep going.
-    #[unstable]
     pub fn trap(&self, decoder: &mut RawDecoder, input: &[u8], output: &mut StringWriter) -> bool {
         match *self {
             DecoderTrap::Strict     => false,
@@ -424,7 +405,6 @@ impl Clone for DecoderTrap {
     }
 }
 
-#[stable]
 #[derive(Copy)]
 pub enum EncoderTrap {
     /// Immediately fails on errors.
@@ -443,13 +423,12 @@ pub enum EncoderTrap {
     /// Calls given function to handle encoder errors.
     /// The function is given the current encoder, input and output writer,
     /// and should return true only when it is fine to keep going.
-    #[unstable] Call(EncoderTrapFunc),
+    Call(EncoderTrapFunc),
 }
 
 impl EncoderTrap {
     /// Handles an encoder error. May write to the output writer.
     /// Returns true only when it is fine to keep going.
-    #[unstable]
     pub fn trap(&self, encoder: &mut RawEncoder, input: &str, output: &mut ByteWriter) -> bool {
         fn reencode(encoder: &mut RawEncoder, input: &str, output: &mut ByteWriter,
                     trapname: &str) -> bool {
@@ -495,7 +474,6 @@ impl Clone for EncoderTrap {
 /// Determine the encoding by looking for a Byte Order Mark (BOM)
 /// and decoded a single string in memory.
 /// Return the result and the used encoding.
-#[unstable]
 pub fn decode(input: &[u8], trap: DecoderTrap, fallback_encoding: EncodingRef)
            -> (Result<String, Cow<'static, str>>, EncodingRef) {
     use all::{UTF_8, UTF_16LE, UTF_16BE};

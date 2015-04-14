@@ -18,7 +18,7 @@ extern crate encoding_index_tests;
 ///
 /// > This matches the GB18030 standard for code points encoded as two bytes,
 /// > except `0xA3 0xA0` maps to U+3000 to be compatible with deployed content.
-#[stable] pub mod gb18030;
+pub mod gb18030;
 
 /// GB 18030 four-byte area.
 ///
@@ -29,6 +29,5 @@ extern crate encoding_index_tests;
 /// > whereas they can be represented neatly in 207 ranges combined with trivial limit checks.
 /// > It therefore only superficially matches the GB18030 standard
 /// > for code points encoded as four bytes.
-/// > See also index gb18030 ranges code point and index gb18030 ranges pointer below.
-#[stable] pub mod gb18030_ranges;
+pub mod gb18030_ranges;
 
