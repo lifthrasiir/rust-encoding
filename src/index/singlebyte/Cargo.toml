@@ -1,6 +1,6 @@
 [package]
 name = "encoding-index-singlebyte"
-version = "1.20141219.4"
+version = "1.20141219.5"
 authors = ["Kang Seonghoon <public+rust@mearie.org>"]
 
 description = "Index tables for various single-byte character encodings"

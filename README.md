@@ -1,4 +1,4 @@
-[Encoding][doc] 0.2.30
+[Encoding][doc] 0.2.31
 ======================
 
 [![Encoding on Travis CI][travis-image]][travis]
@@ -27,7 +27,7 @@ Or in the case you are using Rust 1.0 beta, pin the exact version:
 
 ```toml
 [dependencies]
-encoding = "=0.2.28"
+encoding = "=0.2.31"
 ```
 
 Then put this in your crate root:
@@ -198,9 +198,12 @@ Encoding covers all encodings specified by WHATWG Encoding Standard and some mor
     * EUC-JP and Windows code page 932 (`shift_jis`,
       since it's the most widespread extension to Shift_JIS)
     * ISO-2022-JP with asymmetric JIS X 0212 support
+      (Note: this is not yet up to date to the current standard)
+    * GBK
     * GB 18030
-    * HZ
     * Big5-2003 with HKSCS-2008 extensions
+* Encodings that were originally specified by WHATWG Encoding Standard:
+    * HZ
 * ISO 8859-1 (distinct from Windows code page 1252)
 
 Parenthesized names refer to the encoding's primary name assigned by WHATWG Encoding Standard.
