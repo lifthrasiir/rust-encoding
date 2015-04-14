@@ -151,38 +151,6 @@ pub trait RawEncoder: 'static {
     /// and returns optional error information (None means success).
     /// `remaining` value of the error information, if any, is always an empty string.
     fn raw_finish(&mut self, output: &mut ByteWriter) -> Option<CodecError>;
-
-    /// Normalizes the input for testing. Internal use only.
-    #[cfg(test)]
-    fn test_norm_input<'r>(&self, input: &'r str) -> &'r str { input }
-
-    /// Normalizes the output for testing. Internal use only.
-    #[cfg(test)]
-    fn test_norm_output<'r>(&self, output: &'r [u8]) -> &'r [u8] { output }
-
-    /// A test-friendly interface to `raw_feed`. Internal use only.
-    #[cfg(test)]
-    fn test_feed(&mut self, input: &str) -> (usize, Option<CodecError>, Vec<u8>) {
-        let mut buf = Vec::new();
-        let (nprocessed, err) = self.raw_feed(input, &mut buf);
-        (nprocessed, err, buf)
-    }
-
-    /// A test-friendly interface to `raw_finish`. Internal use only.
-    #[cfg(test)]
-    fn test_finish(&mut self) -> (Option<CodecError>, Vec<u8>) {
-        let mut buf = Vec::new();
-        let err = self.raw_finish(&mut buf);
-        (err, buf)
-    }
-
-    /// Concatenates two input sequences into one. Internal use only.
-    #[cfg(test)]
-    fn test_concat(&self, a: &str, b: &str) -> String {
-        let mut s = a.to_string();
-        s.push_str(b);
-        s
-    }
 }
 
 /// Decoder converting a byte sequence into a Unicode string.
@@ -206,39 +174,6 @@ pub trait RawDecoder: 'static {
     /// pushes the a decoded string at the end of the given output,
     /// and returns optional error information (None means success).
     fn raw_finish(&mut self, output: &mut StringWriter) -> Option<CodecError>;
-
-    /// Normalizes the input for testing. Internal use only.
-    #[cfg(test)]
-    fn test_norm_input<'r>(&self, input: &'r [u8]) -> &'r [u8] { input }
-
-    /// Normalizes the output for testing. Internal use only.
-    #[cfg(test)]
-    fn test_norm_output<'r>(&self, output: &'r str) -> &'r str { output }
-
-    /// A test-friendly interface to `raw_feed`. Internal use only.
-    #[cfg(test)]
-    fn test_feed(&mut self, input: &[u8]) -> (usize, Option<CodecError>, String) {
-        let mut buf = String::new();
-        let (nprocessed, err) = self.raw_feed(input, &mut buf);
-        (nprocessed, err, buf)
-    }
-
-    /// A test-friendly interface to `raw_finish`. Internal use only.
-    #[cfg(test)]
-    fn test_finish(&mut self) -> (Option<CodecError>, String) {
-        let mut buf = String::new();
-        let err = self.raw_finish(&mut buf);
-        (err, buf)
-    }
-
-    /// Concatenates two input sequences into one. Internal use only.
-    #[cfg(test)]
-    fn test_concat(&self, a: &[u8], b: &[u8]) -> Vec<u8> {
-        let mut v = Vec::with_capacity(a.len() + b.len());
-        v.extend(a.iter().cloned());
-        v.extend(b.iter().cloned());
-        v
-    }
 }
 
 /// A trait object using dynamic dispatch which is a sendable reference to the encoding,

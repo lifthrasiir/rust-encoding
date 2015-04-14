@@ -4,80 +4,202 @@
 
 //! Macros and utilities for testing.
 
-macro_rules! assert_feed_ok(
-    ($this:expr, $processed:expr, $unprocessed:expr, $output:expr) => ({
-        let processed = $processed;
-        let processed = $this.test_norm_input(&processed);
-        let unprocessed = $unprocessed;
-        let unprocessed = $this.test_norm_input(&unprocessed);
-        let output = $output;
-        let output = $this.test_norm_output(&output);
-        let input = $this.test_concat(processed, unprocessed);
-        let (nprocessed, err, buf) = $this.test_feed(&input);
-        let upto = err.map(|e| e.upto);
-        assert!(processed.len() == nprocessed && None == upto,
-                "raw_feed should return {:?}, but instead returned {:?}",
-                (processed.len(), None::<isize>), (nprocessed, upto));
-        assert!(&output[..] == &buf[..],
-                "raw_feed should push {:?}, but instead pushed {:?}", output, buf);
-    })
-);
+use std::borrow::ToOwned;
+use types::{RawDecoder, RawEncoder};
 
-macro_rules! assert_feed_err(
-    ($this:expr, $backup:expr, $processed:expr, $problem:expr, $remaining:expr, $output:expr) => ({
-        let processed = $processed;
-        let processed = $this.test_norm_input(&processed);
-        let problem = $problem;
-        let problem = $this.test_norm_input(&problem);
-        let remaining = $remaining;
-        let remaining = $this.test_norm_input(&remaining);
-        let output = $output;
-        let output = $this.test_norm_output(&output);
-        let input = $this.test_concat(&$this.test_concat(processed, problem), remaining);
-        let backup: isize = $backup;
-        let (nprocessed, err, buf) = $this.test_feed(&input[-backup as usize..]);
-        let upto = err.map(|e| e.upto);
-        let expectedupto = processed.len() as isize + problem.len() as isize + backup;
-        assert!(processed.len() == nprocessed && Some(expectedupto) == upto,
-                "raw_feed should return {:?}, but instead returned {:?}",
-                (processed.len(), Some(expectedupto)), (nprocessed, upto));
-        assert!(&output[..] == &buf[..],
-                "raw_feed should push {:?}, but instead pushed {:?}", output, buf);
+pub struct TestResult<'a, Output: 'a + ?Sized + ToOwned> {
+    pub expected_return: (usize, Option<isize>),
+    pub expected_push: &'a Output,
+    pub actual_return: (usize, Option<isize>),
+    pub actual_push: Output::Owned,
+}
+
+pub trait Testable {
+    type Input: ?Sized;
+    type Output: ?Sized + ToOwned;
+
+    fn process_feed_ok<'a>(&mut self, processed: &Self::Input, unprocessed: &Self::Input,
+                           output: &'a Self::Output) -> TestResult<'a, Self::Output>;
+    fn process_feed_err<'a>(&mut self, backup: isize,
+                            processed: &Self::Input, problem: &Self::Input, remaining: &Self::Input,
+                            output: &'a Self::Output) -> TestResult<'a, Self::Output>;
+    fn process_finish_ok<'a>(&mut self, output: &'a Self::Output) -> TestResult<'a, Self::Output>;
+    fn process_finish_err<'a>(&mut self, backup: isize,
+                              output: &'a Self::Output) -> TestResult<'a, Self::Output>;
+}
+
+impl Testable for RawDecoder {
+    type Input = [u8];
+    type Output = str;
+
+    fn process_feed_ok<'a>(&mut self, processed: &[u8], unprocessed: &[u8],
+                           output: &'a str) -> TestResult<'a, str> {
+        let mut input = Vec::with_capacity(processed.len() + unprocessed.len());
+        input.extend(processed.iter().cloned());
+        input.extend(unprocessed.iter().cloned());
+
+        let mut buf = String::new();
+        let (nprocessed, err) = self.raw_feed(&input, &mut buf);
+        TestResult {
+            expected_return: (processed.len(), None),
+            expected_push: output,
+            actual_return: (nprocessed, err.map(|e| e.upto)),
+            actual_push: buf,
+        }
+    }
+
+    fn process_feed_err<'a>(&mut self, backup: isize, processed: &[u8], problem: &[u8],
+                            remaining: &[u8], output: &'a str) -> TestResult<'a, str> {
+        let mut input = Vec::with_capacity(processed.len() + problem.len() + remaining.len());
+        input.extend(processed.iter().cloned());
+        input.extend(problem.iter().cloned());
+        input.extend(remaining.iter().cloned());
+
+        let mut buf = String::new();
+        let (nprocessed, err) = self.raw_feed(&input[-backup as usize..], &mut buf);
+        TestResult {
+            expected_return: (processed.len(), Some(processed.len() as isize +
+                                                    problem.len() as isize + backup)),
+            expected_push: output,
+            actual_return: (nprocessed, err.map(|e| e.upto)),
+            actual_push: buf,
+        }
+    }
+
+    fn process_finish_ok<'a>(&mut self, output: &'a str) -> TestResult<'a, str> {
+        let mut buf = String::new();
+        let err = self.raw_finish(&mut buf);
+        TestResult {
+            expected_return: (0, None),
+            expected_push: output,
+            actual_return: (0, err.map(|e| e.upto)),
+            actual_push: buf,
+        }
+    }
+
+    fn process_finish_err<'a>(&mut self, backup: isize, output: &'a str) -> TestResult<'a, str> {
+        let mut buf = String::new();
+        let err = self.raw_finish(&mut buf);
+        TestResult {
+            expected_return: (0, Some(backup)),
+            expected_push: output,
+            actual_return: (0, err.map(|e| e.upto)),
+            actual_push: buf,
+        }
+    }
+}
+
+impl Testable for RawEncoder {
+    type Input = str;
+    type Output = [u8];
+
+    fn process_feed_ok<'a>(&mut self, processed: &str, unprocessed: &str,
+                           output: &'a [u8]) -> TestResult<'a, [u8]> {
+        let mut input = String::with_capacity(processed.len() + unprocessed.len());
+        input.push_str(processed);
+        input.push_str(unprocessed);
+
+        let mut buf = Vec::new();
+        let (nprocessed, err) = self.raw_feed(&input, &mut buf);
+        TestResult {
+            expected_return: (processed.len(), None),
+            expected_push: output,
+            actual_return: (nprocessed, err.map(|e| e.upto)),
+            actual_push: buf,
+        }
+    }
+
+    fn process_feed_err<'a>(&mut self, backup: isize, processed: &str, problem: &str,
+                            remaining: &str, output: &'a [u8]) -> TestResult<'a, [u8]> {
+        let mut input = String::with_capacity(processed.len() + problem.len() + remaining.len());
+        input.push_str(processed);
+        input.push_str(problem);
+        input.push_str(remaining);
+
+        let mut buf = Vec::new();
+        let (nprocessed, err) = self.raw_feed(&input[-backup as usize..], &mut buf);
+        TestResult {
+            expected_return: (processed.len(), Some(processed.len() as isize +
+                                                    problem.len() as isize + backup)),
+            expected_push: output,
+            actual_return: (nprocessed, err.map(|e| e.upto)),
+            actual_push: buf,
+        }
+    }
+
+    fn process_finish_ok<'a>(&mut self, output: &'a [u8]) -> TestResult<'a, [u8]> {
+        let mut buf = Vec::new();
+        let err = self.raw_finish(&mut buf);
+        TestResult {
+            expected_return: (0, None),
+            expected_push: output,
+            actual_return: (0, err.map(|e| e.upto)),
+            actual_push: buf,
+        }
+    }
+
+    fn process_finish_err<'a>(&mut self, backup: isize, output: &'a [u8]) -> TestResult<'a, [u8]> {
+        let mut buf = Vec::new();
+        let err = self.raw_finish(&mut buf);
+        TestResult {
+            expected_return: (0, Some(backup)),
+            expected_push: output,
+            actual_return: (0, err.map(|e| e.upto)),
+            actual_push: buf,
+        }
+    }
+}
+
+macro_rules! assert_expected {
+    ($result:expr, $func:expr, $filter:expr) => ({
+        use testutils::Testable;
+        match $result {
+            result => {
+                assert!(result.expected_return == result.actual_return,
+                        "{} should return {:?}, but instead returned {:?}",
+                        $func, $filter(result.expected_return), $filter(result.actual_return));
+                assert!(&result.expected_push[..] == &result.actual_push[..],
+                        "{} should push {:?}, but instead pushed {:?}",
+                        $func, result.expected_push, result.actual_push);
+            }
+        }
     });
+}
+
+macro_rules! assert_feed_ok {
+    ($this:expr, $processed:expr, $unprocessed:expr, $output:expr) => (
+        assert_expected!($this.process_feed_ok(&$processed, &$unprocessed, &$output),
+                         "raw_feed", |r| r)
+    );
+}
+
+macro_rules! assert_feed_err {
+    ($this:expr, $backup:expr, $processed:expr, $problem:expr, $remaining:expr, $output:expr) => (
+        assert_expected!($this.process_feed_err($backup, &$processed, &$problem, &$remaining,
+                                                &$output),
+                         "raw_feed", |r| r)
+    );
     ($this:expr, $processed:expr, $problem:expr, $remaining:expr, $output:expr) => (
         assert_feed_err!($this, 0, $processed, $problem, $remaining, $output)
-    )
-);
+    );
+}
 
-macro_rules! assert_finish_ok(
-    ($this:expr, $output:expr) => ({
-        let output = $output;
-        let output = $this.test_norm_output(&output);
-        let (err, buf) = $this.test_finish();
-        let upto = err.map(|e| e.upto);
-        assert!(None == upto,
-                "raw_finish should return {:?}, but instead returned {:?}", None::<isize>, upto);
-        assert!(&output[..] == &buf[..],
-                "raw_finish should push {:?}, but instead pushed {:?}", output, buf);
-    })
-);
+macro_rules! assert_finish_ok {
+    ($this:expr, $output:expr) => (
+        assert_expected!($this.process_finish_ok(&$output),
+                         "raw_finish", |r: (usize, Option<isize>)| r.0)
+    );
+}
 
-macro_rules! assert_finish_err(
-    ($this:expr, $backup:expr, $output:expr) => ({
-        let output = $output;
-        let output = $this.test_norm_output(&output);
-        let (err, buf) = $this.test_finish();
-        let backup: isize = $backup;
-        let upto = err.map(|e| e.upto);
-        assert!(Some(backup) == upto,
-                "raw_finish should return {:?}, but instead returned {:?}", Some(backup), upto);
-        assert!(output == buf,
-                "raw_finish should push {:?}, but instead pushed {:?}", output, buf);
-    });
+macro_rules! assert_finish_err {
+    ($this:expr, $backup:expr, $output:expr) => (
+        assert_expected!($this.process_finish_err($backup, &$output),
+                         "raw_finish", |r: (usize, Option<isize>)| r.0)
+    );
     ($this:expr, $output:expr) => (
         assert_finish_err!($this, 0, $output)
-    )
-);
+    );
+}
 
 /// Some ASCII-only text to test.
 //
