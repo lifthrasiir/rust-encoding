@@ -51,7 +51,7 @@ impl<'r> StrCharIndex<'r> for &'r str {
 }
 
 /// A helper struct for the stateful decoder DSL.
-pub struct StatefulDecoderHelper<'a, St> {
+pub struct StatefulDecoderHelper<'a, St, Data: 'a> {
     /// The current buffer.
     pub buf: &'a [u8],
     /// The current index to the buffer.
@@ -60,16 +60,19 @@ pub struct StatefulDecoderHelper<'a, St> {
     pub output: &'a mut (types::StringWriter + 'a),
     /// The last codec error. The caller will later collect this.
     pub err: Option<types::CodecError>,
+    /// The additional data attached for the use from transition functions.
+    pub data: &'a Data,
     /// A marker for the phantom type parameter `St`.
     _marker: PhantomData<St>,
 }
 
-impl<'a, St: Default> StatefulDecoderHelper<'a, St> {
+impl<'a, St: Default, Data> StatefulDecoderHelper<'a, St, Data> {
     /// Makes a new decoder context out of given buffer and output callback.
     #[inline(always)]
-    pub fn new(buf: &'a [u8],
-               output: &'a mut (types::StringWriter + 'a)) -> StatefulDecoderHelper<'a, St> {
-        StatefulDecoderHelper { buf: buf, pos: 0, output: output, err: None, _marker: PhantomData }
+    pub fn new(buf: &'a [u8], output: &'a mut (types::StringWriter + 'a),
+               data: &'a Data) -> StatefulDecoderHelper<'a, St, Data> {
+        StatefulDecoderHelper { buf: buf, pos: 0, output: output, err: None,
+                                data: data, _marker: PhantomData }
     }
 
     /// Reads one byte from the buffer if any.
@@ -174,7 +177,7 @@ macro_rules! stateful_decoder(
             }
 
             pub mod internal {
-                pub type Context<'a> = ::util::StatefulDecoderHelper<'a, super::State>;
+                pub type Context<'a, Data> = ::util::StatefulDecoderHelper<'a, super::State, Data>;
 
                 $($item)*
             }
@@ -183,7 +186,7 @@ macro_rules! stateful_decoder(
                 use super::internal::*;
 
                 #[inline(always)]
-                pub fn $inist($inictx: &mut Context) -> super::State {
+                pub fn $inist<T>($inictx: &mut Context<T>) -> super::State {
                     // prohibits all kind of recursions, including self-recursions
                     #[allow(unused_imports)] use super::transient::*;
                     match $inictx.read() {
@@ -194,7 +197,7 @@ macro_rules! stateful_decoder(
 
                 $(
                     #[inline(always)]
-                    pub fn $ckst($ckctx: &mut Context $(, $ckarg: $ckty)*) -> super::State {
+                    pub fn $ckst<T>($ckctx: &mut Context<T> $(, $ckarg: $ckty)*) -> super::State {
                         // prohibits all kind of recursions, including self-recursions
                         #[allow(unused_imports)] use super::transient::*;
                         match $ckctx.read() {
@@ -210,27 +213,85 @@ macro_rules! stateful_decoder(
 
                 #[inline(always)]
                 #[allow(dead_code)]
-                pub fn $inist(_: &mut Context) -> super::State {
+                pub fn $inist<T>(_: &mut Context<T>) -> super::State {
                     super::$inist // do not recurse further
                 }
 
                 $(
                     #[inline(always)]
                     #[allow(dead_code)]
-                    pub fn $ckst(_: &mut Context $(, $ckarg: $ckty)*) -> super::State {
+                    pub fn $ckst<T>(_: &mut Context<T> $(, $ckarg: $ckty)*) -> super::State {
                         super::$ckst(() $(, $ckarg)*) // do not recurse further
                     }
                 )*
 
                 $(
                     #[inline(always)]
-                    pub fn $st($ctx: &mut Context $(, $arg: $ty)*) -> super::State {
+                    pub fn $st<T>($ctx: &mut Context<T> $(, $arg: $ty)*) -> super::State {
                         match $inictx.read() {
                             None => super::$st(() $(, $arg)*),
                             Some(c) => match c { $($($lhs)|+ => { $($rhs);+ })+ },
                         }
                     }
                 )*
+            }
+
+            pub fn raw_feed<T>(mut st: State, input: &[u8], output: &mut ::types::StringWriter,
+                               data: &T) -> (State, usize, Option<::types::CodecError>) {
+                output.writer_hint(input.len());
+
+                let mut ctx = ::util::StatefulDecoderHelper::new(input, output, data);
+                let mut processed = 0;
+
+                let st_ = match st {
+                    $inist => $inist,
+                    $(
+                        $ckst(() $(, $ckarg)*) => start::$ckst(&mut ctx $(, $ckarg)*),
+                    )*
+                    $(
+                        $st(() $(, $arg)*) => transient::$st(&mut ctx $(, $arg)*),
+                    )*
+                };
+                match (ctx.err.take(), st_) {
+                    (None, $inist) $(| (None, $ckst(..)))* => { st = st_; processed = ctx.pos; }
+                    // XXX splitting the match case improves the performance somehow, but why?
+                    (None, _) => { return (st_, processed, None); }
+                    (Some(err), _) => { return (st_, processed, Some(err)); }
+                }
+
+                while ctx.pos < ctx.buf.len() {
+                    let st_ = match st {
+                        $inist => start::$inist(&mut ctx),
+                        $(
+                            $ckst(() $(, $ckarg)*) => start::$ckst(&mut ctx $(, $ckarg)*),
+                        )*
+                        _ => unreachable!(),
+                    };
+                    match (ctx.err.take(), st_) {
+                        (None, $inist) $(| (None, $ckst(..)))* => { st = st_; processed = ctx.pos; }
+                        // XXX splitting the match case improves the performance somehow, but why?
+                        (None, _) => { return (st_, processed, None); }
+                        (Some(err), _) => { return (st_, processed, Some(err)); }
+                    }
+                }
+
+                (st, processed, None)
+            }
+
+            pub fn raw_finish<T>(mut st: State, output: &mut ::types::StringWriter,
+                                 data: &T) -> (State, Option<::types::CodecError>) {
+                #![allow(unused_mut, unused_variables)]
+                let mut ctx = ::util::StatefulDecoderHelper::new(&[], output, data);
+                let st = match ::std::mem::replace(&mut st, $inist) {
+                    $inist => { let $inictx = &mut ctx; $($inifin);+ },
+                    $(
+                        $ckst(() $(, $ckarg)*) => { let $ckctx = &mut ctx; $($ckfin);+ },
+                    )*
+                    $(
+                        $st(() $(, $arg)*) => { let $ctx = &mut ctx; $($fin);+ },
+                    )*
+                };
+                (st, ctx.err.take())
             }
         }
 
@@ -246,65 +307,15 @@ macro_rules! stateful_decoder(
 
             fn raw_feed(&mut self, input: &[u8],
                         output: &mut StringWriter) -> (usize, Option<CodecError>) {
-                use self::$stmod::{start, transient};
-
-                output.writer_hint(input.len());
-
-                let mut ctx = ::util::StatefulDecoderHelper::new(input, output);
-                let mut processed = 0;
-                let mut st = self.st;
-
-                let st_ = match st {
-                    $stmod::$inist => $stmod::$inist,
-                    $(
-                        $stmod::$ckst(() $(, $ckarg)*) => start::$ckst(&mut ctx $(, $ckarg)*),
-                    )*
-                    $(
-                        $stmod::$st(() $(, $arg)*) => transient::$st(&mut ctx $(, $arg)*),
-                    )*
-                };
-                match (ctx.err.take(), st_) {
-                    (None, $stmod::$inist) $(| (None, $stmod::$ckst(..)))* =>
-                        { st = st_; processed = ctx.pos; }
-                    // XXX splitting the match case improves the performance somehow, but why?
-                    (None, _) => { self.st = st_; return (processed, None); }
-                    (Some(err), _) => { self.st = st_; return (processed, Some(err)); }
-                }
-
-                while ctx.pos < ctx.buf.len() {
-                    let st_ = match st {
-                        $stmod::$inist => start::$inist(&mut ctx),
-                        $(
-                            $stmod::$ckst(() $(, $ckarg)*) => start::$ckst(&mut ctx $(, $ckarg)*),
-                        )*
-                        _ => unreachable!(),
-                    };
-                    match (ctx.err.take(), st_) {
-                        (None, $stmod::$inist) $(| (None, $stmod::$ckst(..)))* =>
-                            { st = st_; processed = ctx.pos; }
-                        // XXX splitting the match case improves the performance somehow, but why?
-                        (None, _) => { self.st = st_; return (processed, None); }
-                        (Some(err), _) => { self.st = st_; return (processed, Some(err)); }
-                    }
-                }
-
+                let (st, processed, err) = $stmod::raw_feed(self.st, input, output, &());
                 self.st = st;
-                (processed, None)
+                (processed, err)
             }
 
             fn raw_finish(&mut self, output: &mut StringWriter) -> Option<CodecError> {
-                #![allow(unused_mut, unused_variables)]
-                let mut ctx = ::util::StatefulDecoderHelper::new(&[], output);
-                self.st = match ::std::mem::replace(&mut self.st, $stmod::$inist) {
-                    $stmod::$inist => { let $inictx = &mut ctx; $($inifin);+ },
-                    $(
-                        $stmod::$ckst(() $(, $ckarg)*) => { let $ckctx = &mut ctx; $($ckfin);+ },
-                    )*
-                    $(
-                        $stmod::$st(() $(, $arg)*) => { let $ctx = &mut ctx; $($fin);+ },
-                    )*
-                };
-                ctx.err.take()
+                let (st, err) = $stmod::raw_finish(self.st, output, &());
+                self.st = st;
+                err
             }
         }
     )
