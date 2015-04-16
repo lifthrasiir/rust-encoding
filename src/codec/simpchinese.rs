@@ -6,6 +6,7 @@
 
 use std::convert::Into;
 use std::marker::PhantomData;
+use std::default::Default;
 use util::StrCharIndex;
 use index_simpchinese as index;
 use types::*;
@@ -94,7 +95,7 @@ impl<T: GBType> Encoding for GBEncoding<T> {
 }
 
 /**
- *  An encoder for GBK and GB18030.
+ * An encoder for GBK and GB18030.
  *
  * ## Specialization
  *
@@ -160,11 +161,36 @@ impl<T: GBType> RawEncoder for GBEncoder<T> {
     }
 }
 
-ascii_compatible_stateful_decoder! {
-    #[doc="A decoder for GB 18030 (also used by GBK)."]
-    #[derive(Clone, Copy)]
-    struct GB18030Decoder;
+/// A decoder for GB 18030 (also used by GBK).
+#[derive(Clone, Copy)]
+struct GB18030Decoder {
+    st: gb18030::State,
+}
 
+impl GB18030Decoder {
+    pub fn new() -> Box<RawDecoder> {
+        Box::new(GB18030Decoder { st: Default::default() })
+    }
+}
+
+impl RawDecoder for GB18030Decoder {
+    fn from_self(&self) -> Box<RawDecoder> { GB18030Decoder::new() }
+    fn is_ascii_compatible(&self) -> bool { true }
+
+    fn raw_feed(&mut self, input: &[u8], output: &mut StringWriter) -> (usize, Option<CodecError>) {
+        let (st, processed, err) = gb18030::raw_feed(self.st, input, output, &());
+        self.st = st;
+        (processed, err)
+    }
+
+    fn raw_finish(&mut self, output: &mut StringWriter) -> Option<CodecError> {
+        let (st, err) = gb18030::raw_finish(self.st, output, &());
+        self.st = st;
+        err
+    }
+}
+
+stateful_decoder! {
     module gb18030;
 
     internal pub fn map_two_bytes(lead: u8, trail: u8) -> u32 {
@@ -517,14 +543,37 @@ impl RawEncoder for HZEncoder {
     }
 }
 
+/// A decoder for HZ.
+#[derive(Clone, Copy)]
+struct HZDecoder {
+    st: hz::State,
+}
+
+impl HZDecoder {
+    pub fn new() -> Box<RawDecoder> {
+        Box::new(HZDecoder { st: Default::default() })
+    }
+}
+
+impl RawDecoder for HZDecoder {
+    fn from_self(&self) -> Box<RawDecoder> { HZDecoder::new() }
+    fn is_ascii_compatible(&self) -> bool { true }
+
+    fn raw_feed(&mut self, input: &[u8], output: &mut StringWriter) -> (usize, Option<CodecError>) {
+        let (st, processed, err) = hz::raw_feed(self.st, input, output, &());
+        self.st = st;
+        (processed, err)
+    }
+
+    fn raw_finish(&mut self, output: &mut StringWriter) -> Option<CodecError> {
+        let (st, err) = hz::raw_finish(self.st, output, &());
+        self.st = st;
+        err
+    }
+}
+
 stateful_decoder! {
-    #[doc="A decoder for HZ."]
-    #[derive(Clone, Copy)]
-    struct HZDecoder;
-
     module hz;
-
-    ascii_compatible false;
 
     internal pub fn map_two_bytes(lead: u8, trail: u8) -> u32 {
         use index_simpchinese as index;

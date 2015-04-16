@@ -5,6 +5,7 @@
 //! Legacy Japanese encodings based on JIS X 0208 and JIS X 0212.
 
 use std::convert::Into;
+use std::default::Default;
 use util::StrCharIndex;
 use index_japanese as index;
 use types::*;
@@ -82,11 +83,36 @@ impl RawEncoder for EUCJPEncoder {
     }
 }
 
-ascii_compatible_stateful_decoder! {
-    #[doc="A decoder for EUC-JP with JIS X 0212 in G3."]
-    #[derive(Clone, Copy)]
-    struct EUCJP0212Decoder;
+/// A decoder for EUC-JP with JIS X 0212 in G3.
+#[derive(Clone, Copy)]
+struct EUCJP0212Decoder {
+    st: eucjp::State,
+}
 
+impl EUCJP0212Decoder {
+    pub fn new() -> Box<RawDecoder> {
+        Box::new(EUCJP0212Decoder { st: Default::default() })
+    }
+}
+
+impl RawDecoder for EUCJP0212Decoder {
+    fn from_self(&self) -> Box<RawDecoder> { EUCJP0212Decoder::new() }
+    fn is_ascii_compatible(&self) -> bool { true }
+
+    fn raw_feed(&mut self, input: &[u8], output: &mut StringWriter) -> (usize, Option<CodecError>) {
+        let (st, processed, err) = eucjp::raw_feed(self.st, input, output, &());
+        self.st = st;
+        (processed, err)
+    }
+
+    fn raw_finish(&mut self, output: &mut StringWriter) -> Option<CodecError> {
+        let (st, err) = eucjp::raw_finish(self.st, output, &());
+        self.st = st;
+        err
+    }
+}
+
+stateful_decoder! {
     module eucjp;
 
     internal pub fn map_two_0208_bytes(lead: u8, trail: u8) -> u32 {
@@ -479,11 +505,36 @@ impl RawEncoder for Windows31JEncoder {
     }
 }
 
-ascii_compatible_stateful_decoder! {
-    #[doc="A decoder for Shift_JIS with IBM/NEC extensions."]
-    #[derive(Clone, Copy)]
-    struct Windows31JDecoder;
+/// A decoder for Shift_JIS with IBM/NEC extensions.
+#[derive(Clone, Copy)]
+struct Windows31JDecoder {
+    st: windows31j::State,
+}
 
+impl Windows31JDecoder {
+    pub fn new() -> Box<RawDecoder> {
+        Box::new(Windows31JDecoder { st: Default::default() })
+    }
+}
+
+impl RawDecoder for Windows31JDecoder {
+    fn from_self(&self) -> Box<RawDecoder> { Windows31JDecoder::new() }
+    fn is_ascii_compatible(&self) -> bool { true }
+
+    fn raw_feed(&mut self, input: &[u8], output: &mut StringWriter) -> (usize, Option<CodecError>) {
+        let (st, processed, err) = windows31j::raw_feed(self.st, input, output, &());
+        self.st = st;
+        (processed, err)
+    }
+
+    fn raw_finish(&mut self, output: &mut StringWriter) -> Option<CodecError> {
+        let (st, err) = windows31j::raw_finish(self.st, output, &());
+        self.st = st;
+        err
+    }
+}
+
+stateful_decoder! {
     module windows31j;
 
     internal pub fn map_two_0208_bytes(lead: u8, trail: u8) -> u32 {
@@ -798,14 +849,37 @@ impl RawEncoder for ISO2022JPEncoder {
     }
 }
 
+/// A decoder for ISO-2022-JP with JIS X 0212 support.
+#[derive(Clone, Copy)]
+struct ISO2022JPDecoder {
+    st: iso2022jp::State,
+}
+
+impl ISO2022JPDecoder {
+    pub fn new() -> Box<RawDecoder> {
+        Box::new(ISO2022JPDecoder { st: Default::default() })
+    }
+}
+
+impl RawDecoder for ISO2022JPDecoder {
+    fn from_self(&self) -> Box<RawDecoder> { ISO2022JPDecoder::new() }
+    fn is_ascii_compatible(&self) -> bool { false }
+
+    fn raw_feed(&mut self, input: &[u8], output: &mut StringWriter) -> (usize, Option<CodecError>) {
+        let (st, processed, err) = iso2022jp::raw_feed(self.st, input, output, &());
+        self.st = st;
+        (processed, err)
+    }
+
+    fn raw_finish(&mut self, output: &mut StringWriter) -> Option<CodecError> {
+        let (st, err) = iso2022jp::raw_finish(self.st, output, &());
+        self.st = st;
+        err
+    }
+}
+
 stateful_decoder! {
-    #[doc="A decoder for ISO-2022-JP with JIS X 0212 support."]
-    #[derive(Clone, Copy)]
-    struct ISO2022JPDecoder;
-
     module iso2022jp;
-
-    ascii_compatible false;
 
     internal pub fn map_two_0208_bytes(lead: u8, trail: u8) -> u32 {
         use index_japanese as index;

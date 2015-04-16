@@ -5,6 +5,7 @@
 //! Legacy Korean encodings based on KS X 1001.
 
 use std::convert::Into;
+use std::default::Default;
 use util::StrCharIndex;
 use index_korean as index;
 use types::*;
@@ -68,11 +69,36 @@ impl RawEncoder for Windows949Encoder {
     }
 }
 
-ascii_compatible_stateful_decoder! {
-    #[doc="A decoder for Windows code page 949."]
-    #[derive(Clone, Copy)]
-    struct Windows949Decoder;
+/// A decoder for Windows code page 949.
+#[derive(Clone, Copy)]
+struct Windows949Decoder {
+    st: windows949::State,
+}
 
+impl Windows949Decoder {
+    pub fn new() -> Box<RawDecoder> {
+        Box::new(Windows949Decoder { st: Default::default() })
+    }
+}
+
+impl RawDecoder for Windows949Decoder {
+    fn from_self(&self) -> Box<RawDecoder> { Windows949Decoder::new() }
+    fn is_ascii_compatible(&self) -> bool { true }
+
+    fn raw_feed(&mut self, input: &[u8], output: &mut StringWriter) -> (usize, Option<CodecError>) {
+        let (st, processed, err) = windows949::raw_feed(self.st, input, output, &());
+        self.st = st;
+        (processed, err)
+    }
+
+    fn raw_finish(&mut self, output: &mut StringWriter) -> Option<CodecError> {
+        let (st, err) = windows949::raw_finish(self.st, output, &());
+        self.st = st;
+        err
+    }
+}
+
+stateful_decoder! {
     module windows949;
 
     internal pub fn map_two_bytes(lead: u8, trail: u8) -> u32 {

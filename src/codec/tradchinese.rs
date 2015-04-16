@@ -5,6 +5,7 @@
 //! Legacy traditional Chinese encodings.
 
 use std::convert::Into;
+use std::default::Default;
 use util::StrCharIndex;
 use index_tradchinese as index;
 use types::*;
@@ -74,11 +75,36 @@ impl RawEncoder for BigFive2003Encoder {
     }
 }
 
-ascii_compatible_stateful_decoder! {
-    #[doc="A decoder for Big5-2003 with HKSCS-2008 extension."]
-    #[derive(Clone, Copy)]
-    struct BigFive2003HKSCS2008Decoder;
+/// A decoder for Big5-2003 with HKSCS-2008 extension.
+#[derive(Clone, Copy)]
+struct BigFive2003HKSCS2008Decoder {
+    st: bigfive2003::State,
+}
 
+impl BigFive2003HKSCS2008Decoder {
+    pub fn new() -> Box<RawDecoder> {
+        Box::new(BigFive2003HKSCS2008Decoder { st: Default::default() })
+    }
+}
+
+impl RawDecoder for BigFive2003HKSCS2008Decoder {
+    fn from_self(&self) -> Box<RawDecoder> { BigFive2003HKSCS2008Decoder::new() }
+    fn is_ascii_compatible(&self) -> bool { true }
+
+    fn raw_feed(&mut self, input: &[u8], output: &mut StringWriter) -> (usize, Option<CodecError>) {
+        let (st, processed, err) = bigfive2003::raw_feed(self.st, input, output, &());
+        self.st = st;
+        (processed, err)
+    }
+
+    fn raw_finish(&mut self, output: &mut StringWriter) -> Option<CodecError> {
+        let (st, err) = bigfive2003::raw_finish(self.st, output, &());
+        self.st = st;
+        err
+    }
+}
+
+stateful_decoder! {
     module bigfive2003;
 
     internal pub fn map_two_bytes(lead: u8, trail: u8) -> u32 {

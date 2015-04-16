@@ -130,12 +130,9 @@ impl<'a, St: Default, Data> StatefulDecoderHelper<'a, St, Data> {
 }
 
 /// Defines a stateful decoder from given state machine.
-macro_rules! stateful_decoder(
+macro_rules! stateful_decoder {
     (
-        $(#[$decmeta:meta])*
-        struct $dec:ident;
         module $stmod:ident; // should be unique from other existing identifiers
-        ascii_compatible $asciicompat:expr;
         $(internal $item:item)* // will only be visible from state functions
     initial:
         state $inist:ident($inictx:ident: Context) {
@@ -153,15 +150,11 @@ macro_rules! stateful_decoder(
             final => $($fin:expr),+;
         })*
     ) => (
-        $(#[$decmeta])*
-        pub struct $dec {
-            st: $stmod::State
-        }
-
         #[allow(non_snake_case)]
         mod $stmod {
             pub use self::State::*;
-            #[derive(PartialEq,Clone,Copy)]
+
+            #[derive(PartialEq, Clone, Copy)]
             pub enum State {
                 $inist,
                 $(
@@ -294,38 +287,10 @@ macro_rules! stateful_decoder(
                 (st, ctx.err.take())
             }
         }
+    );
 
-        impl $dec {
-            pub fn new() -> Box<RawDecoder> {
-                Box::new($dec { st: $stmod::$inist })
-            }
-        }
-
-        impl RawDecoder for $dec {
-            fn from_self(&self) -> Box<RawDecoder> { $dec::new() }
-            fn is_ascii_compatible(&self) -> bool { $asciicompat }
-
-            fn raw_feed(&mut self, input: &[u8],
-                        output: &mut StringWriter) -> (usize, Option<CodecError>) {
-                let (st, processed, err) = $stmod::raw_feed(self.st, input, output, &());
-                self.st = st;
-                (processed, err)
-            }
-
-            fn raw_finish(&mut self, output: &mut StringWriter) -> Option<CodecError> {
-                let (st, err) = $stmod::raw_finish(self.st, output, &());
-                self.st = st;
-                err
-            }
-        }
-    )
-);
-
-/// Defines an ASCII-compatible stateful decoder from given state machine.
-macro_rules! ascii_compatible_stateful_decoder(
+    // simplified rules: no checkpoint and default final actions
     (
-        $(#[$decmeta:meta])*
-        struct $dec:ident;
         module $stmod:ident; // should be unique from other existing identifiers
         $(internal $item:item)* // will only be visible from state functions
     initial:
@@ -337,11 +302,8 @@ macro_rules! ascii_compatible_stateful_decoder(
             $(case $($lhs:pat),+ => $($rhs:expr),+;)+
         })*
     ) => (
-        stateful_decoder!(
-            $(#[$decmeta])*
-            struct $dec;
+        stateful_decoder! {
             module $stmod;
-            ascii_compatible true;
             $(internal $item)*
         initial:
             state $inist($inictx: Context) {
@@ -354,7 +316,7 @@ macro_rules! ascii_compatible_stateful_decoder(
                 $(case $($lhs),+ => $($rhs),+;)+
                 final => $ctx.err("incomplete sequence");
             })*
-        );
-    )
-);
+        }
+    );
+}
 
