@@ -27,18 +27,22 @@ version = "~1.20141219.5"
 path = "src/index/singlebyte"
 
 [dependencies.encoding-index-korean]
+name = "encoding_index_korean"
 version = "~1.20141219.5"
 path = "src/index/korean"
 
 [dependencies.encoding-index-japanese]
+name = "encoding_index_japanese"
 version = "~1.20141219.5"
 path = "src/index/japanese"
 
 [dependencies.encoding-index-simpchinese]
+name = "encoding_index_simpchinese"
 version = "~1.20141219.5"
 path = "src/index/simpchinese"
 
 [dependencies.encoding-index-tradchinese]
+name = "encoding_index_tradchinese"
 version = "~1.20141219.5"
 path = "src/index/tradchinese"
 
