@@ -32,7 +32,7 @@ version = "~1.20141219.5"
 path = "src/index/korean"
 
 [dependencies.encoding-index-japanese]
-name = "encoding_index_korean"
+name = "encoding_index_japanese"
 version = "~1.20141219.5"
 path = "src/index/japanese"
 
