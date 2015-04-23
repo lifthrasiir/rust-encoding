@@ -228,17 +228,12 @@ pub use self::types::{CodecError, ByteWriter, StringWriter,
                       EncoderTrapFunc, DecoderTrapFunc, DecoderTrap,
                       EncoderTrap, decode}; // reexport
 
-// XXX gah rust-lang/rust#15702
-#[deprecated = "use encoding::RawEncoder instead"] pub use self::types::RawEncoder as Encoder;
-#[deprecated = "use encoding::RawDecoder instead"] pub use self::types::RawDecoder as Decoder;
-
 #[macro_use] mod util;
 #[cfg(test)] #[macro_use] mod testutils;
 
 pub mod types;
 
 /// Codec implementations.
-#[unstable]
 pub mod codec {
     pub mod error;
     pub mod ascii;
