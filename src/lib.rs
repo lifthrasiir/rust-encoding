@@ -234,7 +234,6 @@ pub use self::types::{CodecError, ByteWriter, StringWriter,
 pub mod types;
 
 /// Codec implementations.
-#[unstable]
 pub mod codec {
     pub mod error;
     pub mod ascii;
