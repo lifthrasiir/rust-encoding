@@ -17,6 +17,7 @@ test:
 	cargo test -v -p encoding-index-japanese
 	cargo test -v -p encoding-index-simpchinese
 	cargo test -v -p encoding-index-tradchinese
+	cargo test -v -p encoding-types
 
 .PHONY: readme
 readme: README.md
