@@ -7,7 +7,21 @@ import sys
 import os.path
 
 def whatwg_index(name, comments):
-    for line in urllib.urlopen('http://encoding.spec.whatwg.org/index-%s.txt' % name):
+    try: os.mkdir('.cache')
+    except Exception: pass
+    cached_path = os.path.join('.cache', '%s.txt' % name)
+    if os.path.exists(cached_path):
+        print >>sys.stderr, '(cached)',
+    else:
+        try:
+            urllib.urlretrieve('http://encoding.spec.whatwg.org/index-%s.txt' % name,
+                               cached_path)
+        except Exception:
+            try: os.unlink(cached_path)
+            except Exception: pass
+            raise
+
+    for line in open(cached_path):
         line = line.strip()
         if not line: continue
         if line.startswith('#'):
@@ -114,7 +128,9 @@ def generate_single_byte_index(crate, name):
         print >>f, '    mod = %s' % modname
         print >>f, ');'
 
-    return 2 * len(data) + len(lower) + 2 * len(upper)
+    forwardsz = 2 * len(data)
+    backwardsz = len(lower) + 2 * len(upper)
+    return forwardsz, backwardsz
 
 def generate_multi_byte_index(crate, name):
     modname = name.replace('-', '_')
@@ -259,10 +275,11 @@ def generate_multi_byte_index(crate, name):
             print >>f, '    dups = []'
         print >>f, ');'
 
-    tablesz = 2 * (maxkey - minkey) + 2 * len(lower) + 2 * len(upper)
-    if morebits: tablesz += 4 * ((maxkey - minkey + 31) // 32)
-    if remap: tablesz += 2 * len(remap)
-    return tablesz
+    forwardsz = 2 * (maxkey - minkey)
+    backwardsz = 2 * len(lower) + 2 * len(upper)
+    if morebits: backwardsz += 4 * ((maxkey - minkey + 31) // 32)
+    if remap: backwardsz += 2 * len(remap)
+    return forwardsz, backwardsz
 
 def generate_multi_byte_range_lbound_index(crate, name):
     modname = name.replace('-', '_')
@@ -334,7 +351,9 @@ def generate_multi_byte_range_lbound_index(crate, name):
         print >>f, '    value = [%d, %d], value < %d' % (minvalue, maxvalue, valueubound)
         print >>f, ');'
 
-    return 8 * len(data)
+    forwardsz = 4 * len(data)
+    backwardsz = 4 * len(data)
+    return forwardsz, backwardsz
 
 INDICES = {
     'singlebyte/ibm866':          generate_single_byte_index,
@@ -376,11 +395,14 @@ INDICES = {
 
 if __name__ == '__main__':
     import sys
-    filter = sys.argv[1] if len(sys.argv) > 1 else ''
+    filters = sys.argv[1:]
+    totalsz = 0
     for index, generate in INDICES.items():
         crate, _, index = index.partition('/')
-        if filter not in index: continue
+        if filters and all(s not in index for s in filters): continue
         print >>sys.stderr, 'generating index %s...' % index,
-        tablesz = generate(crate, index)
-        print >>sys.stderr, '%d bytes.' % tablesz
+        forwardsz, backwardsz = generate(crate, index)
+        totalsz += forwardsz + backwardsz
+        print >>sys.stderr, '%d + %d = %d bytes.' % (forwardsz, backwardsz, forwardsz + backwardsz)
+    print >>sys.stderr, 'total %d bytes.' % totalsz
 
