@@ -1,5 +1,5 @@
-[Encoding][doc] 0.2.32
-======================
+[Encoding][doc] 0.3.0-dev
+=========================
 
 [![Encoding on Travis CI][travis-image]][travis]
 
@@ -10,7 +10,10 @@ Character encoding support for Rust. (also known as `rust-encoding`)
 It is based on [WHATWG Encoding Standard](http://encoding.spec.whatwg.org/),
 and also provides an advanced interface for error detection and recovery.
 
-[Complete Documentation][doc]
+*This documentation is for the development version (0.3).
+Please see the [stable documentation][doc] for 0.2.x versions.*
+
+[Complete Documentation][doc] (stable)
 
 [doc]: https://lifthrasiir.github.io/rust-encoding/
 
@@ -20,14 +23,7 @@ Put this in your `Cargo.toml`:
 
 ```toml
 [dependencies]
-encoding = "0.2"
-```
-
-Or in the case you are using Rust 1.0 beta, pin the exact version:
-
-```toml
-[dependencies]
-encoding = "=0.2.32"
+encoding = "0.3"
 ```
 
 Then put this in your crate root:
@@ -35,6 +31,22 @@ Then put this in your crate root:
 ```rust
 extern crate encoding;
 ```
+
+### Data Table
+
+By default, Encoding comes with ~480 KB of data table ("indices").
+This allows Encoding to encode and decode legacy encodings efficiently,
+but this might not be desirable for some applications.
+
+Encoding provides the `no-optimized-legacy-encoding` Cargo feature
+to reduce the size of encoding tables (to ~185 KB)
+at the expense of encoding performance (typically 5x to 20x slower).
+The decoding performance remains identical.
+**This feature is strongly intended for end users.
+Do not try to enable this feature from library crates, ever.**
+
+For finer-tuned optimization, see `src/index/gen_index.py` for
+custom table generation.
 
 ## Overview
 
@@ -160,7 +172,8 @@ There are two ways to get `Encoding`:
   You should use them when the encoding would not change or only handful of them are required.
   Combined with link-time optimization, any unused encoding would be discarded from the binary.
 * `encoding::label` has functions to dynamically get an encoding from given string ("label").
-  They will return a static reference to the encoding, which type is also known as `EncodingRef`.
+  They will return a static reference to the encoding,
+  which type is also known as `EncodingRef`.
   It is useful when a list of required encodings is not available in advance,
   but it will result in the larger binary and missed optimization opportunities.
 
@@ -214,3 +227,4 @@ Consequently one should be careful when picking a desired character encoding.
 The only standards reliable in this regard are WHATWG Encoding Standard and
 [vendor-provided mappings from the Unicode consortium](http://www.unicode.org/Public/MAPPINGS/).
 Whenever in doubt, look at the source code and specifications for detailed explanations.
+

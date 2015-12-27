@@ -9,7 +9,7 @@
 // Identifier: f963aaa1653f630c523e7b04729fb4e4458f35806c45eb5c179445623138f0c0
 // Date: 2014-12-19
 
-static FORWARD_TABLE: &'static [u32] = &[
+const FORWARD_TABLE: &'static [u32] = &[
     0, 128, 165, 169, 178, 184, 216, 226, 235, 238, 244, 248, 251, 253, 258,
     276, 284, 300, 325, 329, 334, 364, 463, 465, 467, 469, 471, 473, 475, 477,
     506, 594, 610, 712, 716, 730, 930, 938, 962, 970, 1026, 1104, 1106, 8209,
@@ -29,9 +29,9 @@ static FORWARD_TABLE: &'static [u32] = &[
     59460, 59478, 59493, 63789, 63866, 63894, 63976, 63986, 64016, 64018,
     64021, 64025, 64034, 64037, 64042, 65074, 65093, 65107, 65112, 65127,
     65132, 65375, 65510, 65536,
-];
+]; // 208 entries
 
-static BACKWARD_TABLE: &'static [u32] = &[
+const BACKWARD_TABLE: &'static [u32] = &[
     0, 0, 36, 38, 45, 50, 81, 89, 95, 96, 100, 103, 104, 105, 109, 126, 133,
     148, 172, 175, 179, 208, 306, 307, 308, 309, 310, 311, 312, 313, 341, 428,
     443, 544, 545, 558, 741, 742, 749, 750, 805, 819, 820, 7922, 7924, 7925,
@@ -51,36 +51,32 @@ static BACKWARD_TABLE: &'static [u32] = &[
     33550, 37845, 37921, 37948, 38029, 38038, 38064, 38065, 38066, 38069,
     38075, 38076, 38078, 39108, 39109, 39113, 39114, 39115, 39116, 39265,
     39394, 189000,
-];
+]; // 208 entries
+
+fn search(code: u32, fromtab: &'static [u32], totab: &'static [u32]) -> u32 {
+    let mut i = if code >= fromtab[127] {81} else {0};
+    if code >= fromtab[i+63] { i += 64; }
+    if code >= fromtab[i+31] { i += 32; }
+    if code >= fromtab[i+15] { i += 16; }
+    if code >= fromtab[i+7] { i += 8; }
+    if code >= fromtab[i+3] { i += 4; }
+    if code >= fromtab[i+1] { i += 2; }
+    if code >= fromtab[i] { i += 1; }
+    (code - fromtab[i-1]) + totab[i-1]
+}
 
 /// Returns the index code point for pointer `code` in this index.
 #[inline]
 pub fn forward(code: u32) -> u32 {
     if (code > 39419 && code < 189000) || code > 1237575 { return 0xffffffff; }
-    let mut i = if code >= BACKWARD_TABLE[127] {81} else {0};
-    if code >= BACKWARD_TABLE[i+63] { i += 64; }
-    if code >= BACKWARD_TABLE[i+31] { i += 32; }
-    if code >= BACKWARD_TABLE[i+15] { i += 16; }
-    if code >= BACKWARD_TABLE[i+7] { i += 8; }
-    if code >= BACKWARD_TABLE[i+3] { i += 4; }
-    if code >= BACKWARD_TABLE[i+1] { i += 2; }
-    if code >= BACKWARD_TABLE[i] { i += 1; }
-    (code - BACKWARD_TABLE[i-1]) + FORWARD_TABLE[i-1]
+    search(code, BACKWARD_TABLE, FORWARD_TABLE)
 }
 
 /// Returns the index pointer for code point `code` in this index.
 #[inline]
 pub fn backward(code: u32) -> u32 {
     if code < 128 { return 0xffffffff; }
-    let mut i = if code >= FORWARD_TABLE[127] {81} else {0};
-    if code >= FORWARD_TABLE[i+63] { i += 64; }
-    if code >= FORWARD_TABLE[i+31] { i += 32; }
-    if code >= FORWARD_TABLE[i+15] { i += 16; }
-    if code >= FORWARD_TABLE[i+7] { i += 8; }
-    if code >= FORWARD_TABLE[i+3] { i += 4; }
-    if code >= FORWARD_TABLE[i+1] { i += 2; }
-    if code >= FORWARD_TABLE[i] { i += 1; }
-    (code - FORWARD_TABLE[i-1]) + BACKWARD_TABLE[i-1]
+    search(code, FORWARD_TABLE, BACKWARD_TABLE)
 }
 
 #[cfg(test)]

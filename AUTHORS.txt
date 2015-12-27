@@ -28,6 +28,7 @@ Peter Atashian <retep998@gmail.com>
 Pierre Baillet <pierre@baillet.name>
 Robert Straw <drbawb@fatalsyntax.com>
 Simon Sapin <simon.sapin@exyr.org>
+Simonas Kazlauskas <git@kazlauskas.me>
 Son <leson.phung@gmail.com>
 Steve Klabnik <steve@steveklabnik.com>
 klutzy <klutzytheklutzy@gmail.com>

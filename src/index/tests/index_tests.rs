@@ -21,6 +21,10 @@ macro_rules! single_byte_tests {
                     let j = forward(i);
                     if j != 0xffff { assert_eq!(backward(j as u32), i); }
                 }
+                for i in 0..0x110000 {
+                    let j = backward(i);
+                    if j != 0 { assert_eq!(forward(j) as u32, i); }
+                }
             }
 
             #[bench]
@@ -32,6 +36,7 @@ macro_rules! single_byte_tests {
                 })
             }
 
+            // strongly prefers the performance for invalid characters
             #[bench]
             fn bench_backward_sequential_128(bencher: &mut test::Bencher) {
                 let mut start: u32 = 0;
@@ -40,6 +45,17 @@ macro_rules! single_byte_tests {
                         test::black_box(backward(i));
                     }
                     start += 0x80;
+                })
+            }
+
+            // strongly prefers the performance for valid characters
+            #[bench]
+            fn bench_roundtrip_sequential_128(bencher: &mut test::Bencher) {
+                bencher.iter(|| {
+                    for i in 0x80..0x100 {
+                        let j = forward(i as u8);
+                        if j != 0 { test::black_box(backward(j as u32)); }
+                    }
                 })
             }
         }
@@ -52,12 +68,17 @@ macro_rules! multi_byte_tests {
     (make shared tests and benches with dups = $dups:expr) => ( // internal macro
         #[test]
         fn test_correct_table() {
-            static DUPS: &'static [u16] = &$dups;
+            const DUPS: &'static [u16] = &$dups;
             for i in 0..0x10000 {
                 let i = i as u16;
                 if DUPS.contains(&i) { continue; }
                 let j = forward(i);
                 if j != 0xffff { assert_eq!(backward(j), i); }
+            }
+            for i in 0..0x110000 {
+                let j = backward(i);
+                if DUPS.contains(&j) { continue; }
+                if j != 0xffff { assert_eq!(forward(j), i); }
             }
         }
 
