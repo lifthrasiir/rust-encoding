@@ -59,6 +59,17 @@ mod tests {
     }
 
     #[test]
+    fn test_encoding_debug_format() {
+        let enc = MyEncoding {
+            flag: true,
+            prohibit: '\u{80}',
+            prepend: "",
+        };
+
+        assert_eq!(format!("{:?}", &enc as &Encoding), "Encoding(my encoding)");
+    }
+
+    #[test]
     fn test_reencoding_trap_with_ascii_compatible_encoding() {
         static COMPAT: &'static MyEncoding =
             &MyEncoding { flag: true, prohibit: '\u{80}', prepend: "" };
