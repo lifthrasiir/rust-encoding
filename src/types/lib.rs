@@ -53,6 +53,7 @@
  */
 
 use std::borrow::Cow;
+use std::fmt;
 
 /// Error information from either encoder or decoder.
 pub struct CodecError {
@@ -289,6 +290,15 @@ pub trait Encoding {
                 }
             }
         }
+    }
+}
+
+impl<'a> fmt::Debug for &'a Encoding {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+        try!(fmt.write_str("Encoding("));
+        try!(fmt.write_str(self.name()));
+        try!(fmt.write_str(")"));
+        Ok(())
     }
 }
 
