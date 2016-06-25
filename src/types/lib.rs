@@ -157,7 +157,7 @@ pub trait RawEncoder: 'static {
 
 /// Decoder converting a byte sequence into a Unicode string.
 /// This is a lower level interface, and normally `Encoding::decode` should be used instead.
-pub trait RawDecoder: 'static {
+pub trait RawDecoder: Send + 'static {
     /// Creates a fresh `RawDecoder` instance which parameters are same as `self`.
     fn from_self(&self) -> Box<RawDecoder>;
 
