@@ -133,7 +133,7 @@ impl StringWriter for String {
 
 /// Encoder converting a Unicode string into a byte sequence.
 /// This is a lower level interface, and normally `Encoding::encode` should be used instead.
-pub trait RawEncoder: 'static {
+pub trait RawEncoder: Send + 'static {
     /// Creates a fresh `RawEncoder` instance which parameters are same as `self`.
     fn from_self(&self) -> Box<RawEncoder>;
 
