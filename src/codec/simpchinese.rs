@@ -26,7 +26,7 @@ pub struct GBK;
 pub struct GB18030;
 
 /// An internal trait used to customize GBK and GB18030 implementations.
-trait GBType: Clone + 'static {
+trait GBType: Clone + Send + 'static {
     fn name() -> &'static str;
     fn whatwg_name() -> Option<&'static str>;
     fn initial_gbk_flag() -> bool;

@@ -12,6 +12,7 @@ mod tests {
     use super::EncoderTrap::NcrEscape;
     use util::StrCharIndex;
     use std::convert::Into;
+    use std::sync::mpsc::channel;
 
     // a contrived encoding example: same as ASCII, but inserts `prepend` between each character
     // within two "e"s (so that `widespread` becomes `wide*s*p*r*ead` and `eeeeasel` becomes
@@ -94,6 +95,15 @@ mod tests {
                    Ok(b"He*l*l*o&#8253;* *I*'*m* *f*i*n*e.".to_vec()));
         assert_eq!(INCOMPAT.encode("Hello\u{203d} I'm fine.", NcrEscape),
                    Ok(b"He*l*l*o*&*#*8*2*5*3*;* *I*'*m* *f*i*n*e.".to_vec()));
+    }
+
+    #[test]
+    fn test_encoding_sendable() {
+        static COMPAT: &'static MyEncoding =
+            &MyEncoding { flag: true, prohibit: '\u{80}', prepend: "*" };
+        let encoder = COMPAT.raw_encoder();
+        let (tx, _rx) = channel();
+        tx.send(encoder);
     }
 
     #[test]

@@ -22,7 +22,7 @@ pub struct Little;
 pub struct Big;
 
 /// An internal trait used to customize UTF-16 implementations.
-trait Endian: Clone + 'static {
+trait Endian: Clone + Send + 'static {
     fn name() -> &'static str;
     fn whatwg_name() -> Option<&'static str>;
     fn write_two_bytes(output: &mut ByteWriter, msb: u8, lsb: u8);
