@@ -95,7 +95,7 @@ impl ByteWriter for Vec<u8> {
     }
 
     fn write_bytes(&mut self, v: &[u8]) {
-        self.extend(v.iter().cloned());
+        self.extend_from_slice(v);
     }
 }
 
