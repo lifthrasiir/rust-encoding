@@ -118,8 +118,7 @@ pub trait StringWriter {
 
 impl StringWriter for String {
     fn writer_hint(&mut self, expectedlen: usize) {
-        let newlen = self.len() + expectedlen;
-        self.reserve(newlen);
+        self.reserve(expectedlen);
     }
 
     fn write_char(&mut self, c: char) {
