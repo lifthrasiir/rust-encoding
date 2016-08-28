@@ -11,12 +11,14 @@ authors:
 
 .PHONY: test
 test:
+	# `test_correct_table` tests with indices with non-BMP mappings tend to be
+	# very slow without the optimization, so japanese and tradchinese got flags
 	cargo test -v
 	cargo test -v -p encoding-index-singlebyte
 	cargo test -v -p encoding-index-korean
-	cargo test -v -p encoding-index-japanese
+	RUSTFLAGS='-C opt-level=1' cargo test -v -p encoding-index-japanese
 	cargo test -v -p encoding-index-simpchinese
-	cargo test -v -p encoding-index-tradchinese
+	RUSTFLAGS='-C opt-level=1' cargo test -v -p encoding-index-tradchinese
 	cargo test -v -p encoding-types
 
 .PHONY: readme

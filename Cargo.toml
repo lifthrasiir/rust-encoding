@@ -36,7 +36,7 @@ path = "src/types"
 # so we should use tilde requirements here.
 
 [dependencies.encoding-index-singlebyte]
-version = "~1.20141219.6"
+version = "~1.20160120.0"
 path = "src/index/singlebyte"
 
 [dependencies.encoding-index-korean]
@@ -48,7 +48,7 @@ version = "~1.20141219.6"
 path = "src/index/japanese"
 
 [dependencies.encoding-index-simpchinese]
-version = "~1.20141219.6"
+version = "~1.20160120.0"
 path = "src/index/simpchinese"
 
 [dependencies.encoding-index-tradchinese]

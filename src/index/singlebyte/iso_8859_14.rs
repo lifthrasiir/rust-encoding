@@ -7,7 +7,7 @@
 // https://encoding.spec.whatwg.org/
 //
 // Identifier: 2c8651cfc08b1f35b17919ee5379f2fa006af3ec809f11b3b7f470785580542b
-// Date: 2014-12-19
+// Date: 2016-01-20
 
 #[allow(dead_code)] const X: u16 = 0xffff;
 
@@ -87,6 +87,5 @@ pub fn backward(code: u32) -> u8 {
 }
 
 #[cfg(test)]
-single_byte_tests!(
-    mod = iso_8859_14
-);
+single_byte_tests! {
+}

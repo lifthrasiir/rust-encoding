@@ -72,7 +72,7 @@ impl RawDecoder for ROT13Decoder {
         output.writer_hint(input.len());
         let string = match from_utf8(input) {
             Ok(s) => s,
-            Err(e) => return (0, Some(CodecError {
+            Err(_e) => return (0, Some(CodecError {
                 upto: 0, // Utf8Error::valid_up_to is unstable at the time of writing,
                          // therefore we can’t quite do partial parsing yet
                 cause: "input is not valid utf-8".into()
@@ -87,7 +87,7 @@ impl RawDecoder for ROT13Decoder {
         (input.len(), None)
     }
 
-    fn raw_finish(&mut self, output: &mut StringWriter) -> Option<CodecError> {
+    fn raw_finish(&mut self, _output: &mut StringWriter) -> Option<CodecError> {
         None
     }
 }

@@ -137,6 +137,7 @@ pub fn encoding_from_whatwg_label(label: &str) -> Option<EncodingRef> {
         "koi8-r" |
         "koi8_r" =>
             Some(all::KOI8_R as EncodingRef),
+        "koi8-ru" |
         "koi8-u" =>
             Some(all::KOI8_U as EncodingRef),
         "csmacintosh" |
@@ -239,6 +240,7 @@ pub fn encoding_from_whatwg_label(label: &str) -> Option<EncodingRef> {
         "iso-2022-jp" =>
             Some(all::ISO_2022_JP as EncodingRef),
         "csshiftjis" |
+        "ms932" |
         "ms_kanji" |
         "shift-jis" |
         "shift_jis" |

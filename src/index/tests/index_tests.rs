@@ -7,12 +7,10 @@
 /// Makes a common test suite for single-byte indices.
 #[macro_export]
 macro_rules! single_byte_tests {
-    (
-        mod = $parentmod:ident // XXX Rust issue #20701 prevents the use of `super`
-    ) => (
+    () => (
         mod tests {
             extern crate test;
-            use $parentmod::{forward, backward};
+            use super::{forward, backward};
 
             #[test]
             fn test_correct_table() {
@@ -107,25 +105,23 @@ macro_rules! multi_byte_tests {
     );
 
     (
-        mod = $parentmod:ident, // XXX Rust issue #20701
         dups = $dups:expr
     ) => (
         mod tests {
             extern crate test;
-            use $parentmod::{forward, backward};
+            use super::{forward, backward};
 
             multi_byte_tests!(make shared tests and benches with dups = $dups);
         }
     );
 
     (
-        mod = $parentmod:ident, // XXX Rust issue #20701
         remap = [$remap_min:expr, $remap_max:expr],
         dups = $dups:expr
     ) => (
         mod tests {
             extern crate test;
-            use $parentmod::{forward, backward, backward_remapped};
+            use super::{forward, backward, backward_remapped};
 
             multi_byte_tests!(make shared tests and benches with dups = $dups);
 
@@ -164,13 +160,12 @@ macro_rules! multi_byte_tests {
 #[macro_export]
 macro_rules! multi_byte_range_tests {
     (
-        mod = $parentmod:ident,
         key = [$minkey:expr, $maxkey:expr], key < $keyubound:expr,
         value = [$minvalue:expr, $maxvalue:expr], value < $valueubound:expr
     ) => (
         mod tests {
             extern crate test;
-            use $parentmod::{forward, backward};
+            use super::{forward, backward};
 
             static MIN_KEY: u32 = $minkey;
             static MAX_KEY: u32 = $maxkey;
@@ -182,10 +177,10 @@ macro_rules! multi_byte_range_tests {
             #[test]
             #[allow(unused_comparisons)]
             fn test_no_failure() {
-                for i in (if MIN_KEY>0 {MIN_KEY-1} else {0})..(MAX_KEY+2) {
+                for i in MIN_KEY.saturating_sub(1)..(MAX_KEY+2) {
                     forward(i);
                 }
-                for j in (if MIN_VALUE>0 {MIN_VALUE-1} else {0})..(MAX_VALUE+2) {
+                for j in MIN_VALUE.saturating_sub(1)..(MAX_VALUE+2) {
                     backward(j);
                 }
             }

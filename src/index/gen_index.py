@@ -230,8 +230,6 @@ def make_minimal_search(data, invdata, premap, maxsearch):
     return bestsearch
 
 def generate_single_byte_index(opts, crate, name):
-    modname = name.replace('-', '_')
-
     data = [None] * 128
     invdata = {}
     comments = []
@@ -254,7 +252,6 @@ def generate_single_byte_index(opts, crate, name):
     assert 2**16 <= bitmap < 2**32
 
     args = dict(
-        modname=modname,
         datasz=len(data),
         maxvalue=max(invdata),
         bitmap=bitmap,
@@ -319,9 +316,8 @@ def generate_single_byte_index(opts, crate, name):
            |}}
            |
            |#[cfg(test)]
-           |single_byte_tests!(
-           |    mod = {modname}
-           |);
+           |single_byte_tests! {{
+           |}}
         ''')
 
     forwardsz = 2 * len(data)
@@ -329,8 +325,6 @@ def generate_single_byte_index(opts, crate, name):
     return forwardsz, backwardsz, 0
 
 def generate_multi_byte_index(opts, crate, name):
-    modname = name.replace('-', '_')
-
     # some indices need an additional function for efficient mapping.
     premap = lambda i: i
     premapcode = ''
@@ -547,7 +541,6 @@ def generate_multi_byte_index(opts, crate, name):
     minkey = min(data)
     maxkey = max(data) + 1
     args = dict(
-        modname=modname,
         premapcode=premapcode,
         maxvalue=max(invdata),
         dataoff=minkey,
@@ -751,8 +744,7 @@ def generate_multi_byte_index(opts, crate, name):
         write_fmt(f, args, '''\
            |
            |#[cfg(test)]
-           |multi_byte_tests!(
-           |    mod = {modname},
+           |multi_byte_tests! {{
         ''')
         write_fmt(f, args, remap, '''\
            |    remap = [{remapmin}, {remapmax}],
@@ -770,7 +762,7 @@ def generate_multi_byte_index(opts, crate, name):
                |    dups = []
             ''')
         write_fmt(f, args, '''\
-           |);
+           |}}
         ''')
 
     forwardsz = 2 * (maxkey - minkey)
@@ -782,8 +774,6 @@ def generate_multi_byte_index(opts, crate, name):
     return forwardsz, backwardsz + backwardmore, backwardszslow + backwardmore
 
 def generate_multi_byte_range_lbound_index(opts, crate, name):
-    modname = name.replace('-', '_')
-
     data = []
     comments = []
     for key, value in whatwg_index(opts, name, comments):
@@ -806,7 +796,6 @@ def generate_multi_byte_range_lbound_index(opts, crate, name):
         valueubound = maxvalue + 1
 
     args = dict(
-        modname=modname,
         datasz=len(data),
         minkey=minkey,
         maxkey=maxkey,
@@ -873,11 +862,10 @@ def generate_multi_byte_range_lbound_index(opts, crate, name):
            |}}
            |
            |#[cfg(test)]
-           |multi_byte_range_tests!(
-           |    mod = {modname},
+           |multi_byte_range_tests! {{
            |    key = [{minkey}, {maxkey}], key < {keyubound},
            |    value = [{minvalue}, {maxvalue}], value < {valueubound}
-           |);
+           |}}
         ''')
 
     forwardsz = 4 * len(data)

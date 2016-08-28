@@ -19,3 +19,7 @@ no-optimized-legacy-encoding = []
 # TODO consider using dev-dependencies instead (Cargo issue #860)
 version = "0.1.5"
 path = "../tests"
+
+[profile.test]
+# `test_correct_table` tests tend to be especially slow
+opt-level = 1

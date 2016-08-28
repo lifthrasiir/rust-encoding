@@ -7,7 +7,7 @@
 // https://encoding.spec.whatwg.org/
 //
 // Identifier: cbaa91f3deb7d0841faf5c33041fc15a285da0e87e64ab802c4bf04b7c4da861
-// Date: 2014-12-19
+// Date: 2016-01-20
 
 #[allow(dead_code)] const X: u16 = 0xffff;
 
@@ -2494,8 +2494,7 @@ pub fn backward_remapped(code: u32) -> u16 {
 }
 
 #[cfg(test)]
-multi_byte_tests!(
-    mod = jis0208,
+multi_byte_tests! {
     remap = [8272, 8835],
     dups = [
         1207, 1208, 1209, 1212, 1213, 1214, 1217, 1218, 1219, 8644, 10716,
@@ -2539,4 +2538,4 @@ multi_byte_tests!(
         11087, 11088, 11089, 11090, 11091, 11092, 11093, 11094, 11095, 11096,
         11097, 11098, 11099, 11100, 11101, 11102, 11103,
     ]
-);
+}
