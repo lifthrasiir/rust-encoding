@@ -103,7 +103,7 @@ mod tests {
             &MyEncoding { flag: true, prohibit: '\u{80}', prepend: "*" };
         let encoder = COMPAT.raw_encoder();
         let (tx, _rx) = channel();
-        tx.send(encoder);
+        let _ = tx.send(encoder);
     }
 
     #[test]

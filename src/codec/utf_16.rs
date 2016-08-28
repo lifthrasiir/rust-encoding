@@ -5,118 +5,54 @@
 //! UTF-16.
 
 use std::convert::Into;
-use std::marker::PhantomData;
 use util::as_char;
 use types::*;
 
-/// An implementation type for little endian.
+/// UTF-16 (UCS Transformation Format, 16-bit), in little endian.
 ///
-/// Can be used as a type parameter to `UTF16Encoding`, `UTF16Encoder` and `UTF16Decoder`.
+/// This is a Unicode encoding where one codepoint may use
+/// 2 (up to U+FFFF) or 4 bytes (up to U+10FFFF) depending on its value.
+/// It uses a "surrogate" mechanism to encode non-BMP codepoints,
+/// which are represented as a pair of lower surrogate and upper surrogate characters.
+/// In this effect, surrogate characters (U+D800..DFFF) cannot appear alone
+/// and cannot be included in a valid Unicode string.
 #[derive(Clone, Copy)]
-pub struct Little;
+pub struct UTF16LEEncoding;
 
-/// An implementation type for big endian.
+impl Encoding for UTF16LEEncoding {
+    fn name(&self) -> &'static str { "utf-16le" }
+    fn whatwg_name(&self) -> Option<&'static str> { Some("utf-16le") }
+    fn raw_encoder(&self) -> Box<RawEncoder> { UTF16LEEncoder::new() }
+    fn raw_decoder(&self) -> Box<RawDecoder> { UTF16LEDecoder::new() }
+}
+
+/// UTF-16 (UCS Transformation Format, 16-bit), in big endian.
 ///
-/// Can be used as a type parameter to `UTF16Encoding`, `UTF16Encoder` and `UTF16Decoder`.
+/// This is a Unicode encoding where one codepoint may use
+/// 2 (up to U+FFFF) or 4 bytes (up to U+10FFFF) depending on its value.
+/// It uses a "surrogate" mechanism to encode non-BMP codepoints,
+/// which are represented as a pair of lower surrogate and upper surrogate characters.
+/// In this effect, surrogate characters (U+D800..DFFF) cannot appear alone
+/// and cannot be included in a valid Unicode string.
 #[derive(Clone, Copy)]
-pub struct Big;
+pub struct UTF16BEEncoding;
 
-/// An internal trait used to customize UTF-16 implementations.
-trait Endian: Clone + Send + 'static {
-    fn name() -> &'static str;
-    fn whatwg_name() -> Option<&'static str>;
-    fn write_two_bytes(output: &mut ByteWriter, msb: u8, lsb: u8);
-    fn concat_two_bytes(lead: u16, trail: u8) -> u16;
+impl Encoding for UTF16BEEncoding {
+    fn name(&self) -> &'static str { "utf-16be" }
+    fn whatwg_name(&self) -> Option<&'static str> { Some("utf-16be") }
+    fn raw_encoder(&self) -> Box<RawEncoder> { UTF16BEEncoder::new() }
+    fn raw_decoder(&self) -> Box<RawDecoder> { UTF16BEDecoder::new() }
 }
 
-impl Endian for Little {
-    fn name() -> &'static str { "utf-16le" }
-    fn whatwg_name() -> Option<&'static str> { Some("utf-16le") }
-    fn write_two_bytes(output: &mut ByteWriter, msb: u8, lsb: u8) {
-        output.write_byte(lsb);
-        output.write_byte(msb);
-    }
-    fn concat_two_bytes(lead: u16, trail: u8) -> u16 {
-        lead | ((trail as u16) << 8)
-    }
-}
-
-impl Endian for Big {
-    fn name() -> &'static str { "utf-16be" }
-    fn whatwg_name() -> Option<&'static str> { Some("utf-16be") }
-    fn write_two_bytes(output: &mut ByteWriter, msb: u8, lsb: u8) {
-        output.write_byte(msb);
-        output.write_byte(lsb);
-    }
-    fn concat_two_bytes(lead: u16, trail: u8) -> u16 {
-        (lead << 8) | trail as u16
-    }
-}
-
-/**
- * UTF-16 (UCS Transformation Format, 16-bit).
- *
- * This is a Unicode encoding where one codepoint may use
- * 2 (up to U+FFFF) or 4 bytes (up to U+10FFFF) depending on its value.
- * It uses a "surrogate" mechanism to encode non-BMP codepoints,
- * which are represented as a pair of lower surrogate and upper surrogate characters.
- * In this effect, surrogate characters (U+D800..DFFF) cannot appear alone
- * and cannot be included in a valid Unicode string.
- *
- * ## Specialization
- *
- * This type is specialized with endianness type `E`,
- * which should be either `Little` (little endian) or `Big` (big endian).
- */
+/// A shared encoder logic for UTF-16.
 #[derive(Clone, Copy)]
-pub struct UTF16Encoding<E> {
-    _marker: PhantomData<E>
-}
+struct UTF16Encoder;
 
-/// A type for UTF-16 in little endian.
-pub type UTF16LEEncoding = UTF16Encoding<Little>;
-/// A type for UTF-16 in big endian.
-pub type UTF16BEEncoding = UTF16Encoding<Big>;
-
-/// An instance for UTF-16 in little endian.
-pub const UTF_16LE_ENCODING: UTF16LEEncoding = UTF16Encoding { _marker: PhantomData };
-/// An instance for UTF-16 in big endian.
-pub const UTF_16BE_ENCODING: UTF16BEEncoding = UTF16Encoding { _marker: PhantomData };
-
-impl<E: Endian> Encoding for UTF16Encoding<E> {
-    fn name(&self) -> &'static str { <E as Endian>::name() }
-    fn whatwg_name(&self) -> Option<&'static str> { <E as Endian>::whatwg_name() }
-    fn raw_encoder(&self) -> Box<RawEncoder> { UTF16Encoder::<E>::new() }
-    fn raw_decoder(&self) -> Box<RawDecoder> { UTF16Decoder::<E>::new() }
-}
-
-/**
- * An encoder for UTF-16.
- *
- * ## Specialization
- *
- * This type is specialized with endianness type `E`,
- * which should be either `Little` (little endian) or `Big` (big endian).
- */
-#[derive(Clone, Copy)]
-pub struct UTF16Encoder<E> {
-    _marker: PhantomData<E>
-}
-
-impl<E: Endian> UTF16Encoder<E> {
-    fn new() -> Box<RawEncoder> {
-        Box::new(UTF16Encoder::<E> { _marker: PhantomData })
-    }
-}
-
-impl<E: Endian> RawEncoder for UTF16Encoder<E> {
-    fn from_self(&self) -> Box<RawEncoder> { UTF16Encoder::<E>::new() }
-
-    fn raw_feed(&mut self, input: &str, output: &mut ByteWriter) -> (usize, Option<CodecError>) {
+impl UTF16Encoder {
+    fn raw_feed<F>(&mut self, input: &str, output: &mut ByteWriter,
+                   write_two_bytes: F) -> (usize, Option<CodecError>)
+            where F: Fn(&mut ByteWriter, u8, u8) {
         output.writer_hint(input.len() * 2);
-
-        let write_two_bytes = |output: &mut ByteWriter, msb: u8, lsb: u8|
-            <E as Endian>::write_two_bytes(output, msb, lsb);
 
         for ch in input.chars() {
             match ch {
@@ -136,41 +72,62 @@ impl<E: Endian> RawEncoder for UTF16Encoder<E> {
         }
         (input.len(), None)
     }
-
-    fn raw_finish(&mut self, _output: &mut ByteWriter) -> Option<CodecError> {
-        None
-    }
 }
 
-/**
- * A decoder for UTF-16.
- *
- * ## Specialization
- *
- * This type is specialized with endianness type `E`,
- * which should be either `Little` (little endian) or `Big` (big endian).
- */
-pub struct UTF16Decoder<E> {
+/// An encoder for UTF-16 in little endian.
+#[derive(Clone, Copy)]
+pub struct UTF16LEEncoder;
+
+impl UTF16LEEncoder {
+    fn new() -> Box<RawEncoder> { Box::new(UTF16LEEncoder) }
+}
+
+impl RawEncoder for UTF16LEEncoder {
+    fn from_self(&self) -> Box<RawEncoder> { UTF16LEEncoder::new() }
+    fn raw_feed(&mut self, input: &str, output: &mut ByteWriter) -> (usize, Option<CodecError>) {
+        UTF16Encoder.raw_feed(input, output, |output: &mut ByteWriter, msb: u8, lsb: u8| {
+            output.write_byte(lsb);
+            output.write_byte(msb);
+        })
+    }
+    fn raw_finish(&mut self, _output: &mut ByteWriter) -> Option<CodecError> { None }
+}
+
+/// An encoder for UTF-16 in big endian.
+#[derive(Clone, Copy)]
+pub struct UTF16BEEncoder;
+
+impl UTF16BEEncoder {
+    fn new() -> Box<RawEncoder> { Box::new(UTF16BEEncoder) }
+}
+
+impl RawEncoder for UTF16BEEncoder {
+    fn from_self(&self) -> Box<RawEncoder> { UTF16BEEncoder::new() }
+    fn raw_feed(&mut self, input: &str, output: &mut ByteWriter) -> (usize, Option<CodecError>) {
+        UTF16Encoder.raw_feed(input, output, |output: &mut ByteWriter, msb: u8, lsb: u8| {
+            output.write_byte(msb);
+            output.write_byte(lsb);
+        })
+    }
+    fn raw_finish(&mut self, _output: &mut ByteWriter) -> Option<CodecError> { None }
+}
+
+/// A shared decoder logic for UTF-16.
+#[derive(Clone, Copy)]
+struct UTF16Decoder {
     leadbyte: u16,
     leadsurrogate: u16,
-    _marker: PhantomData<E>
 }
 
-impl<E: Endian> UTF16Decoder<E> {
-    pub fn new() -> Box<RawDecoder> {
-        Box::new(UTF16Decoder::<E> { leadbyte: 0xffff, leadsurrogate: 0xffff,
-                                     _marker: PhantomData })
+impl UTF16Decoder {
+    fn new() -> UTF16Decoder {
+        UTF16Decoder { leadbyte: 0xffff, leadsurrogate: 0xffff }
     }
-}
 
-impl<E: Endian> RawDecoder for UTF16Decoder<E> {
-    fn from_self(&self) -> Box<RawDecoder> { UTF16Decoder::<E>::new() }
-
-    fn raw_feed(&mut self, input: &[u8], output: &mut StringWriter) -> (usize, Option<CodecError>) {
+    fn raw_feed<F>(&mut self, input: &[u8], output: &mut StringWriter,
+                   concat_two_bytes: F) -> (usize, Option<CodecError>)
+            where F: Fn(u16, u8) -> u16 {
         output.writer_hint(input.len() / 2); // when every codepoint is U+0000..007F
-
-        let concat_two_bytes = |lead: u16, trail: u8|
-            <E as Endian>::concat_two_bytes(lead, trail);
 
         let mut i = 0;
         let mut processed = 0;
@@ -300,17 +257,61 @@ impl<E: Endian> RawDecoder for UTF16Decoder<E> {
     }
 }
 
+/// A decoder for UTF-16 in little endian.
+#[derive(Clone, Copy)]
+struct UTF16LEDecoder {
+    inner: UTF16Decoder,
+}
+
+impl UTF16LEDecoder {
+    pub fn new() -> Box<RawDecoder> {
+        Box::new(UTF16LEDecoder { inner: UTF16Decoder::new() })
+    }
+}
+
+impl RawDecoder for UTF16LEDecoder {
+    fn from_self(&self) -> Box<RawDecoder> { UTF16LEDecoder::new() }
+    fn raw_feed(&mut self, input: &[u8], output: &mut StringWriter) -> (usize, Option<CodecError>) {
+        self.inner.raw_feed(input, output, |lead: u16, trail: u8| lead | ((trail as u16) << 8))
+    }
+    fn raw_finish(&mut self, output: &mut StringWriter) -> Option<CodecError> {
+        self.inner.raw_finish(output)
+    }
+}
+
+/// A decoder for UTF-16 in big endian.
+#[derive(Clone, Copy)]
+struct UTF16BEDecoder {
+    inner: UTF16Decoder,
+}
+
+impl UTF16BEDecoder {
+    pub fn new() -> Box<RawDecoder> {
+        Box::new(UTF16BEDecoder { inner: UTF16Decoder::new() })
+    }
+}
+
+impl RawDecoder for UTF16BEDecoder {
+    fn from_self(&self) -> Box<RawDecoder> { UTF16BEDecoder::new() }
+    fn raw_feed(&mut self, input: &[u8], output: &mut StringWriter) -> (usize, Option<CodecError>) {
+        self.inner.raw_feed(input, output, |lead: u16, trail: u8| (lead << 8) | trail as u16)
+    }
+    fn raw_finish(&mut self, output: &mut StringWriter) -> Option<CodecError> {
+        self.inner.raw_finish(output)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     // little endian and big endian is symmetric to each other, there's no need to test both.
-    // since big endian is easier to inspect we test UTF_16BE only.
+    // since big endian is easier to inspect we test UTF16BEEncoding only.
 
-    use super::UTF_16BE_ENCODING as UTF_16BE;
+    use super::UTF16BEEncoding;
     use types::*;
 
     #[test]
     fn test_encoder_valid() {
-        let mut e = UTF_16BE.raw_encoder();
+        let mut e = UTF16BEEncoding.raw_encoder();
         assert_feed_ok!(e, "\u{0}\
                             \u{1}\u{02}\u{004}\u{0008}\
                             \u{10}\u{020}\u{0040}\u{80}\
@@ -352,7 +353,7 @@ mod tests {
 
     #[test]
     fn test_decoder_valid() {
-        let mut d = UTF_16BE.raw_decoder();
+        let mut d = UTF16BEEncoding.raw_decoder();
         assert_feed_ok!(d, [0x00, 0x00,
                             0x00, 0x01, 0x00, 0x02, 0x00, 0x04, 0x00, 0x08,
                             0x00, 0x10, 0x00, 0x20, 0x00, 0x40, 0x00, 0x80,
@@ -394,14 +395,14 @@ mod tests {
 
     #[test]
     fn test_decoder_valid_partial_bmp() {
-        let mut d = UTF_16BE.raw_decoder();
+        let mut d = UTF16BEEncoding.raw_decoder();
         assert_feed_ok!(d, [], [0x12], "");
         assert_feed_ok!(d, [0x34], [], "\u{1234}");
         assert_feed_ok!(d, [], [0x56], "");
         assert_feed_ok!(d, [0x78], [], "\u{5678}");
         assert_finish_ok!(d, "");
 
-        let mut d = UTF_16BE.raw_decoder();
+        let mut d = UTF16BEEncoding.raw_decoder();
         assert_feed_ok!(d, [], [0x12], "");
         assert_feed_ok!(d, [0x34], [0x56], "\u{1234}");
         assert_feed_ok!(d, [0x78, 0xab, 0xcd], [], "\u{5678}\u{abcd}");
@@ -410,7 +411,7 @@ mod tests {
 
     #[test]
     fn test_decoder_valid_partial_non_bmp() {
-        let mut d = UTF_16BE.raw_decoder();
+        let mut d = UTF16BEEncoding.raw_decoder();
         assert_feed_ok!(d, [], [0xd8], "");
         assert_feed_ok!(d, [], [0x08], "");
         assert_feed_ok!(d, [], [0xdf], "");
@@ -420,14 +421,14 @@ mod tests {
         assert_feed_ok!(d, [0x90], [], "\u{67890}");
         assert_finish_ok!(d, "");
 
-        let mut d = UTF_16BE.raw_decoder();
+        let mut d = UTF16BEEncoding.raw_decoder();
         assert_feed_ok!(d, [], [0xd8], "");
         assert_feed_ok!(d, [], [0x08, 0xdf], "");
         assert_feed_ok!(d, [0x45], [0xd9, 0x5e], "\u{12345}");
         assert_feed_ok!(d, [0xdc, 0x90], [], "\u{67890}");
         assert_finish_ok!(d, "");
 
-        let mut d = UTF_16BE.raw_decoder();
+        let mut d = UTF16BEEncoding.raw_decoder();
         assert_feed_ok!(d, [], [0xd8, 0x08, 0xdf], "");
         assert_feed_ok!(d, [0x45], [0xd9, 0x5e, 0xdc], "\u{12345}");
         assert_feed_ok!(d, [0x90], [], "\u{67890}");
@@ -436,26 +437,26 @@ mod tests {
 
     #[test]
     fn test_decoder_invalid_partial() {
-        let mut d = UTF_16BE.raw_decoder();
+        let mut d = UTF16BEEncoding.raw_decoder();
         assert_feed_ok!(d, [], [0x12], "");
         assert_finish_err!(d, "");
 
-        let mut d = UTF_16BE.raw_decoder();
+        let mut d = UTF16BEEncoding.raw_decoder();
         assert_feed_ok!(d, [], [0xd8], "");
         assert_finish_err!(d, "");
 
-        let mut d = UTF_16BE.raw_decoder();
+        let mut d = UTF16BEEncoding.raw_decoder();
         assert_feed_ok!(d, [], [0xd8, 0x08], "");
         assert_finish_err!(d, "");
 
-        let mut d = UTF_16BE.raw_decoder();
+        let mut d = UTF16BEEncoding.raw_decoder();
         assert_feed_ok!(d, [], [0xd8, 0x08, 0xdf], "");
         assert_finish_err!(d, "");
     }
 
     #[test]
     fn test_decoder_invalid_lone_upper_surrogate() {
-        let mut d = UTF_16BE.raw_decoder();
+        let mut d = UTF16BEEncoding.raw_decoder();
         assert_feed_ok!(d, [], [0xd8, 0x00], "");
         assert_feed_err!(d, [], [], [0x12, 0x34], "");
         assert_feed_err!(d, [], [0xd8, 0x00], [0x56, 0x78], "");
@@ -464,7 +465,7 @@ mod tests {
         assert_feed_ok!(d, [], [0xd8, 0x00], "");
         assert_finish_err!(d, "");
 
-        let mut d = UTF_16BE.raw_decoder();
+        let mut d = UTF16BEEncoding.raw_decoder();
         assert_feed_ok!(d, [], [0xdb, 0xff], "");
         assert_feed_err!(d, [], [], [0x12, 0x34], "");
         assert_feed_err!(d, [], [0xdb, 0xff], [0x56, 0x78], "");
@@ -476,7 +477,7 @@ mod tests {
 
     #[test]
     fn test_decoder_invalid_lone_upper_surrogate_partial() {
-        let mut d = UTF_16BE.raw_decoder();
+        let mut d = UTF16BEEncoding.raw_decoder();
         assert_feed_ok!(d, [], [0xd8], "");
         assert_feed_err!(d, [], [0x00], [0x12, 0x34], "");
         assert_feed_ok!(d, [], [0xd8, 0x00, 0x56], "");
@@ -488,7 +489,7 @@ mod tests {
         assert_feed_ok!(d, [], [0xd8], "");
         assert_finish_err!(d, "");
 
-        let mut d = UTF_16BE.raw_decoder();
+        let mut d = UTF16BEEncoding.raw_decoder();
         assert_feed_ok!(d, [], [0xdb], "");
         assert_feed_err!(d, [], [0xff], [0x12, 0x34], "");
         assert_feed_ok!(d, [], [0xdb, 0xff, 0x56], "");
@@ -503,12 +504,12 @@ mod tests {
 
     #[test]
     fn test_decoder_invalid_lone_lower_surrogate() {
-        let mut d = UTF_16BE.raw_decoder();
+        let mut d = UTF16BEEncoding.raw_decoder();
         assert_feed_err!(d, [], [0xdc, 0x00], [], "");
         assert_feed_err!(d, [0x12, 0x34], [0xdc, 0x00], [0x56, 0x78], "\u{1234}");
         assert_finish_ok!(d, "");
 
-        let mut d = UTF_16BE.raw_decoder();
+        let mut d = UTF16BEEncoding.raw_decoder();
         assert_feed_err!(d, [], [0xdf, 0xff], [], "");
         assert_feed_err!(d, [0x12, 0x34], [0xdf, 0xff], [0x56, 0x78], "\u{1234}");
         assert_finish_ok!(d, "");
@@ -516,7 +517,7 @@ mod tests {
 
     #[test]
     fn test_decoder_invalid_lone_lower_surrogate_partial() {
-        let mut d = UTF_16BE.raw_decoder();
+        let mut d = UTF16BEEncoding.raw_decoder();
         assert_feed_ok!(d, [], [0xdc], "");
         assert_feed_err!(d, [], [0x00], [], "");
         assert_feed_ok!(d, [0x12, 0x34], [0xdc], "\u{1234}");
@@ -532,40 +533,40 @@ mod tests {
 
     #[test]
     fn test_decoder_invalid_one_byte_before_finish() {
-        let mut d = UTF_16BE.raw_decoder();
+        let mut d = UTF16BEEncoding.raw_decoder();
         assert_feed_ok!(d, [], [0x12], "");
         assert_finish_err!(d, "");
 
-        let mut d = UTF_16BE.raw_decoder();
+        let mut d = UTF16BEEncoding.raw_decoder();
         assert_feed_ok!(d, [0x12, 0x34], [0x56], "\u{1234}");
         assert_finish_err!(d, "");
     }
 
     #[test]
     fn test_decoder_invalid_three_bytes_before_finish() {
-        let mut d = UTF_16BE.raw_decoder();
+        let mut d = UTF16BEEncoding.raw_decoder();
         assert_feed_ok!(d, [], [0xd8, 0x00, 0xdc], "");
         assert_finish_err!(d, "");
 
-        let mut d = UTF_16BE.raw_decoder();
+        let mut d = UTF16BEEncoding.raw_decoder();
         assert_feed_ok!(d, [0x12, 0x34], [0xd8, 0x00, 0xdc], "\u{1234}");
         assert_finish_err!(d, "");
     }
 
     #[test]
     fn test_decoder_invalid_three_bytes_before_finish_partial() {
-        let mut d = UTF_16BE.raw_decoder();
+        let mut d = UTF16BEEncoding.raw_decoder();
         assert_feed_ok!(d, [], [0xd8], "");
         assert_feed_ok!(d, [], [0x00], "");
         assert_feed_ok!(d, [], [0xdc], "");
         assert_finish_err!(d, "");
 
-        let mut d = UTF_16BE.raw_decoder();
+        let mut d = UTF16BEEncoding.raw_decoder();
         assert_feed_ok!(d, [0x12, 0x34], [0xd8], "\u{1234}");
         assert_feed_ok!(d, [], [0x00, 0xdc], "");
         assert_finish_err!(d, "");
 
-        let mut d = UTF_16BE.raw_decoder();
+        let mut d = UTF16BEEncoding.raw_decoder();
         assert_feed_ok!(d, [0x12, 0x34], [0xd8, 0x00], "\u{1234}");
         assert_feed_ok!(d, [], [0xdc], "");
         assert_finish_err!(d, "");
@@ -573,13 +574,13 @@ mod tests {
 
     #[test]
     fn test_decoder_feed_after_finish() {
-        let mut d = UTF_16BE.raw_decoder();
+        let mut d = UTF16BEEncoding.raw_decoder();
         assert_feed_ok!(d, [0x12, 0x34], [0x12], "\u{1234}");
         assert_finish_err!(d, "");
         assert_feed_ok!(d, [0x12, 0x34], [], "\u{1234}");
         assert_finish_ok!(d, "");
 
-        let mut d = UTF_16BE.raw_decoder();
+        let mut d = UTF16BEEncoding.raw_decoder();
         assert_feed_ok!(d, [0xd8, 0x08, 0xdf, 0x45], [0xd8, 0x08, 0xdf], "\u{12345}");
         assert_finish_err!(d, "");
         assert_feed_ok!(d, [0xd8, 0x08, 0xdf, 0x45], [0xd8, 0x08], "\u{12345}");

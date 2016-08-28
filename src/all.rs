@@ -68,14 +68,14 @@ singlebyte!(var=WINDOWS_1258, mod=index::windows_1258, name|whatwg="windows-1258
 singlebyte!(var=MAC_CYRILLIC, mod=index::x_mac_cyrillic,
             name="mac-cyrillic", whatwg=Some("x-mac-cyrillic"));
 unique!(var=UTF_8, mod=codec::utf_8, val=UTF8Encoding);
-unique!(var=UTF_16LE, mod=codec::utf_16, ty=UTF16LEEncoding, val=UTF_16LE_ENCODING);
-unique!(var=UTF_16BE, mod=codec::utf_16, ty=UTF16BEEncoding, val=UTF_16BE_ENCODING);
+unique!(var=UTF_16LE, mod=codec::utf_16, val=UTF16LEEncoding);
+unique!(var=UTF_16BE, mod=codec::utf_16, val=UTF16BEEncoding);
 unique!(var=WINDOWS_949, mod=codec::korean, val=Windows949Encoding);
 unique!(var=EUC_JP, mod=codec::japanese, val=EUCJPEncoding);
 unique!(var=WINDOWS_31J, mod=codec::japanese, val=Windows31JEncoding);
 unique!(var=ISO_2022_JP, mod=codec::japanese, val=ISO2022JPEncoding);
-unique!(var=GBK, mod=codec::simpchinese, ty=GBKEncoding, val=GBK_ENCODING);
-unique!(var=GB18030, mod=codec::simpchinese, ty=GB18030Encoding, val=GB18030_ENCODING);
+unique!(var=GBK, mod=codec::simpchinese, val=GBKEncoding);
+unique!(var=GB18030, mod=codec::simpchinese, val=GB18030Encoding);
 unique!(var=HZ, mod=codec::simpchinese, val=HZEncoding);
 unique!(var=BIG5_2003, mod=codec::tradchinese, val=BigFive2003Encoding);
 
