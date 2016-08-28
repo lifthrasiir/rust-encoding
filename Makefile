@@ -23,17 +23,39 @@ readme: README.md
 
 README.md: src/lib.rs
 	# really, really sorry for this mess.
-	awk '/^# Encoding /{print "[Encoding][doc]",$$3}' $< > $@
-	awk '/^# Encoding /{print "[Encoding][doc]",$$3}' $< | sed 's/./=/g' >> $@
+	awk '/^\/\/! # Encoding /{print "[Encoding][doc]",$$4}' $< > $@
+	awk '/^\/\/! # Encoding /{print "[Encoding][doc]",$$4}' $< | sed 's/./=/g' >> $@
 	echo >> $@
 	echo '[![Encoding on Travis CI][travis-image]][travis]' >> $@
 	echo >> $@
 	echo '[travis-image]: https://travis-ci.org/lifthrasiir/rust-encoding.png' >> $@
 	echo '[travis]: https://travis-ci.org/lifthrasiir/rust-encoding' >> $@
-	awk '/^# Encoding /,/^## /' $< | tail -n +2 | head -n -2 >> $@
+	awk '/^\/\/! # Encoding /,/^\/\/! ## /' $< | cut -b 5- | grep -v '^# ' >> $@
 	echo >> $@
 	echo '[Complete Documentation][doc]' >> $@
 	echo >> $@
 	echo '[doc]: https://lifthrasiir.github.io/rust-encoding/' >> $@
 	echo >> $@
-	awk '/^## /,/^\*\/$$/' $< | grep -v '^# ' | head -n -2 >> $@
+	awk '/^\/\/! ## /,!/^\/\/!/' $< | cut -b 5- | grep -v '^# ' >> $@
+
+.PHONY: doc
+doc: authors readme
+	cargo doc
+
+.PHONY: doc-publish
+doc-publish: doc
+	( \
+		PKGID="$$(cargo pkgid)"; \
+		PKGNAMEVER="$${PKGID#*#}"; \
+		PKGNAME="$${PKGNAMEVER%:*}"; \
+		REMOTE="$$(git config --get remote.origin.url)"; \
+		cd target/doc && \
+		rm -rf .git && \
+		git init && \
+		git checkout --orphan gh-pages && \
+		echo '<!doctype html><html><head><meta http-equiv="refresh" content="0;URL='$$PKGNAME'/index.html"></head><body></body></html>' > index.html && \
+		git add . && \
+		git commit -m 'updated docs.' && \
+		git push "$$REMOTE" gh-pages -f; \
+	)
+

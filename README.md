@@ -1,4 +1,4 @@
-[Encoding][doc] 0.2.32
+[Encoding][doc] 0.2.33
 ======================
 
 [![Encoding on Travis CI][travis-image]][travis]
@@ -9,6 +9,8 @@
 Character encoding support for Rust. (also known as `rust-encoding`)
 It is based on [WHATWG Encoding Standard](http://encoding.spec.whatwg.org/),
 and also provides an advanced interface for error detection and recovery.
+
+## Usage
 
 [Complete Documentation][doc]
 
@@ -21,13 +23,6 @@ Put this in your `Cargo.toml`:
 ```toml
 [dependencies]
 encoding = "0.2"
-```
-
-Or in the case you are using Rust 1.0 beta, pin the exact version:
-
-```toml
-[dependencies]
-encoding = "=0.2.32"
 ```
 
 Then put this in your crate root:
@@ -159,8 +154,10 @@ There are two ways to get `Encoding`:
 * `encoding::all` has static items for every supported encoding.
   You should use them when the encoding would not change or only handful of them are required.
   Combined with link-time optimization, any unused encoding would be discarded from the binary.
+
 * `encoding::label` has functions to dynamically get an encoding from given string ("label").
-  They will return a static reference to the encoding, which type is also known as `EncodingRef`.
+  They will return a static reference to the encoding,
+  which type is also known as `EncodingRef`.
   It is useful when a list of required encodings is not available in advance,
   but it will result in the larger binary and missed optimization opportunities.
 
@@ -214,3 +211,4 @@ Consequently one should be careful when picking a desired character encoding.
 The only standards reliable in this regard are WHATWG Encoding Standard and
 [vendor-provided mappings from the Unicode consortium](http://www.unicode.org/Public/MAPPINGS/).
 Whenever in doubt, look at the source code and specifications for detailed explanations.
+
