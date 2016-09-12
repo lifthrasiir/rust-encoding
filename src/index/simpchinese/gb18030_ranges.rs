@@ -69,6 +69,7 @@ fn search(code: u32, fromtab: &'static [u32], totab: &'static [u32]) -> u32 {
 #[inline]
 pub fn forward(code: u32) -> u32 {
     if (code > 39419 && code < 189000) || code > 1237575 { return 0xffffffff; }
+    if code == 7457 { return 0xe7c7; }
     search(code, BACKWARD_TABLE, FORWARD_TABLE)
 }
 
@@ -76,6 +77,7 @@ pub fn forward(code: u32) -> u32 {
 #[inline]
 pub fn backward(code: u32) -> u32 {
     if code < 128 { return 0xffffffff; }
+    if code == 0xe7c7 { return 7457; }
     search(code, FORWARD_TABLE, BACKWARD_TABLE)
 }
 

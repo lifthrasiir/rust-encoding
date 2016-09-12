@@ -473,11 +473,12 @@ def generate_multi_byte_index(opts, crate, name):
                |}
             ''')
 
-    data = {}
-    invdata = {}
-    dups = []
-    comments = []
-    morebits = False
+    data = {}        # key => value
+    invdata = {}     # (the first) value => key, with some exceptions
+    dups = []        # any value that is not mapped in invdata
+    rawdups = []     # same to dups but a literal Rust code
+    comments = []    # the comments in the index file
+    morebits = False # True if the mapping needs SIP
     for key, value in whatwg_index(opts, name, comments):
         assert 0 <= key < 0xffff and 0 <= value < 0x110000 and value != 0xffff and key not in data
         if value >= 0x10000:
@@ -489,14 +490,34 @@ def generate_multi_byte_index(opts, crate, name):
         else:
             dups.append(key)
 
-    # Big5 has four two-letter forward mappings, we use special entries for them
     if name == 'big5':
+        # Big5 has four two-letter forward mappings, we use special entries for them
         specialidx = [1133, 1135, 1164, 1166]
         assert all(key not in data for key in specialidx)
         assert all(value not in invdata for value in xrange(len(specialidx)))
         for value, key in enumerate(specialidx):
             data[key] = value
             dups.append(key) # no consistency testing for them
+
+        # and HKSCS additions are entirely missing from the backward mapping
+        hkscslimit = (0xa1 - 0x81) * 157
+        for value, key in invdata.items():
+            if key < hkscslimit: del invdata[value]
+        rawdups.append('0...%d' % (hkscslimit - 1)) # no consistency testing for them
+
+        # there are also some duplicate entries where the *later* mapping is canonical
+        swappedcanon = [0x2550, 0x255E, 0x2561, 0x256A, 0x5341, 0x5345]
+        olddups = dups
+        dups = []
+        for key in olddups:
+            value = data[key]
+            if value in swappedcanon:
+                dups.append(invdata[value])
+                invdata[value] = key
+            else:
+                dups.append(key)
+
+        dups = [i for i in dups if i >= hkscslimit] # cleanup
 
     # JIS X 0208 index has two ranges [8272,8836) and [8836,11280) to support two slightly
     # different encodings EUC-JP and Shift_JIS; the default backward function would favor
@@ -749,11 +770,11 @@ def generate_multi_byte_index(opts, crate, name):
         write_fmt(f, args, remap, '''\
            |    remap = [{remapmin}, {remapmax}],
         ''')
-        if dups:
+        if dups or rawdups:
             write_fmt(f, args, '''\
                |    dups = [
             ''')
-            write_comma_separated(f, '        ', ['%d, ' % v for v in sorted(dups)])
+            write_comma_separated(f, '        ', ['%s, ' % v for v in rawdups] + ['%d, ' % v for v in sorted(dups)])
             write_fmt(f, args, '''\
                |    ]
             ''')
@@ -842,9 +863,10 @@ def generate_multi_byte_range_lbound_index(opts, crate, name):
         write_fmt(f, args, minkey > 0, '''\
            |    if code < {minkey} {{ return 0xffffffff; }}
         ''')
-        # GB 18030 has "invalid" region inside
+        # GB 18030 has "invalid" region inside and a singular mapping
         write_fmt(f, args, name == 'gb18030-ranges', '''\
            |    if (code > 39419 && code < 189000) || code > 1237575 {{ return 0xffffffff; }}
+           |    if code == 7457 {{ return 0xe7c7; }}
         ''')
         write_fmt(f, args, '''\
            |    search(code, BACKWARD_TABLE, FORWARD_TABLE)
@@ -856,6 +878,10 @@ def generate_multi_byte_range_lbound_index(opts, crate, name):
         ''')
         write_fmt(f, args, minvalue > 0, '''\
            |    if code < {minvalue} {{ return 0xffffffff; }}
+        ''')
+        # GB 18030 has a singular mapping
+        write_fmt(f, args, name == 'gb18030-ranges', '''\
+           |    if code == 0xe7c7 {{ return 7457; }}
         ''')
         write_fmt(f, args, '''\
            |    search(code, FORWARD_TABLE, BACKWARD_TABLE)

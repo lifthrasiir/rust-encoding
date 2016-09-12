@@ -63,19 +63,22 @@ macro_rules! single_byte_tests {
 /// Makes a common test suite for multi-byte indices.
 #[macro_export]
 macro_rules! multi_byte_tests {
-    (make shared tests and benches with dups = $dups:expr) => ( // internal macro
+    (@shared dups=[$($dups:pat),* $(,)*]) => ( // internal macro
+        fn in_dups(i: u16) -> bool {
+            match i { $($dups => true,)* _ => false }
+        }
+
         #[test]
         fn test_correct_table() {
-            const DUPS: &'static [u16] = &$dups;
             for i in 0..0x10000 {
                 let i = i as u16;
-                if DUPS.contains(&i) { continue; }
+                if in_dups(i) { continue; }
                 let j = forward(i);
                 if j != 0xffff { assert_eq!(backward(j), i); }
             }
             for i in 0..0x110000 {
                 let j = backward(i);
-                if DUPS.contains(&j) { continue; }
+                if in_dups(j) { continue; }
                 if j != 0xffff { assert_eq!(forward(j), i); }
             }
         }
@@ -105,25 +108,25 @@ macro_rules! multi_byte_tests {
     );
 
     (
-        dups = $dups:expr
+        dups = [$($dups:pat),* $(,)*]
     ) => (
         mod tests {
             extern crate test;
             use super::{forward, backward};
 
-            multi_byte_tests!(make shared tests and benches with dups = $dups);
+            multi_byte_tests!(@shared dups=[$($dups),*]);
         }
     );
 
     (
         remap = [$remap_min:expr, $remap_max:expr],
-        dups = $dups:expr
+        dups = [$($dups:pat),* $(,)*]
     ) => (
         mod tests {
             extern crate test;
             use super::{forward, backward, backward_remapped};
 
-            multi_byte_tests!(make shared tests and benches with dups = $dups);
+            multi_byte_tests!(@shared dups=[$($dups),*]);
 
             static REMAP_MIN: u16 = $remap_min;
             static REMAP_MAX: u16 = $remap_max;

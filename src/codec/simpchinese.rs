@@ -117,6 +117,11 @@ impl GBEncoder {
         for ((i, j), ch) in input.index_iter() {
             if ch < '\u{80}' {
                 output.write_byte(ch as u8);
+            } else if ch == '\u{e5e5}' {
+                return (i, Some(CodecError {
+                    upto: j as isize,
+                    cause: "no legacy private-use character supported".into()
+                }));
             } else if gbk_flag && ch == '\u{20AC}' {
                 output.write_byte('\u{80}' as u8)
             } else {
@@ -249,7 +254,7 @@ mod gb18030_tests {
     use types::*;
 
     #[test]
-    fn test_encoder() {
+    fn test_encoder_valid() {
         let mut e = GB18030Encoding.raw_encoder();
         assert_feed_ok!(e, "A", "", [0x41]);
         assert_feed_ok!(e, "BC", "", [0x42, 0x43]);
@@ -266,6 +271,14 @@ mod gb18030_tests {
         assert_feed_ok!(e, "\u{a5}", "", [0x81, 0x30, 0x84, 0x36]);
         assert_feed_ok!(e, "\u{10ffff}", "", [0xe3, 0x32, 0x9a, 0x35]);
         assert_feed_ok!(e, "\u{2a6a5}\u{3007}", "", [0x98, 0x35, 0xee, 0x37, 0xa9, 0x96]);
+        assert_finish_ok!(e, []);
+    }
+
+    #[test]
+    fn test_encoder_invalid() {
+        let mut e = GB18030Encoding.raw_encoder();
+        // U+E5E5 is the only character that is forbidden from GB 18030
+        assert_feed_err!(e, "", "\u{e5e5}", "", []);
         assert_finish_ok!(e, []);
     }
 
@@ -287,6 +300,7 @@ mod gb18030_tests {
         assert_feed_ok!(d, [0x81, 0x30, 0x84, 0x36], [], "\u{a5}");
         assert_feed_ok!(d, [0xe3, 0x32, 0x9a, 0x35], [], "\u{10ffff}");
         assert_feed_ok!(d, [0x98, 0x35, 0xee, 0x37, 0xa9, 0x96], [], "\u{2a6a5}\u{3007}");
+        assert_feed_ok!(d, [0xa3, 0xa0], [], "\u{3000}");
         assert_finish_ok!(d, "");
     }
 

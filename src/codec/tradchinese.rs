@@ -54,8 +54,7 @@ impl RawEncoder for BigFive2003Encoder {
                 output.write_byte(ch as u8);
             } else {
                 let ptr = index::big5::backward(ch as u32);
-                if ptr == 0xffff || ptr < (0xa1 - 0x81) * 157 {
-                    // no HKSCS extension (XXX doesn't HKSCS include 0xFA40..0xFEFE?)
+                if ptr == 0xffff {
                     return (i, Some(CodecError {
                         upto: j as isize, cause: "unrepresentable character".into()
                     }));
@@ -164,6 +163,7 @@ mod bigfive2003_tests {
                         [0xa4, 0xa4, 0xb5, 0xd8, 0xa5, 0xc1, 0xb0, 0xea]);
         assert_feed_ok!(e, "1\u{20ac}/m", "", [0x31, 0xa3, 0xe1, 0x2f, 0x6d]);
         assert_feed_ok!(e, "\u{ffed}", "", [0xf9, 0xfe]);
+        assert_feed_ok!(e, "\u{2550}", "", [0xf9, 0xf9]); // not [0xa2, 0xa4]
         assert_finish_ok!(e, []);
     }
 
@@ -189,6 +189,8 @@ mod bigfive2003_tests {
         assert_feed_ok!(d, [0xc1, 0xb0, 0xea], [], "\u{6c11}\u{570b}");
         assert_feed_ok!(d, [0x31, 0xa3, 0xe1, 0x2f, 0x6d], [], "1\u{20ac}/m");
         assert_feed_ok!(d, [0xf9, 0xfe], [], "\u{ffed}");
+        assert_feed_ok!(d, [0xf9, 0xf9], [], "\u{2550}");
+        assert_feed_ok!(d, [0xa2, 0xa4], [], "\u{2550}");
         assert_feed_ok!(d, [0x87, 0x7e], [], "\u{3eec}"); // HKSCS-2008 addition
         assert_feed_ok!(d, [0x88, 0x62, 0x88, 0x64, 0x88, 0xa3, 0x88, 0xa5], [],
                         "\u{ca}\u{304}\u{00ca}\u{30c}\u{ea}\u{304}\u{ea}\u{30c}"); // 2-byte output
