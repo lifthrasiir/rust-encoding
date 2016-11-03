@@ -12,6 +12,10 @@
 #[macro_use]
 extern crate encoding_index_tests;
 
+
+/// ARMSCII-8
+pub mod armscii_8;
+
 /// IBM code page 866.
 pub mod ibm866;
 

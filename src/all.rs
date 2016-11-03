@@ -38,6 +38,7 @@ macro_rules! singlebyte(
 
 unique!(var=ERROR, mod=codec::error, val=ErrorEncoding);
 unique!(var=ASCII, mod=codec::ascii, val=ASCIIEncoding);
+singlebyte!(var=ARMSCII_8, mod=index::armscii_8, name="armscii-8");
 singlebyte!(var=IBM866, mod=index::ibm866, name|whatwg="ibm866");
 singlebyte!(var=ISO_8859_1, mod=codec::singlebyte::iso_8859_1, name="iso-8859-1");
 singlebyte!(var=ISO_8859_2, mod=index::iso_8859_2, name|whatwg="iso-8859-2");

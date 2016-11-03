@@ -906,6 +906,8 @@ def generate_multi_byte_range_lbound_index(opts, crate, name):
     return forwardsz, backwardsz, backwardsz
 
 INDICES = [
+    ('singlebyte/armscii-8',       generate_single_byte_index),
+
     ('singlebyte/ibm866',          generate_single_byte_index),
     ('singlebyte/iso-8859-2',      generate_single_byte_index),
     ('singlebyte/iso-8859-3',      generate_single_byte_index),
