@@ -9,7 +9,23 @@ import re
 import heapq
 import argparse
 
-def whatwg_index(opts, name, comments):
+def open_index(path, comments):
+    for line in open(path):
+        line = line.strip()
+        if not line: continue
+        if line.startswith('#'):
+            comments.append('//' + line[1:])
+            continue
+        parts = line.split(None, 2)
+        key = int(parts[0], 0)
+        value = int(parts[1], 0)
+        yield key, value
+
+def read_index(opts, crate, name, comments):
+    dirname = os.path.join(os.path.dirname(__file__), crate)
+    path = os.path.join(dirname, 'index-%s.txt' % name)
+    if os.path.isfile(path): return open_index(path, comments)
+
     try: os.mkdir(opts.cache_dir)
     except OSError: pass
     cached_path = os.path.join(opts.cache_dir, '%s.txt' % name)
@@ -24,16 +40,7 @@ def whatwg_index(opts, name, comments):
             except OSError: pass
             raise
 
-    for line in open(cached_path):
-        line = line.strip()
-        if not line: continue
-        if line.startswith('#'):
-            comments.append('//' + line[1:])
-            continue
-        parts = line.split(None, 2)
-        key = int(parts[0], 0)
-        value = int(parts[1], 0)
-        yield key, value
+    return open_index(cached_path, comments)
 
 def mkdir_and_open(crate, name):
     dirname = os.path.join(os.path.dirname(__file__), crate)
@@ -233,7 +240,7 @@ def generate_single_byte_index(opts, crate, name):
     data = [None] * 128
     invdata = {}
     comments = []
-    for key, value in whatwg_index(opts, name, comments):
+    for key, value in read_index(opts, crate, name, comments):
         assert 0 <= key < 128 and 0 <= value < 0xffff and data[key] is None and value not in invdata
         data[key] = value
         invdata[value] = key
@@ -479,7 +486,7 @@ def generate_multi_byte_index(opts, crate, name):
     rawdups = []     # same to dups but a literal Rust code
     comments = []    # the comments in the index file
     morebits = False # True if the mapping needs SIP
-    for key, value in whatwg_index(opts, name, comments):
+    for key, value in read_index(opts, crate, name, comments):
         assert 0 <= key < 0xffff and 0 <= value < 0x110000 and value != 0xffff and key not in data
         if value >= 0x10000:
             assert (value >> 16) == 2
@@ -797,7 +804,7 @@ def generate_multi_byte_index(opts, crate, name):
 def generate_multi_byte_range_lbound_index(opts, crate, name):
     data = []
     comments = []
-    for key, value in whatwg_index(opts, name, comments):
+    for key, value in read_index(opts, crate, name, comments):
         data.append((key, value))
     assert data and data == sorted(data)
 
