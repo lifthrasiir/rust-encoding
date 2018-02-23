@@ -96,6 +96,7 @@ pub fn encodings() -> &'static [EncodingRef] {
     const ENCODINGS: &'static [EncodingRef] = &[
         ERROR,
         ASCII,
+        ARMSCII_8,
         IBM866,
         ISO_8859_1,
         ISO_8859_2,
