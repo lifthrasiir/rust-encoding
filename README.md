@@ -218,6 +218,7 @@ Encoding covers all encodings specified by WHATWG Encoding Standard and some mor
 * Encodings that were originally specified by WHATWG Encoding Standard:
     * HZ
 * ISO 8859-1 (distinct from Windows code page 1252)
+* Code page 437 (`cp437`)
 
 Parenthesized names refer to the encoding's primary name assigned by WHATWG Encoding Standard.
 
