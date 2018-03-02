@@ -16,6 +16,9 @@ extern crate encoding_index_tests;
 /// ARMSCII-8
 pub mod armscii_8;
 
+/// CP437
+pub mod cp437;
+
 /// IBM code page 866.
 pub mod ibm866;
 
