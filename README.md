@@ -197,6 +197,7 @@ See the additional documents on `encoding::types` module for more information on
 Encoding covers all encodings specified by WHATWG Encoding Standard and some more:
 
 * 7-bit strict ASCII (`ascii`)
+* ArmSCII-8 (`armscii-8`)
 * UTF-8 (`utf-8`)
 * UTF-16 in little endian (`utf-16` or `utf-16le`) and big endian (`utf-16be`)
 * All single byte encoding in WHATWG Encoding Standard:
