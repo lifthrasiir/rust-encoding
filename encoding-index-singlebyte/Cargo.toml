@@ -15,7 +15,6 @@ path = "lib.rs"
 [features]
 no-optimized-legacy-encoding = []
 
-[dependencies.encoding_index_tests]
-# TODO consider using dev-dependencies instead (Cargo issue #860)
+[dev-dependencies.encoding_index_tests]
 version = "0.1.5"
-path = "../tests"
+path = "../encoding_index_tests"

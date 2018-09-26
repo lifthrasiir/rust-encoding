@@ -23,6 +23,16 @@ no-optimized-legacy-encoding = [
 	"encoding-index-tradchinese/no-optimized-legacy-encoding",
 ]
 
+[workspace]
+members = [
+    "encoding-index-singlebyte",
+    "encoding-index-korean",
+    "encoding-index-japanese",
+    "encoding-index-simpchinese",
+    "encoding-index-tradchinese",
+    "encoding_index_tests",
+]
+
 [dependencies.encoding-types]
 version = "0.2"
 path = "src/types"
@@ -37,23 +47,23 @@ path = "src/types"
 
 [dependencies.encoding-index-singlebyte]
 version = "~1.20160120.0"
-path = "src/index/singlebyte"
+path = "encoding-index-singlebyte"
 
 [dependencies.encoding-index-korean]
 version = "~1.20141219.6"
-path = "src/index/korean"
+path = "encoding-index-korean"
 
 [dependencies.encoding-index-japanese]
 version = "~1.20141219.6"
-path = "src/index/japanese"
+path = "encoding-index-japanese"
 
 [dependencies.encoding-index-simpchinese]
 version = "~1.20160120.0"
-path = "src/index/simpchinese"
+path = "encoding-index-simpchinese"
 
 [dependencies.encoding-index-tradchinese]
 version = "~1.20141219.6"
-path = "src/index/tradchinese"
+path = "encoding-index-tradchinese"
 
 [dev-dependencies]
 getopts = "*" # for examples
