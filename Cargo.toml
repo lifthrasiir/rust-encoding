@@ -2,7 +2,7 @@
 name = "encoding"
 version = "0.3.0-dev"
 authors = ["Kang Seonghoon <public+rust@mearie.org>"]
-
+exclude = ["/src/index/*", "/Makefile"]
 description = "Character encoding support for Rust"
 homepage = "https://github.com/lifthrasiir/rust-encoding"
 documentation = "https://lifthrasiir.github.io/rust-encoding/"
