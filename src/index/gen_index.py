@@ -6,6 +6,16 @@ import urllib
 import sys
 import os.path
 
+CC0_LICENSE = "rust-encoding by Kang Seonghoon
+
+To the extent possible under law, the person who associated CC0 with
+rust-encoding has waived all copyright and related or neighboring rights
+to rust-encoding.
+
+You should have received a copy of the CC0 legalcode along with this
+work.  If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
+"
+
 def whatwg_index(name, comments):
     for line in urllib.urlopen('http://encoding.spec.whatwg.org/index-%s.txt' % name):
         line = line.strip()
@@ -383,4 +393,4 @@ if __name__ == '__main__':
         print >>sys.stderr, 'generating index %s...' % index,
         tablesz = generate(crate, index)
         print >>sys.stderr, '%d bytes.' % tablesz
-
+        write_license_file(crate)
