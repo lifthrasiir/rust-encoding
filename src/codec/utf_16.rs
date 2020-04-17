@@ -84,7 +84,7 @@ pub const UTF_16LE_ENCODING: UTF16LEEncoding = UTF16Encoding { _marker: PhantomD
 /// An instance for UTF-16 in big endian.
 pub const UTF_16BE_ENCODING: UTF16BEEncoding = UTF16Encoding { _marker: PhantomData };
 
-impl<E: Endian> Encoding for UTF16Encoding<E> {
+impl<E: Endian + Send> Encoding for UTF16Encoding<E> {
     fn name(&self) -> &'static str { <E as Endian>::name() }
     fn whatwg_name(&self) -> Option<&'static str> { <E as Endian>::whatwg_name() }
     fn raw_encoder(&self) -> Box<RawEncoder> { UTF16Encoder::<E>::new() }
@@ -104,13 +104,13 @@ pub struct UTF16Encoder<E> {
     _marker: PhantomData<E>
 }
 
-impl<E: Endian> UTF16Encoder<E> {
+impl<E: Endian + Send> UTF16Encoder<E> {
     fn new() -> Box<RawEncoder> {
         Box::new(UTF16Encoder::<E> { _marker: PhantomData })
     }
 }
 
-impl<E: Endian> RawEncoder for UTF16Encoder<E> {
+impl<E: Endian + Send> RawEncoder for UTF16Encoder<E> {
     fn from_self(&self) -> Box<RawEncoder> { UTF16Encoder::<E>::new() }
 
     fn raw_feed(&mut self, input: &str, output: &mut ByteWriter) -> (usize, Option<CodecError>) {
@@ -157,14 +157,14 @@ pub struct UTF16Decoder<E> {
     _marker: PhantomData<E>
 }
 
-impl<E: Endian> UTF16Decoder<E> {
+impl<E: Endian + Send> UTF16Decoder<E> {
     pub fn new() -> Box<RawDecoder> {
         Box::new(UTF16Decoder::<E> { leadbyte: 0xffff, leadsurrogate: 0xffff,
                                      _marker: PhantomData })
     }
 }
 
-impl<E: Endian> RawDecoder for UTF16Decoder<E> {
+impl<E: Endian + Send> RawDecoder for UTF16Decoder<E> {
     fn from_self(&self) -> Box<RawDecoder> { UTF16Decoder::<E>::new() }
 
     fn raw_feed(&mut self, input: &[u8], output: &mut StringWriter) -> (usize, Option<CodecError>) {

@@ -88,7 +88,7 @@ pub const GBK_ENCODING: GBKEncoding = GBEncoding { _marker: PhantomData };
 /// An instance for GB18030.
 pub const GB18030_ENCODING: GB18030Encoding = GBEncoding { _marker: PhantomData };
 
-impl<T: GBType> Encoding for GBEncoding<T> {
+impl<T: GBType + Send> Encoding for GBEncoding<T> {
     fn name(&self) -> &'static str { <T as GBType>::name() }
     fn whatwg_name(&self) -> Option<&'static str> { <T as GBType>::whatwg_name() }
     fn raw_encoder(&self) -> Box<RawEncoder> { GBEncoder::<T>::new() }
@@ -108,13 +108,13 @@ pub struct GBEncoder<T> {
     _marker: PhantomData<T>
 }
 
-impl<T: GBType> GBEncoder<T> {
+impl<T: GBType + Send> GBEncoder<T> {
     pub fn new() -> Box<RawEncoder> {
         Box::new(GBEncoder::<T> { _marker: PhantomData })
     }
 }
 
-impl<T: GBType> RawEncoder for GBEncoder<T> {
+impl<T: GBType + Send> RawEncoder for GBEncoder<T> {
     fn from_self(&self) -> Box<RawEncoder> { GBEncoder::<T>::new() }
     fn is_ascii_compatible(&self) -> bool { true }
 
