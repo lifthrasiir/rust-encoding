@@ -4,15 +4,15 @@
 
 //! An interface for retrieving an encoding (or a set of encodings) from a string/numeric label.
 
-use all;
-use types::EncodingRef;
+use crate::all;
+use crate::types::EncodingRef;
 
 /// Returns an encoding from given label, defined in the WHATWG Encoding standard, if any.
 /// Implements "get an encoding" algorithm: http://encoding.spec.whatwg.org/#concept-encoding-get
 pub fn encoding_from_whatwg_label(label: &str) -> Option<EncodingRef> {
     let label = label.trim_matches(&[' ', '\n', '\r', '\t', '\x0C'][..]);
     let label: String =
-        label.chars().map(|c| match c { 'A'...'Z' => (c as u8 + 32) as char, _ => c }).collect();
+        label.chars().map(|c| match c { 'A'..='Z' => (c as u8 + 32) as char, _ => c }).collect();
     match &label[..] {
         "unicode-1-1-utf-8" |
         "utf-8" |
@@ -324,7 +324,7 @@ pub fn encoding_from_windows_code_page(cp: usize) -> Option<EncodingRef> {
 #[cfg(test)]
 mod tests {
     extern crate test;
-    use all;
+    use crate::all;
     use super::encoding_from_whatwg_label;
 
     #[test]

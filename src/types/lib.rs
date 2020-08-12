@@ -134,7 +134,7 @@ impl StringWriter for String {
 /// This is a lower level interface, and normally `Encoding::encode` should be used instead.
 pub trait RawEncoder: Send + 'static {
     /// Creates a fresh `RawEncoder` instance which parameters are same as `self`.
-    fn from_self(&self) -> Box<RawEncoder>;
+    fn from_self(&self) -> Box<dyn RawEncoder>;
 
     /// Returns true if this encoding is compatible to ASCII,
     /// i.e. U+0000 through U+007F always map to bytes 00 through 7F and nothing else.
@@ -145,20 +145,20 @@ pub trait RawEncoder: Send + 'static {
     /// and returns a byte offset to the first unprocessed character
     /// (that can be zero when the first such character appeared in the prior calls to `raw_feed`)
     /// and optional error information (None means success).
-    fn raw_feed(&mut self, input: &str, output: &mut ByteWriter) -> (usize, Option<CodecError>);
+    fn raw_feed(&mut self, input: &str, output: &mut dyn ByteWriter) -> (usize, Option<CodecError>);
 
     /// Finishes the encoder,
     /// pushes the an encoded byte sequence at the end of the given output,
     /// and returns optional error information (None means success).
     /// `remaining` value of the error information, if any, is always an empty string.
-    fn raw_finish(&mut self, output: &mut ByteWriter) -> Option<CodecError>;
+    fn raw_finish(&mut self, output: &mut dyn ByteWriter) -> Option<CodecError>;
 }
 
 /// Decoder converting a byte sequence into a Unicode string.
 /// This is a lower level interface, and normally `Encoding::decode` should be used instead.
 pub trait RawDecoder: Send + 'static {
     /// Creates a fresh `RawDecoder` instance which parameters are same as `self`.
-    fn from_self(&self) -> Box<RawDecoder>;
+    fn from_self(&self) -> Box<dyn RawDecoder>;
 
     /// Returns true if this encoding is compatible to ASCII,
     /// i.e. bytes 00 through 7F always map to U+0000 through U+007F and nothing else.
@@ -169,17 +169,17 @@ pub trait RawDecoder: Send + 'static {
     /// and returns an offset to the first unprocessed byte
     /// (that can be zero when the first such byte appeared in the prior calls to `raw_feed`)
     /// and optional error information (None means success).
-    fn raw_feed(&mut self, input: &[u8], output: &mut StringWriter) -> (usize, Option<CodecError>);
+    fn raw_feed(&mut self, input: &[u8], output: &mut dyn StringWriter) -> (usize, Option<CodecError>);
 
     /// Finishes the decoder,
     /// pushes the a decoded string at the end of the given output,
     /// and returns optional error information (None means success).
-    fn raw_finish(&mut self, output: &mut StringWriter) -> Option<CodecError>;
+    fn raw_finish(&mut self, output: &mut dyn StringWriter) -> Option<CodecError>;
 }
 
 /// A trait object using dynamic dispatch which is a sendable reference to the encoding,
 /// for code where the encoding is not known at compile-time.
-pub type EncodingRef = &'static (Encoding + Send + Sync);
+pub type EncodingRef = &'static (dyn Encoding + Send + Sync);
 
 /// Character encoding.
 pub trait Encoding {
@@ -193,10 +193,10 @@ pub trait Encoding {
     fn whatwg_name(&self) -> Option<&'static str> { None }
 
     /// Creates a new encoder.
-    fn raw_encoder(&self) -> Box<RawEncoder>;
+    fn raw_encoder(&self) -> Box<dyn RawEncoder>;
 
     /// Creates a new decoder.
-    fn raw_decoder(&self) -> Box<RawDecoder>;
+    fn raw_decoder(&self) -> Box<dyn RawDecoder>;
 
     /// An easy-to-use interface to `RawEncoder`.
     /// On the encoder error `trap` is called,
@@ -208,7 +208,7 @@ pub trait Encoding {
     }
 
     /// Encode into a `ByteWriter`.
-    fn encode_to(&self, input: &str, trap: EncoderTrap, ret: &mut ByteWriter)
+    fn encode_to(&self, input: &str, trap: EncoderTrap, ret: &mut dyn ByteWriter)
         -> Result<(), Cow<'static, str>>
     {
         // we don't need to keep `unprocessed` here;
@@ -256,7 +256,7 @@ pub trait Encoding {
     ///
     /// This does *not* handle partial characters at the beginning or end of `input`!
     /// Use `RawDecoder` for incremental decoding.
-    fn decode_to(&self, input: &[u8], trap: DecoderTrap, ret: &mut StringWriter)
+    fn decode_to(&self, input: &[u8], trap: DecoderTrap, ret: &mut dyn StringWriter)
         -> Result<(), Cow<'static, str>>
     {
         // we don't need to keep `unprocessed` here;
@@ -292,22 +292,22 @@ pub trait Encoding {
     }
 }
 
-impl<'a> fmt::Debug for &'a Encoding {
+impl<'a> fmt::Debug for &'a dyn Encoding {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        try!(fmt.write_str("Encoding("));
-        try!(fmt.write_str(self.name()));
-        try!(fmt.write_str(")"));
+        fmt.write_str("Encoding(")?;
+        fmt.write_str(self.name())?;
+        fmt.write_str(")")?;
         Ok(())
     }
 }
 
 /// A type of the bare function in `EncoderTrap` values.
 pub type EncoderTrapFunc =
-    extern "Rust" fn(encoder: &mut RawEncoder, input: &str, output: &mut ByteWriter) -> bool;
+    extern "Rust" fn(encoder: &mut dyn RawEncoder, input: &str, output: &mut dyn ByteWriter) -> bool;
 
 /// A type of the bare function in `DecoderTrap` values.
 pub type DecoderTrapFunc =
-    extern "Rust" fn(decoder: &mut RawDecoder, input: &[u8], output: &mut StringWriter) -> bool;
+    extern "Rust" fn(decoder: &mut dyn RawDecoder, input: &[u8], output: &mut dyn StringWriter) -> bool;
 
 /// Trap, which handles decoder errors.
 #[derive(Copy)]
@@ -329,7 +329,7 @@ pub enum DecoderTrap {
 impl DecoderTrap {
     /// Handles a decoder error. May write to the output writer.
     /// Returns true only when it is fine to keep going.
-    pub fn trap(&self, decoder: &mut RawDecoder, input: &[u8], output: &mut StringWriter) -> bool {
+    pub fn trap(&self, decoder: &mut dyn RawDecoder, input: &[u8], output: &mut dyn StringWriter) -> bool {
         match *self {
             DecoderTrap::Strict     => false,
             DecoderTrap::Replace    => { output.write_char('\u{fffd}'); true },
@@ -374,8 +374,8 @@ pub enum EncoderTrap {
 impl EncoderTrap {
     /// Handles an encoder error. May write to the output writer.
     /// Returns true only when it is fine to keep going.
-    pub fn trap(&self, encoder: &mut RawEncoder, input: &str, output: &mut ByteWriter) -> bool {
-        fn reencode(encoder: &mut RawEncoder, input: &str, output: &mut ByteWriter,
+    pub fn trap(&self, encoder: &mut dyn RawEncoder, input: &str, output: &mut dyn ByteWriter) -> bool {
+        fn reencode(encoder: &mut dyn RawEncoder, input: &str, output: &mut dyn ByteWriter,
                     trapname: &str) -> bool {
             if encoder.is_ascii_compatible() { // optimization!
                 output.write_bytes(input.as_bytes());

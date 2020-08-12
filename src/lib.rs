@@ -267,7 +267,7 @@ pub mod label;
 /// Return the result and the used encoding.
 pub fn decode(input: &[u8], trap: DecoderTrap, fallback_encoding: EncodingRef)
            -> (Result<String, Cow<'static, str>>, EncodingRef) {
-    use all::{UTF_8, UTF_16LE, UTF_16BE};
+    use crate::all::{UTF_8, UTF_16LE, UTF_16BE};
     if input.starts_with(&[0xEF, 0xBB, 0xBF]) {
         (UTF_8.decode(&input[3..], trap), UTF_8 as EncodingRef)
     } else if input.starts_with(&[0xFE, 0xFF]) {
