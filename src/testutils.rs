@@ -5,7 +5,7 @@
 //! Macros and utilities for testing.
 
 use std::borrow::ToOwned;
-use types::{RawDecoder, RawEncoder};
+use crate::types::{RawDecoder, RawEncoder};
 
 pub struct TestResult<'a, Output: 'a + ?Sized + ToOwned> {
     pub expected_return: (usize, Option<isize>),
@@ -152,7 +152,7 @@ impl Testable for dyn RawEncoder {
 
 macro_rules! assert_expected {
     ($result:expr, $func:expr, $filter:expr) => ({
-        use testutils::Testable;
+        use crate::testutils::Testable;
         match $result {
             result => {
                 assert!(result.expected_return == result.actual_return,

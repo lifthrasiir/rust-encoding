@@ -6,9 +6,9 @@
 
 use std::convert::Into;
 use std::default::Default;
-use util::StrCharIndex;
-use index_japanese as index;
-use types::*;
+use crate::util::StrCharIndex;
+use crate::index_japanese as index;
+use crate::types::*;
 use self::ISO2022JPState::{ASCII,Katakana,Lead};
 
 /**
@@ -116,7 +116,7 @@ stateful_decoder! {
     module eucjp;
 
     internal pub fn map_two_0208_bytes(lead: u8, trail: u8) -> u32 {
-        use index_japanese as index;
+        use crate::index_japanese as index;
 
         let lead = lead as u16;
         let trail = trail as u16;
@@ -128,7 +128,7 @@ stateful_decoder! {
     }
 
     internal pub fn map_two_0212_bytes(lead: u8, trail: u8) -> u32 {
-        use index_japanese as index;
+        use crate::index_japanese as index;
 
         let lead = lead as u16;
         let trail = trail as u16;
@@ -191,8 +191,8 @@ transient:
 mod eucjp_tests {
     extern crate test;
     use super::EUCJPEncoding;
-    use testutils;
-    use types::*;
+    use crate::testutils;
+    use crate::types::*;
 
     #[test]
     fn test_encoder_valid() {
@@ -538,7 +538,7 @@ stateful_decoder! {
     module windows31j;
 
     internal pub fn map_two_0208_bytes(lead: u8, trail: u8) -> u32 {
-        use index_japanese as index;
+        use crate::index_japanese as index;
 
         let lead = lead as u16;
         let trail = trail as u16;
@@ -578,8 +578,8 @@ transient:
 mod windows31j_tests {
     extern crate test;
     use super::Windows31JEncoding;
-    use testutils;
-    use types::*;
+    use crate::testutils;
+    use crate::types::*;
 
     #[test]
     fn test_encoder_valid() {
@@ -882,7 +882,7 @@ stateful_decoder! {
     module iso2022jp;
 
     internal pub fn map_two_0208_bytes(lead: u8, trail: u8) -> u32 {
-        use index_japanese as index;
+        use crate::index_japanese as index;
 
         let lead = lead as u16;
         let trail = trail as u16;
@@ -894,7 +894,7 @@ stateful_decoder! {
     }
 
     internal pub fn map_two_0212_bytes(lead: u8, trail: u8) -> u32 {
-        use index_japanese as index;
+        use crate::index_japanese as index;
 
         let lead = lead as u16;
         let trail = trail as u16;
@@ -1002,8 +1002,8 @@ transient:
 mod iso2022jp_tests {
     extern crate test;
     use super::ISO2022JPEncoding;
-    use testutils;
-    use types::*;
+    use crate::testutils;
+    use crate::types::*;
 
     #[test]
     fn test_encoder_valid() {

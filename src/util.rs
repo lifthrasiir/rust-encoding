@@ -8,7 +8,7 @@ use std::{str, char, mem};
 use std::marker::PhantomData;
 use std::convert::Into;
 use std::default::Default;
-use types;
+use crate::types;
 
 /// Unchecked conversion to `char`.
 pub fn as_char(ch: u32) -> char {
@@ -170,7 +170,7 @@ macro_rules! stateful_decoder {
             }
 
             pub mod internal {
-                pub type Context<'a, Data> = ::util::StatefulDecoderHelper<'a, super::State, Data>;
+                pub type Context<'a, Data> = crate::util::StatefulDecoderHelper<'a, super::State, Data>;
 
                 $($item)*
             }
@@ -229,11 +229,11 @@ macro_rules! stateful_decoder {
                 )*
             }
 
-            pub fn raw_feed<T>(mut st: State, input: &[u8], output: &mut dyn (::types::StringWriter),
-                               data: &T) -> (State, usize, Option<::types::CodecError>) {
+            pub fn raw_feed<T>(mut st: State, input: &[u8], output: &mut dyn (crate::types::StringWriter),
+                               data: &T) -> (State, usize, Option<crate::types::CodecError>) {
                 output.writer_hint(input.len());
 
-                let mut ctx = ::util::StatefulDecoderHelper::new(input, output, data);
+                let mut ctx = crate::util::StatefulDecoderHelper::new(input, output, data);
                 let mut processed = 0;
 
                 let st_ = match st {
@@ -271,10 +271,10 @@ macro_rules! stateful_decoder {
                 (st, processed, None)
             }
 
-            pub fn raw_finish<T>(mut st: State, output: &mut dyn (::types::StringWriter),
-                                 data: &T) -> (State, Option<::types::CodecError>) {
+            pub fn raw_finish<T>(mut st: State, output: &mut dyn (crate::types::StringWriter),
+                                 data: &T) -> (State, Option<crate::types::CodecError>) {
                 #![allow(unused_mut, unused_variables)]
-                let mut ctx = ::util::StatefulDecoderHelper::new(&[], output, data);
+                let mut ctx = crate::util::StatefulDecoderHelper::new(&[], output, data);
                 let st = match ::std::mem::replace(&mut st, $inist) {
                     $inist => { let $inictx = &mut ctx; $($inifin);+ },
                     $(

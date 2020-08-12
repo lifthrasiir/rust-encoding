@@ -5,8 +5,8 @@
 //! UTF-16.
 
 use std::convert::Into;
-use util::as_char;
-use types::*;
+use crate::util::as_char;
+use crate::types::*;
 
 /// UTF-16 (UCS Transformation Format, 16-bit), in little endian.
 ///
@@ -307,7 +307,7 @@ mod tests {
     // since big endian is easier to inspect we test UTF16BEEncoding only.
 
     use super::UTF16BEEncoding;
-    use types::*;
+    use crate::types::*;
 
     #[test]
     fn test_encoder_valid() {

@@ -5,7 +5,7 @@
 //! A placeholder encoding that returns encoder/decoder error for every case.
 
 use std::convert::Into;
-use types::*;
+use crate::types::*;
 
 /// An encoding that returns encoder/decoder error for every case.
 #[derive(Clone, Copy)]
@@ -70,7 +70,7 @@ impl RawDecoder for ErrorDecoder {
 #[cfg(test)]
 mod tests {
     use super::ErrorEncoding;
-    use types::*;
+    use crate::types::*;
 
     #[test]
     fn test_encoder() {

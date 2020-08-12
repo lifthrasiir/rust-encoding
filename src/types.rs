@@ -10,7 +10,7 @@ pub use super::decode;
 mod tests {
     use super::*;
     use super::EncoderTrap::NcrEscape;
-    use util::StrCharIndex;
+    use crate::util::StrCharIndex;
     use std::convert::Into;
     use std::sync::mpsc::channel;
 

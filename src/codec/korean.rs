@@ -6,9 +6,9 @@
 
 use std::convert::Into;
 use std::default::Default;
-use util::StrCharIndex;
-use index_korean as index;
-use types::*;
+use crate::util::StrCharIndex;
+use crate::index_korean as index;
+use crate::types::*;
 
 /**
  * Windows code page 949.
@@ -102,7 +102,7 @@ stateful_decoder! {
     module windows949;
 
     internal pub fn map_two_bytes(lead: u8, trail: u8) -> u32 {
-        use index_korean as index;
+        use crate::index_korean as index;
 
         let lead = lead as u16;
         let trail = trail as u16;
@@ -138,8 +138,8 @@ transient:
 mod windows949_tests {
     extern crate test;
     use super::Windows949Encoding;
-    use testutils;
-    use types::*;
+    use crate::testutils;
+    use crate::types::*;
 
     #[test]
     fn test_encoder_valid() {

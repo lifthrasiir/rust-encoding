@@ -6,9 +6,9 @@
 
 use std::convert::Into;
 use std::default::Default;
-use util::StrCharIndex;
-use index_simpchinese as index;
-use types::*;
+use crate::util::StrCharIndex;
+use crate::index_simpchinese as index;
+use crate::types::*;
 
 /// GB 18030.
 ///
@@ -188,7 +188,7 @@ stateful_decoder! {
     module gb18030;
 
     internal pub fn map_two_bytes(lead: u8, trail: u8) -> u32 {
-        use index_simpchinese as index;
+        use crate::index_simpchinese as index;
 
         let lead = lead as u16;
         let trail = trail as u16;
@@ -203,7 +203,7 @@ stateful_decoder! {
     }
 
     internal pub fn map_four_bytes(b1: u8, b2: u8, b3: u8, b4: u8) -> u32 {
-        use index_simpchinese as index;
+        use crate::index_simpchinese as index;
 
         // no range check here, caller should have done all checks
         let index = (b1 as u32 - 0x81) * 12600 + (b2 as u32 - 0x30) * 1260 +
@@ -250,8 +250,8 @@ transient:
 mod gb18030_tests {
     extern crate test;
     use super::GB18030Encoding;
-    use testutils;
-    use types::*;
+    use crate::testutils;
+    use crate::types::*;
 
     #[test]
     fn test_encoder_valid() {
@@ -427,8 +427,8 @@ mod gb18030_tests {
 mod gbk_tests {
     extern crate test;
     use super::GBKEncoding;
-    use testutils;
-    use types::*;
+    use crate::testutils;
+    use crate::types::*;
 
     // GBK and GB 18030 share the same decoder logic.
 
@@ -579,7 +579,7 @@ stateful_decoder! {
     module hz;
 
     internal pub fn map_two_bytes(lead: u8, trail: u8) -> u32 {
-        use index_simpchinese as index;
+        use crate::index_simpchinese as index;
 
         let lead = lead as u16;
         let trail = trail as u16;
@@ -647,8 +647,8 @@ transient:
 mod hz_tests {
     extern crate test;
     use super::HZEncoding;
-    use testutils;
-    use types::*;
+    use crate::testutils;
+    use crate::types::*;
 
     #[test]
     fn test_encoder_valid() {

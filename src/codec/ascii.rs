@@ -6,7 +6,7 @@
 
 use std::mem;
 use std::convert::Into;
-use types::*;
+use crate::types::*;
 
 /**
  * ASCII, also known as ISO/IEC 646:US.
@@ -100,8 +100,8 @@ impl RawDecoder for ASCIIDecoder {
 mod tests {
     extern crate test;
     use super::ASCIIEncoding;
-    use testutils;
-    use types::*;
+    use crate::testutils;
+    use crate::types::*;
 
     #[test]
     fn test_encoder() {

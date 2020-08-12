@@ -5,8 +5,8 @@
 //! Common codec implementation for single-byte encodings.
 
 use std::convert::Into;
-use util::{as_char, StrCharIndex};
-use types::*;
+use crate::util::{as_char, StrCharIndex};
+use crate::types::*;
 
 /// A common framework for single-byte encodings based on ASCII.
 #[derive(Copy, Clone)]
@@ -118,8 +118,8 @@ pub mod iso_8859_1 {
 
 #[cfg(test)]
 mod tests {
-    use all::ISO_8859_2;
-    use types::*;
+    use crate::all::ISO_8859_2;
+    use crate::types::*;
 
     #[test]
     fn test_encoder_non_bmp() {

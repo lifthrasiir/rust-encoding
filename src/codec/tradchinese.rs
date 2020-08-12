@@ -6,9 +6,9 @@
 
 use std::convert::Into;
 use std::default::Default;
-use util::StrCharIndex;
-use index_tradchinese as index;
-use types::*;
+use crate::util::StrCharIndex;
+use crate::index_tradchinese as index;
+use crate::types::*;
 
 /**
  * Big5-2003 with common extensions. (XXX with asymmetric HKSCS-2008 support)
@@ -107,7 +107,7 @@ stateful_decoder! {
     module bigfive2003;
 
     internal pub fn map_two_bytes(lead: u8, trail: u8) -> u32 {
-        use index_tradchinese as index;
+        use crate::index_tradchinese as index;
 
         let lead = lead as u16;
         let trail = trail as u16;
@@ -150,8 +150,8 @@ transient:
 mod bigfive2003_tests {
     extern crate test;
     use super::BigFive2003Encoding;
-    use testutils;
-    use types::*;
+    use crate::testutils;
+    use crate::types::*;
 
     #[test]
     fn test_encoder_valid() {

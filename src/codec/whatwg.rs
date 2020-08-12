@@ -4,8 +4,8 @@
 
 //! Asymmetric or special encoding constructions required by the WHATWG Encoding standard.
 
-use codec;
-use types::*;
+use crate::codec;
+use crate::types::*;
 
 /// Replacement encoding used to solve a particular attack vector due to mismatching server and
 /// client supports for encodings. It is rarely useful outside.

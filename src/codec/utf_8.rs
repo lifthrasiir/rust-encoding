@@ -26,7 +26,7 @@
 
 use std::{str, mem};
 use std::convert::Into;
-use types::*;
+use crate::types::*;
 
 /**
  * UTF-8 (UCS Transformation Format, 8-bit).
@@ -244,8 +244,8 @@ mod tests {
 
     use super::{UTF8Encoding, from_utf8};
     use std::str;
-    use testutils;
-    use types::*;
+    use crate::testutils;
+    use crate::types::*;
 
     #[test]
     fn test_valid() {
@@ -632,8 +632,8 @@ mod tests {
         extern crate test;
         use super::super::{UTF8Encoding, from_utf8};
         use std::str;
-        use testutils;
-        use types::*;
+        use crate::testutils;
+        use crate::types::*;
 
         #[bench]
         fn bench_encode(bencher: &mut test::Bencher) {
@@ -687,8 +687,8 @@ mod tests {
         extern crate test;
         use super::super::{UTF8Encoding, from_utf8};
         use std::str;
-        use testutils;
-        use types::*;
+        use crate::testutils;
+        use crate::types::*;
 
         #[bench]
         fn bench_encode(bencher: &mut test::Bencher) {
@@ -740,9 +740,9 @@ mod tests {
         extern crate test;
         use super::super::{UTF8Encoding, from_utf8};
         use std::str;
-        use testutils;
-        use types::*;
-        use types::DecoderTrap::Replace as DecodeReplace;
+        use crate::testutils;
+        use crate::types::*;
+        use crate::types::DecoderTrap::Replace as DecodeReplace;
 
         #[bench]
         fn bench_decode_replace(bencher: &mut test::Bencher) {
@@ -785,9 +785,9 @@ mod tests {
         extern crate test;
         use super::super::{UTF8Encoding, from_utf8};
         use std::str;
-        use testutils;
-        use types::*;
-        use types::DecoderTrap::Replace as DecodeReplace;
+        use crate::testutils;
+        use crate::types::*;
+        use crate::types::DecoderTrap::Replace as DecodeReplace;
 
         #[bench]
         fn bench_decode_replace(bencher: &mut test::Bencher) {
