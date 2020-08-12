@@ -67,7 +67,6 @@ impl UTF16Encoder {
                     write_two_bytes(output, (0xdc | ((ch >> 8) & 0x3)) as u8,
                                             (ch & 0xff) as u8);
                 }
-                _ => unreachable!() // XXX Rust issue #12483, this is redundant
             }
         }
         (input.len(), None)
