@@ -294,9 +294,9 @@ pub trait Encoding {
 
 impl<'a> fmt::Debug for &'a dyn Encoding {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        r#try!(fmt.write_str("Encoding("));
-        r#try!(fmt.write_str(self.name()));
-        r#try!(fmt.write_str(")"));
+        fmt.write_str("Encoding(")?;
+        fmt.write_str(self.name())?;
+        fmt.write_str(")")?;
         Ok(())
     }
 }
