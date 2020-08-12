@@ -57,7 +57,7 @@ pub struct StatefulDecoderHelper<'a, St, Data: 'a> {
     /// The current index to the buffer.
     pub pos: usize,
     /// The output buffer.
-    pub output: &'a mut (types::StringWriter + 'a),
+    pub output: &'a mut (dyn types::StringWriter + 'a),
     /// The last codec error. The caller will later collect this.
     pub err: Option<types::CodecError>,
     /// The additional data attached for the use from transition functions.
@@ -69,7 +69,7 @@ pub struct StatefulDecoderHelper<'a, St, Data: 'a> {
 impl<'a, St: Default, Data> StatefulDecoderHelper<'a, St, Data> {
     /// Makes a new decoder context out of given buffer and output callback.
     #[inline(always)]
-    pub fn new(buf: &'a [u8], output: &'a mut (types::StringWriter + 'a),
+    pub fn new(buf: &'a [u8], output: &'a mut (dyn types::StringWriter + 'a),
                data: &'a Data) -> StatefulDecoderHelper<'a, St, Data> {
         StatefulDecoderHelper { buf: buf, pos: 0, output: output, err: None,
                                 data: data, _marker: PhantomData }
@@ -229,7 +229,7 @@ macro_rules! stateful_decoder {
                 )*
             }
 
-            pub fn raw_feed<T>(mut st: State, input: &[u8], output: &mut ::types::StringWriter,
+            pub fn raw_feed<T>(mut st: State, input: &[u8], output: &mut dyn (::types::StringWriter),
                                data: &T) -> (State, usize, Option<::types::CodecError>) {
                 output.writer_hint(input.len());
 
@@ -271,7 +271,7 @@ macro_rules! stateful_decoder {
                 (st, processed, None)
             }
 
-            pub fn raw_finish<T>(mut st: State, output: &mut ::types::StringWriter,
+            pub fn raw_finish<T>(mut st: State, output: &mut dyn (::types::StringWriter),
                                  data: &T) -> (State, Option<::types::CodecError>) {
                 #![allow(unused_mut, unused_variables)]
                 let mut ctx = ::util::StatefulDecoderHelper::new(&[], output, data);

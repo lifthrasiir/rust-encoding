@@ -28,7 +28,7 @@ pub trait Testable {
                               output: &'a Self::Output) -> TestResult<'a, Self::Output>;
 }
 
-impl Testable for RawDecoder {
+impl Testable for dyn RawDecoder {
     type Input = [u8];
     type Output = str;
 
@@ -89,7 +89,7 @@ impl Testable for RawDecoder {
     }
 }
 
-impl Testable for RawEncoder {
+impl Testable for dyn RawEncoder {
     type Input = str;
     type Output = [u8];
 

@@ -19,7 +19,7 @@ mod tests {
     // `e*ee*ease*l` where `*` is substituted by `prepend`) and prohibits `prohibit` character.
     struct MyEncoder { flag: bool, prohibit: char, prepend: &'static str, toggle: bool }
     impl RawEncoder for MyEncoder {
-        fn from_self(&self) -> Box<RawEncoder> {
+        fn from_self(&self) -> Box<dyn RawEncoder> {
             Box::new(MyEncoder { flag: self.flag,
                                  prohibit: self.prohibit,
                                  prepend: self.prepend,
@@ -27,7 +27,7 @@ mod tests {
         }
         fn is_ascii_compatible(&self) -> bool { self.flag }
         fn raw_feed(&mut self, input: &str,
-                    output: &mut ByteWriter) -> (usize, Option<CodecError>) {
+                    output: &mut dyn ByteWriter) -> (usize, Option<CodecError>) {
             for ((i,j), ch) in input.index_iter() {
                 if ch <= '\u{7f}' && ch != self.prohibit {
                     if self.toggle && !self.prepend.is_empty() {
@@ -44,19 +44,19 @@ mod tests {
             }
             (input.len(), None)
         }
-        fn raw_finish(&mut self, _output: &mut ByteWriter) -> Option<CodecError> { None }
+        fn raw_finish(&mut self, _output: &mut dyn ByteWriter) -> Option<CodecError> { None }
     }
 
     struct MyEncoding { flag: bool, prohibit: char, prepend: &'static str }
     impl Encoding for MyEncoding {
         fn name(&self) -> &'static str { "my encoding" }
-        fn raw_encoder(&self) -> Box<RawEncoder> {
+        fn raw_encoder(&self) -> Box<dyn RawEncoder> {
             Box::new(MyEncoder { flag: self.flag,
                                  prohibit: self.prohibit,
                                  prepend: self.prepend,
                                  toggle: false })
         }
-        fn raw_decoder(&self) -> Box<RawDecoder> { panic!("not supported") }
+        fn raw_decoder(&self) -> Box<dyn RawDecoder> { panic!("not supported") }
     }
 
     #[test]
@@ -67,7 +67,7 @@ mod tests {
             prepend: "",
         };
 
-        assert_eq!(format!("{:?}", &enc as &Encoding), "Encoding(my encoding)");
+        assert_eq!(format!("{:?}", &enc as &dyn Encoding), "Encoding(my encoding)");
     }
 
     #[test]

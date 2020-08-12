@@ -15,8 +15,8 @@ pub struct EncoderOnlyUTF8Encoding;
 impl Encoding for EncoderOnlyUTF8Encoding {
     fn name(&self) -> &'static str { "encoder-only-utf-8" }
     fn whatwg_name(&self) -> Option<&'static str> { Some("replacement") } // WHATWG compatibility
-    fn raw_encoder(&self) -> Box<RawEncoder> { codec::utf_8::UTF8Encoding.raw_encoder() }
-    fn raw_decoder(&self) -> Box<RawDecoder> { codec::error::ErrorEncoding.raw_decoder() }
+    fn raw_encoder(&self) -> Box<dyn RawEncoder> { codec::utf_8::UTF8Encoding.raw_encoder() }
+    fn raw_decoder(&self) -> Box<dyn RawDecoder> { codec::error::ErrorEncoding.raw_decoder() }
 }
 
 /// Algorithmic mapping for `x-user-defined` encoding.

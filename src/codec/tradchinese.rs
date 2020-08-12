@@ -30,8 +30,8 @@ pub struct BigFive2003Encoding;
 impl Encoding for BigFive2003Encoding {
     fn name(&self) -> &'static str { "big5-2003" }
     fn whatwg_name(&self) -> Option<&'static str> { Some("big5") } // WHATWG compatibility
-    fn raw_encoder(&self) -> Box<RawEncoder> { BigFive2003Encoder::new() }
-    fn raw_decoder(&self) -> Box<RawDecoder> { BigFive2003HKSCS2008Decoder::new() }
+    fn raw_encoder(&self) -> Box<dyn RawEncoder> { BigFive2003Encoder::new() }
+    fn raw_decoder(&self) -> Box<dyn RawDecoder> { BigFive2003HKSCS2008Decoder::new() }
 }
 
 /// An encoder for Big5-2003.
@@ -39,14 +39,14 @@ impl Encoding for BigFive2003Encoding {
 pub struct BigFive2003Encoder;
 
 impl BigFive2003Encoder {
-    pub fn new() -> Box<RawEncoder> { Box::new(BigFive2003Encoder) }
+    pub fn new() -> Box<dyn RawEncoder> { Box::new(BigFive2003Encoder) }
 }
 
 impl RawEncoder for BigFive2003Encoder {
-    fn from_self(&self) -> Box<RawEncoder> { BigFive2003Encoder::new() }
+    fn from_self(&self) -> Box<dyn RawEncoder> { BigFive2003Encoder::new() }
     fn is_ascii_compatible(&self) -> bool { true }
 
-    fn raw_feed(&mut self, input: &str, output: &mut ByteWriter) -> (usize, Option<CodecError>) {
+    fn raw_feed(&mut self, input: &str, output: &mut dyn ByteWriter) -> (usize, Option<CodecError>) {
         output.writer_hint(input.len());
 
         for ((i,j), ch) in input.index_iter() {
@@ -69,7 +69,7 @@ impl RawEncoder for BigFive2003Encoder {
         (input.len(), None)
     }
 
-    fn raw_finish(&mut self, _output: &mut ByteWriter) -> Option<CodecError> {
+    fn raw_finish(&mut self, _output: &mut dyn ByteWriter) -> Option<CodecError> {
         None
     }
 }
@@ -81,22 +81,22 @@ struct BigFive2003HKSCS2008Decoder {
 }
 
 impl BigFive2003HKSCS2008Decoder {
-    pub fn new() -> Box<RawDecoder> {
+    pub fn new() -> Box<dyn RawDecoder> {
         Box::new(BigFive2003HKSCS2008Decoder { st: Default::default() })
     }
 }
 
 impl RawDecoder for BigFive2003HKSCS2008Decoder {
-    fn from_self(&self) -> Box<RawDecoder> { BigFive2003HKSCS2008Decoder::new() }
+    fn from_self(&self) -> Box<dyn RawDecoder> { BigFive2003HKSCS2008Decoder::new() }
     fn is_ascii_compatible(&self) -> bool { true }
 
-    fn raw_feed(&mut self, input: &[u8], output: &mut StringWriter) -> (usize, Option<CodecError>) {
+    fn raw_feed(&mut self, input: &[u8], output: &mut dyn StringWriter) -> (usize, Option<CodecError>) {
         let (st, processed, err) = bigfive2003::raw_feed(self.st, input, output, &());
         self.st = st;
         (processed, err)
     }
 
-    fn raw_finish(&mut self, output: &mut StringWriter) -> Option<CodecError> {
+    fn raw_finish(&mut self, output: &mut dyn StringWriter) -> Option<CodecError> {
         let (st, err) = bigfive2003::raw_finish(self.st, output, &());
         self.st = st;
         err
@@ -112,7 +112,7 @@ stateful_decoder! {
         let lead = lead as u16;
         let trail = trail as u16;
         let index = match (lead, trail) {
-            (0x81...0xfe, 0x40...0x7e) | (0x81...0xfe, 0xa1...0xfe) => {
+            (0x81..=0xfe, 0x40..=0x7e) | (0x81..=0xfe, 0xa1..=0xfe) => {
                 let trailoffset = if trail < 0x7f {0x40} else {0x62};
                 (lead - 0x81) * 157 + trail - trailoffset
             }
@@ -124,8 +124,8 @@ stateful_decoder! {
 initial:
     // big5 lead = 0x00
     state S0(ctx: Context) {
-        case b @ 0x00...0x7f => ctx.emit(b as u32);
-        case b @ 0x81...0xfe => S1(ctx, b);
+        case b @ 0x00..=0x7f => ctx.emit(b as u32);
+        case b @ 0x81..=0xfe => S1(ctx, b);
         case _ => ctx.err("invalid sequence");
     }
 

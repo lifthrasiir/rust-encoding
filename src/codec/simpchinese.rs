@@ -40,8 +40,8 @@ pub struct GB18030Encoding;
 impl Encoding for GB18030Encoding {
     fn name(&self) -> &'static str { "gb18030" }
     fn whatwg_name(&self) -> Option<&'static str> { Some("gb18030") }
-    fn raw_encoder(&self) -> Box<RawEncoder> { GB18030Encoder::new() }
-    fn raw_decoder(&self) -> Box<RawDecoder> { GB18030Decoder::new() }
+    fn raw_encoder(&self) -> Box<dyn RawEncoder> { GB18030Encoder::new() }
+    fn raw_decoder(&self) -> Box<dyn RawDecoder> { GB18030Decoder::new() }
 }
 
 /// An encoder for GB 18030.
@@ -49,16 +49,16 @@ impl Encoding for GB18030Encoding {
 pub struct GB18030Encoder;
 
 impl GB18030Encoder {
-    pub fn new() -> Box<RawEncoder> { Box::new(GB18030Encoder) }
+    pub fn new() -> Box<dyn RawEncoder> { Box::new(GB18030Encoder) }
 }
 
 impl RawEncoder for GB18030Encoder {
-    fn from_self(&self) -> Box<RawEncoder> { GB18030Encoder::new() }
+    fn from_self(&self) -> Box<dyn RawEncoder> { GB18030Encoder::new() }
     fn is_ascii_compatible(&self) -> bool { true }
-    fn raw_feed(&mut self, input: &str, output: &mut ByteWriter) -> (usize, Option<CodecError>) {
+    fn raw_feed(&mut self, input: &str, output: &mut dyn ByteWriter) -> (usize, Option<CodecError>) {
         GBEncoder.raw_feed(input, output, false)
     }
-    fn raw_finish(&mut self, _output: &mut ByteWriter) -> Option<CodecError> { None }
+    fn raw_finish(&mut self, _output: &mut dyn ByteWriter) -> Option<CodecError> { None }
 }
 
 /// GBK, as a subset of GB 18030.
@@ -84,8 +84,8 @@ pub struct GBKEncoding;
 impl Encoding for GBKEncoding {
     fn name(&self) -> &'static str { "gbk" }
     fn whatwg_name(&self) -> Option<&'static str> { Some("gbk") }
-    fn raw_encoder(&self) -> Box<RawEncoder> { GBKEncoder::new() }
-    fn raw_decoder(&self) -> Box<RawDecoder> { GB18030Decoder::new() }
+    fn raw_encoder(&self) -> Box<dyn RawEncoder> { GBKEncoder::new() }
+    fn raw_decoder(&self) -> Box<dyn RawDecoder> { GB18030Decoder::new() }
 }
 
 /// An encoder for GBK.
@@ -93,16 +93,16 @@ impl Encoding for GBKEncoding {
 pub struct GBKEncoder;
 
 impl GBKEncoder {
-    pub fn new() -> Box<RawEncoder> { Box::new(GBKEncoder) }
+    pub fn new() -> Box<dyn RawEncoder> { Box::new(GBKEncoder) }
 }
 
 impl RawEncoder for GBKEncoder {
-    fn from_self(&self) -> Box<RawEncoder> { GBKEncoder::new() }
+    fn from_self(&self) -> Box<dyn RawEncoder> { GBKEncoder::new() }
     fn is_ascii_compatible(&self) -> bool { true }
-    fn raw_feed(&mut self, input: &str, output: &mut ByteWriter) -> (usize, Option<CodecError>) {
+    fn raw_feed(&mut self, input: &str, output: &mut dyn ByteWriter) -> (usize, Option<CodecError>) {
         GBEncoder.raw_feed(input, output, true)
     }
-    fn raw_finish(&mut self, _output: &mut ByteWriter) -> Option<CodecError> { None }
+    fn raw_finish(&mut self, _output: &mut dyn ByteWriter) -> Option<CodecError> { None }
 }
 
 /// A shared encoder logic for GBK and GB 18030.
@@ -110,7 +110,7 @@ impl RawEncoder for GBKEncoder {
 struct GBEncoder;
 
 impl GBEncoder {
-    fn raw_feed(&mut self, input: &str, output: &mut ByteWriter,
+    fn raw_feed(&mut self, input: &str, output: &mut dyn ByteWriter,
                 gbk_flag: bool) -> (usize, Option<CodecError>) {
         output.writer_hint(input.len());
 
@@ -162,22 +162,22 @@ struct GB18030Decoder {
 }
 
 impl GB18030Decoder {
-    pub fn new() -> Box<RawDecoder> {
+    pub fn new() -> Box<dyn RawDecoder> {
         Box::new(GB18030Decoder { st: Default::default() })
     }
 }
 
 impl RawDecoder for GB18030Decoder {
-    fn from_self(&self) -> Box<RawDecoder> { GB18030Decoder::new() }
+    fn from_self(&self) -> Box<dyn RawDecoder> { GB18030Decoder::new() }
     fn is_ascii_compatible(&self) -> bool { true }
 
-    fn raw_feed(&mut self, input: &[u8], output: &mut StringWriter) -> (usize, Option<CodecError>) {
+    fn raw_feed(&mut self, input: &[u8], output: &mut dyn StringWriter) -> (usize, Option<CodecError>) {
         let (st, processed, err) = gb18030::raw_feed(self.st, input, output, &());
         self.st = st;
         (processed, err)
     }
 
-    fn raw_finish(&mut self, output: &mut StringWriter) -> Option<CodecError> {
+    fn raw_finish(&mut self, output: &mut dyn StringWriter) -> Option<CodecError> {
         let (st, err) = gb18030::raw_finish(self.st, output, &());
         self.st = st;
         err
@@ -193,7 +193,7 @@ stateful_decoder! {
         let lead = lead as u16;
         let trail = trail as u16;
         let index = match (lead, trail) {
-            (0x81...0xfe, 0x40...0x7e) | (0x81...0xfe, 0x80...0xfe) => {
+            (0x81..=0xfe, 0x40..=0x7e) | (0x81..=0xfe, 0x80..=0xfe) => {
                 let trailoffset = if trail < 0x7f {0x40} else {0x41};
                 (lead - 0x81) * 190 + trail - trailoffset
             }
@@ -214,16 +214,16 @@ stateful_decoder! {
 initial:
     // gb18030 first = 0x00, gb18030 second = 0x00, gb18030 third = 0x00
     state S0(ctx: Context) {
-        case b @ 0x00...0x7f => ctx.emit(b as u32);
+        case b @ 0x00..=0x7f => ctx.emit(b as u32);
         case 0x80 => ctx.emit(0x20ac);
-        case b @ 0x81...0xfe => S1(ctx, b);
+        case b @ 0x81..=0xfe => S1(ctx, b);
         case _ => ctx.err("invalid sequence");
     }
 
 transient:
     // gb18030 first != 0x00, gb18030 second = 0x00, gb18030 third = 0x00
     state S1(ctx: Context, first: u8) {
-        case b @ 0x30...0x39 => S2(ctx, first, b);
+        case b @ 0x30..=0x39 => S2(ctx, first, b);
         case b => match map_two_bytes(first, b) {
             0xffff => ctx.backup_and_err(1, "invalid sequence"), // unconditional
             ch => ctx.emit(ch)
@@ -232,13 +232,13 @@ transient:
 
     // gb18030 first != 0x00, gb18030 second != 0x00, gb18030 third = 0x00
     state S2(ctx: Context, first: u8, second: u8) {
-        case b @ 0x81...0xfe => S3(ctx, first, second, b);
+        case b @ 0x81..=0xfe => S3(ctx, first, second, b);
         case _ => ctx.backup_and_err(2, "invalid sequence");
     }
 
     // gb18030 first != 0x00, gb18030 second != 0x00, gb18030 third != 0x00
     state S3(ctx: Context, first: u8, second: u8, third: u8) {
-        case b @ 0x30...0x39 => match map_four_bytes(first, second, third, b) {
+        case b @ 0x30..=0x39 => match map_four_bytes(first, second, third, b) {
             0xffffffff => ctx.backup_and_err(3, "invalid sequence"), // unconditional
             ch => ctx.emit(ch)
         };
@@ -479,8 +479,8 @@ pub struct HZEncoding;
 impl Encoding for HZEncoding {
     fn name(&self) -> &'static str { "hz" }
     fn whatwg_name(&self) -> Option<&'static str> { None }
-    fn raw_encoder(&self) -> Box<RawEncoder> { HZEncoder::new() }
-    fn raw_decoder(&self) -> Box<RawDecoder> { HZDecoder::new() }
+    fn raw_encoder(&self) -> Box<dyn RawEncoder> { HZEncoder::new() }
+    fn raw_decoder(&self) -> Box<dyn RawDecoder> { HZDecoder::new() }
 }
 
 /// An encoder for HZ.
@@ -490,14 +490,14 @@ pub struct HZEncoder {
 }
 
 impl HZEncoder {
-    pub fn new() -> Box<RawEncoder> { Box::new(HZEncoder { escaped: false }) }
+    pub fn new() -> Box<dyn RawEncoder> { Box::new(HZEncoder { escaped: false }) }
 }
 
 impl RawEncoder for HZEncoder {
-    fn from_self(&self) -> Box<RawEncoder> { HZEncoder::new() }
+    fn from_self(&self) -> Box<dyn RawEncoder> { HZEncoder::new() }
     fn is_ascii_compatible(&self) -> bool { false }
 
-    fn raw_feed(&mut self, input: &str, output: &mut ByteWriter) -> (usize, Option<CodecError>) {
+    fn raw_feed(&mut self, input: &str, output: &mut dyn ByteWriter) -> (usize, Option<CodecError>) {
         output.writer_hint(input.len());
 
         let mut escaped = self.escaped;
@@ -541,7 +541,7 @@ impl RawEncoder for HZEncoder {
         (input.len(), None)
     }
 
-    fn raw_finish(&mut self, _output: &mut ByteWriter) -> Option<CodecError> {
+    fn raw_finish(&mut self, _output: &mut dyn ByteWriter) -> Option<CodecError> {
         None
     }
 }
@@ -553,22 +553,22 @@ struct HZDecoder {
 }
 
 impl HZDecoder {
-    pub fn new() -> Box<RawDecoder> {
+    pub fn new() -> Box<dyn RawDecoder> {
         Box::new(HZDecoder { st: Default::default() })
     }
 }
 
 impl RawDecoder for HZDecoder {
-    fn from_self(&self) -> Box<RawDecoder> { HZDecoder::new() }
+    fn from_self(&self) -> Box<dyn RawDecoder> { HZDecoder::new() }
     fn is_ascii_compatible(&self) -> bool { true }
 
-    fn raw_feed(&mut self, input: &[u8], output: &mut StringWriter) -> (usize, Option<CodecError>) {
+    fn raw_feed(&mut self, input: &[u8], output: &mut dyn StringWriter) -> (usize, Option<CodecError>) {
         let (st, processed, err) = hz::raw_feed(self.st, input, output, &());
         self.st = st;
         (processed, err)
     }
 
-    fn raw_finish(&mut self, output: &mut StringWriter) -> Option<CodecError> {
+    fn raw_finish(&mut self, output: &mut dyn StringWriter) -> Option<CodecError> {
         let (st, err) = hz::raw_finish(self.st, output, &());
         self.st = st;
         err
@@ -584,7 +584,7 @@ stateful_decoder! {
         let lead = lead as u16;
         let trail = trail as u16;
         let index = match (lead, trail) {
-            (0x20...0x7f, 0x21...0x7e) => (lead - 1) * 190 + (trail + 0x3f),
+            (0x20..=0x7f, 0x21..=0x7e) => (lead - 1) * 190 + (trail + 0x3f),
             _ => 0xffff,
         };
         index::gb18030::forward(index)
@@ -594,7 +594,7 @@ initial:
     // hz-gb-2312 flag = unset, hz-gb-2312 lead = 0x00
     state A0(ctx: Context) {
         case 0x7e => A1(ctx);
-        case b @ 0x00...0x7f => ctx.emit(b as u32);
+        case b @ 0x00..=0x7f => ctx.emit(b as u32);
         case _ => ctx.err("invalid sequence");
         final => ctx.reset();
     }
@@ -603,7 +603,7 @@ checkpoint:
     // hz-gb-2312 flag = set, hz-gb-2312 lead = 0x00
     state B0(ctx: Context) {
         case 0x7e => B1(ctx);
-        case b @ 0x20...0x7f => B2(ctx, b);
+        case b @ 0x20..=0x7f => B2(ctx, b);
         case 0x0a => ctx.err("invalid sequence"); // error *and* reset
         case _ => ctx.err("invalid sequence"), B0(ctx);
         final => ctx.reset();

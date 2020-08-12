@@ -64,16 +64,16 @@ fn main() {
     };
 
     let mut input = match matches.free.first().map(|s| &s[..]) {
-        Some("-") | None => Box::new(io::stdin()) as Box<Read>,
+        Some("-") | None => Box::new(io::stdin()) as Box<dyn Read>,
         Some(f) => match File::open(&Path::new(f)) {
-            Ok(f) => Box::new(f) as Box<Read>,
+            Ok(f) => Box::new(f) as Box<dyn Read>,
             Err(e) => panic!("cannot open the input {}: {}", f, e),
         },
     };
     let mut output = match matches.opt_str("o").as_ref().map(|s| &s[..]) {
-        Some("-") | None => Box::new(io::stdout()) as Box<Write>,
+        Some("-") | None => Box::new(io::stdout()) as Box<dyn Write>,
         Some(f) => match File::create(&Path::new(f)) {
-            Ok(f) => Box::new(f) as Box<Write>,
+            Ok(f) => Box::new(f) as Box<dyn Write>,
             Err(e) => panic!("cannot open the output {}: {}", f, e),
         },
     };

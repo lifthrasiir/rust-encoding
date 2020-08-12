@@ -20,8 +20,8 @@ pub struct SingleByteEncoding {
 impl Encoding for SingleByteEncoding {
     fn name(&self) -> &'static str { self.name }
     fn whatwg_name(&self) -> Option<&'static str> { self.whatwg_name }
-    fn raw_encoder(&self) -> Box<RawEncoder> { SingleByteEncoder::new(self.index_backward) }
-    fn raw_decoder(&self) -> Box<RawDecoder> { SingleByteDecoder::new(self.index_forward) }
+    fn raw_encoder(&self) -> Box<dyn RawEncoder> { SingleByteEncoder::new(self.index_backward) }
+    fn raw_decoder(&self) -> Box<dyn RawDecoder> { SingleByteDecoder::new(self.index_forward) }
 }
 
 /// An encoder for single-byte encodings based on ASCII.
@@ -31,16 +31,16 @@ pub struct SingleByteEncoder {
 }
 
 impl SingleByteEncoder {
-    pub fn new(index_backward: extern "Rust" fn(u32) -> u8) -> Box<RawEncoder> {
+    pub fn new(index_backward: extern "Rust" fn(u32) -> u8) -> Box<dyn RawEncoder> {
         Box::new(SingleByteEncoder { index_backward: index_backward })
     }
 }
 
 impl RawEncoder for SingleByteEncoder {
-    fn from_self(&self) -> Box<RawEncoder> { SingleByteEncoder::new(self.index_backward) }
+    fn from_self(&self) -> Box<dyn RawEncoder> { SingleByteEncoder::new(self.index_backward) }
     fn is_ascii_compatible(&self) -> bool { true }
 
-    fn raw_feed(&mut self, input: &str, output: &mut ByteWriter) -> (usize, Option<CodecError>) {
+    fn raw_feed(&mut self, input: &str, output: &mut dyn ByteWriter) -> (usize, Option<CodecError>) {
         output.writer_hint(input.len());
 
         for ((i,j), ch) in input.index_iter() {
@@ -61,7 +61,7 @@ impl RawEncoder for SingleByteEncoder {
         (input.len(), None)
     }
 
-    fn raw_finish(&mut self, _output: &mut ByteWriter) -> Option<CodecError> {
+    fn raw_finish(&mut self, _output: &mut dyn ByteWriter) -> Option<CodecError> {
         None
     }
 }
@@ -73,16 +73,16 @@ pub struct SingleByteDecoder {
 }
 
 impl SingleByteDecoder {
-    pub fn new(index_forward: extern "Rust" fn(u8) -> u16) -> Box<RawDecoder> {
+    pub fn new(index_forward: extern "Rust" fn(u8) -> u16) -> Box<dyn RawDecoder> {
         Box::new(SingleByteDecoder { index_forward: index_forward })
     }
 }
 
 impl RawDecoder for SingleByteDecoder {
-    fn from_self(&self) -> Box<RawDecoder> { SingleByteDecoder::new(self.index_forward) }
+    fn from_self(&self) -> Box<dyn RawDecoder> { SingleByteDecoder::new(self.index_forward) }
     fn is_ascii_compatible(&self) -> bool { true }
 
-    fn raw_feed(&mut self, input: &[u8], output: &mut StringWriter) -> (usize, Option<CodecError>) {
+    fn raw_feed(&mut self, input: &[u8], output: &mut dyn StringWriter) -> (usize, Option<CodecError>) {
         output.writer_hint(input.len());
 
         let mut i = 0;
@@ -105,7 +105,7 @@ impl RawDecoder for SingleByteDecoder {
         (i, None)
     }
 
-    fn raw_finish(&mut self, _output: &mut StringWriter) -> Option<CodecError> {
+    fn raw_finish(&mut self, _output: &mut dyn StringWriter) -> Option<CodecError> {
         None
     }
 }

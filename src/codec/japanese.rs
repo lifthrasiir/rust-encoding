@@ -32,8 +32,8 @@ pub struct EUCJPEncoding;
 impl Encoding for EUCJPEncoding {
     fn name(&self) -> &'static str { "euc-jp" }
     fn whatwg_name(&self) -> Option<&'static str> { Some("euc-jp") }
-    fn raw_encoder(&self) -> Box<RawEncoder> { EUCJPEncoder::new() }
-    fn raw_decoder(&self) -> Box<RawDecoder> { EUCJP0212Decoder::new() }
+    fn raw_encoder(&self) -> Box<dyn RawEncoder> { EUCJPEncoder::new() }
+    fn raw_decoder(&self) -> Box<dyn RawDecoder> { EUCJP0212Decoder::new() }
 }
 
 /// An encoder for EUC-JP with unused G3 character set.
@@ -41,22 +41,22 @@ impl Encoding for EUCJPEncoding {
 pub struct EUCJPEncoder;
 
 impl EUCJPEncoder {
-    pub fn new() -> Box<RawEncoder> { Box::new(EUCJPEncoder) }
+    pub fn new() -> Box<dyn RawEncoder> { Box::new(EUCJPEncoder) }
 }
 
 impl RawEncoder for EUCJPEncoder {
-    fn from_self(&self) -> Box<RawEncoder> { EUCJPEncoder::new() }
+    fn from_self(&self) -> Box<dyn RawEncoder> { EUCJPEncoder::new() }
     fn is_ascii_compatible(&self) -> bool { true }
 
-    fn raw_feed(&mut self, input: &str, output: &mut ByteWriter) -> (usize, Option<CodecError>) {
+    fn raw_feed(&mut self, input: &str, output: &mut dyn ByteWriter) -> (usize, Option<CodecError>) {
         output.writer_hint(input.len());
 
         for ((i,j), ch) in input.index_iter() {
             match ch {
-                '\u{0}'...'\u{7f}' => { output.write_byte(ch as u8); }
+                '\u{0}'..='\u{7f}' => { output.write_byte(ch as u8); }
                 '\u{a5}' => { output.write_byte(0x5c); }
                 '\u{203e}' => { output.write_byte(0x7e); }
-                '\u{ff61}'...'\u{ff9f}' => {
+                '\u{ff61}'..='\u{ff9f}' => {
                     output.write_byte(0x8e);
                     output.write_byte((ch as usize - 0xff61 + 0xa1) as u8);
                 }
@@ -78,7 +78,7 @@ impl RawEncoder for EUCJPEncoder {
         (input.len(), None)
     }
 
-    fn raw_finish(&mut self, _output: &mut ByteWriter) -> Option<CodecError> {
+    fn raw_finish(&mut self, _output: &mut dyn ByteWriter) -> Option<CodecError> {
         None
     }
 }
@@ -90,22 +90,22 @@ struct EUCJP0212Decoder {
 }
 
 impl EUCJP0212Decoder {
-    pub fn new() -> Box<RawDecoder> {
+    pub fn new() -> Box<dyn RawDecoder> {
         Box::new(EUCJP0212Decoder { st: Default::default() })
     }
 }
 
 impl RawDecoder for EUCJP0212Decoder {
-    fn from_self(&self) -> Box<RawDecoder> { EUCJP0212Decoder::new() }
+    fn from_self(&self) -> Box<dyn RawDecoder> { EUCJP0212Decoder::new() }
     fn is_ascii_compatible(&self) -> bool { true }
 
-    fn raw_feed(&mut self, input: &[u8], output: &mut StringWriter) -> (usize, Option<CodecError>) {
+    fn raw_feed(&mut self, input: &[u8], output: &mut dyn StringWriter) -> (usize, Option<CodecError>) {
         let (st, processed, err) = eucjp::raw_feed(self.st, input, output, &());
         self.st = st;
         (processed, err)
     }
 
-    fn raw_finish(&mut self, output: &mut StringWriter) -> Option<CodecError> {
+    fn raw_finish(&mut self, output: &mut dyn StringWriter) -> Option<CodecError> {
         let (st, err) = eucjp::raw_finish(self.st, output, &());
         self.st = st;
         err
@@ -121,7 +121,7 @@ stateful_decoder! {
         let lead = lead as u16;
         let trail = trail as u16;
         let index = match (lead, trail) {
-            (0xa1...0xfe, 0xa1...0xfe) => (lead - 0xa1) * 94 + trail - 0xa1,
+            (0xa1..=0xfe, 0xa1..=0xfe) => (lead - 0xa1) * 94 + trail - 0xa1,
             _ => 0xffff,
         };
         index::jis0208::forward(index)
@@ -133,7 +133,7 @@ stateful_decoder! {
         let lead = lead as u16;
         let trail = trail as u16;
         let index = match (lead, trail) {
-            (0xa1...0xfe, 0xa1...0xfe) => (lead - 0xa1) * 94 + trail - 0xa1,
+            (0xa1..=0xfe, 0xa1..=0xfe) => (lead - 0xa1) * 94 + trail - 0xa1,
             _ => 0xffff,
         };
         index::jis0212::forward(index)
@@ -142,32 +142,32 @@ stateful_decoder! {
 initial:
     // euc-jp lead = 0x00
     state S0(ctx: Context) {
-        case b @ 0x00...0x7f => ctx.emit(b as u32);
+        case b @ 0x00..=0x7f => ctx.emit(b as u32);
         case 0x8e => S1(ctx);
         case 0x8f => S2(ctx);
-        case b @ 0xa1...0xfe => S3(ctx, b);
+        case b @ 0xa1..=0xfe => S3(ctx, b);
         case _ => ctx.err("invalid sequence");
     }
 
 transient:
     // euc-jp lead = 0x8e
     state S1(ctx: Context) {
-        case b @ 0xa1...0xdf => ctx.emit(0xff61 + b as u32 - 0xa1);
-        case 0xa1...0xfe => ctx.err("invalid sequence");
+        case b @ 0xa1..=0xdf => ctx.emit(0xff61 + b as u32 - 0xa1);
+        case 0xa1..=0xfe => ctx.err("invalid sequence");
         case _ => ctx.backup_and_err(1, "invalid sequence");
     }
 
     // euc-jp lead = 0x8f
     // JIS X 0201 half-width katakana
     state S2(ctx: Context) {
-        case b @ 0xa1...0xfe => S4(ctx, b);
+        case b @ 0xa1..=0xfe => S4(ctx, b);
         case _ => ctx.backup_and_err(1, "invalid sequence");
     }
 
     // euc-jp lead != 0x00, euc-jp jis0212 flag = unset
     // JIS X 0208 two-byte sequence
     state S3(ctx: Context, lead: u8) {
-        case b @ 0xa1...0xfe => match map_two_0208_bytes(lead, b) {
+        case b @ 0xa1..=0xfe => match map_two_0208_bytes(lead, b) {
             // do NOT backup, we only backup for out-of-range trails.
             0xffff => ctx.err("invalid sequence"),
             ch => ctx.emit(ch as u32)
@@ -178,7 +178,7 @@ transient:
     // euc-jp lead != 0x00, euc-jp jis0212 flag = set
     // JIS X 0212 three-byte sequence
     state S4(ctx: Context, lead: u8) {
-        case b @ 0xa1...0xfe => match map_two_0212_bytes(lead, b) {
+        case b @ 0xa1..=0xfe => match map_two_0212_bytes(lead, b) {
             // do NOT backup, we only backup for out-of-range trails.
             0xffff => ctx.err("invalid sequence"),
             ch => ctx.emit(ch as u32)
@@ -452,8 +452,8 @@ pub struct Windows31JEncoding;
 impl Encoding for Windows31JEncoding {
     fn name(&self) -> &'static str { "windows-31j" }
     fn whatwg_name(&self) -> Option<&'static str> { Some("shift_jis") } // WHATWG compatibility
-    fn raw_encoder(&self) -> Box<RawEncoder> { Windows31JEncoder::new() }
-    fn raw_decoder(&self) -> Box<RawDecoder> { Windows31JDecoder::new() }
+    fn raw_encoder(&self) -> Box<dyn RawEncoder> { Windows31JEncoder::new() }
+    fn raw_decoder(&self) -> Box<dyn RawDecoder> { Windows31JDecoder::new() }
 }
 
 /// An encoder for Shift_JIS with IBM/NEC extensions.
@@ -461,22 +461,22 @@ impl Encoding for Windows31JEncoding {
 pub struct Windows31JEncoder;
 
 impl Windows31JEncoder {
-    pub fn new() -> Box<RawEncoder> { Box::new(Windows31JEncoder) }
+    pub fn new() -> Box<dyn RawEncoder> { Box::new(Windows31JEncoder) }
 }
 
 impl RawEncoder for Windows31JEncoder {
-    fn from_self(&self) -> Box<RawEncoder> { Windows31JEncoder::new() }
+    fn from_self(&self) -> Box<dyn RawEncoder> { Windows31JEncoder::new() }
     fn is_ascii_compatible(&self) -> bool { true }
 
-    fn raw_feed(&mut self, input: &str, output: &mut ByteWriter) -> (usize, Option<CodecError>) {
+    fn raw_feed(&mut self, input: &str, output: &mut dyn ByteWriter) -> (usize, Option<CodecError>) {
         output.writer_hint(input.len());
 
         for ((i,j), ch) in input.index_iter() {
             match ch {
-                '\u{0}'...'\u{80}' => { output.write_byte(ch as u8); }
+                '\u{0}'..='\u{80}' => { output.write_byte(ch as u8); }
                 '\u{a5}' => { output.write_byte(0x5c); }
                 '\u{203e}' => { output.write_byte(0x7e); }
-                '\u{ff61}'...'\u{ff9f}' => {
+                '\u{ff61}'..='\u{ff9f}' => {
                     output.write_byte((ch as usize - 0xff61 + 0xa1) as u8);
                 }
                 _ => {
@@ -500,7 +500,7 @@ impl RawEncoder for Windows31JEncoder {
         (input.len(), None)
     }
 
-    fn raw_finish(&mut self, _output: &mut ByteWriter) -> Option<CodecError> {
+    fn raw_finish(&mut self, _output: &mut dyn ByteWriter) -> Option<CodecError> {
         None
     }
 }
@@ -512,22 +512,22 @@ struct Windows31JDecoder {
 }
 
 impl Windows31JDecoder {
-    pub fn new() -> Box<RawDecoder> {
+    pub fn new() -> Box<dyn RawDecoder> {
         Box::new(Windows31JDecoder { st: Default::default() })
     }
 }
 
 impl RawDecoder for Windows31JDecoder {
-    fn from_self(&self) -> Box<RawDecoder> { Windows31JDecoder::new() }
+    fn from_self(&self) -> Box<dyn RawDecoder> { Windows31JDecoder::new() }
     fn is_ascii_compatible(&self) -> bool { true }
 
-    fn raw_feed(&mut self, input: &[u8], output: &mut StringWriter) -> (usize, Option<CodecError>) {
+    fn raw_feed(&mut self, input: &[u8], output: &mut dyn StringWriter) -> (usize, Option<CodecError>) {
         let (st, processed, err) = windows31j::raw_feed(self.st, input, output, &());
         self.st = st;
         (processed, err)
     }
 
-    fn raw_finish(&mut self, output: &mut StringWriter) -> Option<CodecError> {
+    fn raw_finish(&mut self, output: &mut dyn StringWriter) -> Option<CodecError> {
         let (st, err) = windows31j::raw_finish(self.st, output, &());
         self.st = st;
         err
@@ -545,10 +545,10 @@ stateful_decoder! {
         let leadoffset = if lead < 0xa0 {0x81} else {0xc1};
         let trailoffset = if trail < 0x7f {0x40} else {0x41};
         let index = match (lead, trail) {
-            (0xf0...0xf9, 0x40...0x7e) | (0xf0...0xf9, 0x80...0xfc) =>
+            (0xf0..=0xf9, 0x40..=0x7e) | (0xf0..=0xf9, 0x80..=0xfc) =>
                 return (0xe000 + (lead - 0xf0) * 188 + trail - trailoffset) as u32,
-            (0x81...0x9f, 0x40...0x7e) | (0x81...0x9f, 0x80...0xfc) |
-            (0xe0...0xfc, 0x40...0x7e) | (0xe0...0xfc, 0x80...0xfc) =>
+            (0x81..=0x9f, 0x40..=0x7e) | (0x81..=0x9f, 0x80..=0xfc) |
+            (0xe0..=0xfc, 0x40..=0x7e) | (0xe0..=0xfc, 0x80..=0xfc) =>
                 (lead - leadoffset) * 188 + trail - trailoffset,
             _ => 0xffff,
         };
@@ -558,9 +558,9 @@ stateful_decoder! {
 initial:
     // shift_jis lead = 0x00
     state S0(ctx: Context) {
-        case b @ 0x00...0x80 => ctx.emit(b as u32);
-        case b @ 0xa1...0xdf => ctx.emit(0xff61 + b as u32 - 0xa1);
-        case b @ 0x81...0x9f, b @ 0xe0...0xfc => S1(ctx, b);
+        case b @ 0x00..=0x80 => ctx.emit(b as u32);
+        case b @ 0xa1..=0xdf => ctx.emit(0xff61 + b as u32 - 0xa1);
+        case b @ 0x81..=0x9f, b @ 0xe0..=0xfc => S1(ctx, b);
         case _ => ctx.err("invalid sequence");
     }
 
@@ -774,8 +774,8 @@ pub struct ISO2022JPEncoding;
 impl Encoding for ISO2022JPEncoding {
     fn name(&self) -> &'static str { "iso-2022-jp" }
     fn whatwg_name(&self) -> Option<&'static str> { Some("iso-2022-jp") }
-    fn raw_encoder(&self) -> Box<RawEncoder> { ISO2022JPEncoder::new() }
-    fn raw_decoder(&self) -> Box<RawDecoder> { ISO2022JPDecoder::new() }
+    fn raw_encoder(&self) -> Box<dyn RawEncoder> { ISO2022JPEncoder::new() }
+    fn raw_decoder(&self) -> Box<dyn RawDecoder> { ISO2022JPDecoder::new() }
 }
 
 #[derive(PartialEq,Clone,Copy)]
@@ -792,14 +792,14 @@ pub struct ISO2022JPEncoder {
 }
 
 impl ISO2022JPEncoder {
-    pub fn new() -> Box<RawEncoder> { Box::new(ISO2022JPEncoder { st: ASCII }) }
+    pub fn new() -> Box<dyn RawEncoder> { Box::new(ISO2022JPEncoder { st: ASCII }) }
 }
 
 impl RawEncoder for ISO2022JPEncoder {
-    fn from_self(&self) -> Box<RawEncoder> { ISO2022JPEncoder::new() }
+    fn from_self(&self) -> Box<dyn RawEncoder> { ISO2022JPEncoder::new() }
     fn is_ascii_compatible(&self) -> bool { true }
 
-    fn raw_feed(&mut self, input: &str, output: &mut ByteWriter) -> (usize, Option<CodecError>) {
+    fn raw_feed(&mut self, input: &str, output: &mut dyn ByteWriter) -> (usize, Option<CodecError>) {
         output.writer_hint(input.len());
 
         let mut st = self.st;
@@ -815,10 +815,10 @@ impl RawEncoder for ISO2022JPEncoder {
 
         for ((i,j), ch) in input.index_iter() {
             match ch {
-                '\u{0}'...'\u{7f}' => { ensure_ASCII!(); output.write_byte(ch as u8); }
+                '\u{0}'..='\u{7f}' => { ensure_ASCII!(); output.write_byte(ch as u8); }
                 '\u{a5}' => { ensure_ASCII!(); output.write_byte(0x5c); }
                 '\u{203e}' => { ensure_ASCII!(); output.write_byte(0x7e); }
-                '\u{ff61}'...'\u{ff9f}' => {
+                '\u{ff61}'..='\u{ff9f}' => {
                     ensure_Katakana!();
                     output.write_byte((ch as usize - 0xff61 + 0x21) as u8);
                 }
@@ -844,7 +844,7 @@ impl RawEncoder for ISO2022JPEncoder {
         (input.len(), None)
     }
 
-    fn raw_finish(&mut self, _output: &mut ByteWriter) -> Option<CodecError> {
+    fn raw_finish(&mut self, _output: &mut dyn ByteWriter) -> Option<CodecError> {
         None
     }
 }
@@ -856,22 +856,22 @@ struct ISO2022JPDecoder {
 }
 
 impl ISO2022JPDecoder {
-    pub fn new() -> Box<RawDecoder> {
+    pub fn new() -> Box<dyn RawDecoder> {
         Box::new(ISO2022JPDecoder { st: Default::default() })
     }
 }
 
 impl RawDecoder for ISO2022JPDecoder {
-    fn from_self(&self) -> Box<RawDecoder> { ISO2022JPDecoder::new() }
+    fn from_self(&self) -> Box<dyn RawDecoder> { ISO2022JPDecoder::new() }
     fn is_ascii_compatible(&self) -> bool { false }
 
-    fn raw_feed(&mut self, input: &[u8], output: &mut StringWriter) -> (usize, Option<CodecError>) {
+    fn raw_feed(&mut self, input: &[u8], output: &mut dyn StringWriter) -> (usize, Option<CodecError>) {
         let (st, processed, err) = iso2022jp::raw_feed(self.st, input, output, &());
         self.st = st;
         (processed, err)
     }
 
-    fn raw_finish(&mut self, output: &mut StringWriter) -> Option<CodecError> {
+    fn raw_finish(&mut self, output: &mut dyn StringWriter) -> Option<CodecError> {
         let (st, err) = iso2022jp::raw_finish(self.st, output, &());
         self.st = st;
         err
@@ -887,7 +887,7 @@ stateful_decoder! {
         let lead = lead as u16;
         let trail = trail as u16;
         let index = match (lead, trail) {
-            (0x21...0x7e, 0x21...0x7e) => (lead - 0x21) * 94 + trail - 0x21,
+            (0x21..=0x7e, 0x21..=0x7e) => (lead - 0x21) * 94 + trail - 0x21,
             _ => 0xffff,
         };
         index::jis0208::forward(index)
@@ -899,7 +899,7 @@ stateful_decoder! {
         let lead = lead as u16;
         let trail = trail as u16;
         let index = match (lead, trail) {
-            (0x21...0x7e, 0x21...0x7e) => (lead - 0x21) * 94 + trail - 0x21,
+            (0x21..=0x7e, 0x21..=0x7e) => (lead - 0x21) * 94 + trail - 0x21,
             _ => 0xffff,
         };
         index::jis0212::forward(index)
@@ -909,7 +909,7 @@ initial:
     // iso-2022-jp state = ASCII, iso-2022-jp jis0212 flag = unset, iso-2022-jp lead = 0x00
     state ASCII(ctx: Context) {
         case 0x1b => EscapeStart(ctx);
-        case b @ 0x00...0x7f => ctx.emit(b as u32), ASCII(ctx);
+        case b @ 0x00..=0x7f => ctx.emit(b as u32), ASCII(ctx);
         case _ => ctx.err("invalid sequence"), ASCII(ctx);
         final => ctx.reset();
     }
@@ -934,7 +934,7 @@ checkpoint:
     // iso-2022-jp state = Katakana
     state Katakana(ctx: Context) {
         case 0x1b => EscapeStart(ctx);
-        case b @ 0x21...0x5f => ctx.emit(0xff61 + b as u32 - 0x21), Katakana(ctx);
+        case b @ 0x21..=0x5f => ctx.emit(0xff61 + b as u32 - 0x21), Katakana(ctx);
         case _ => ctx.err("invalid sequence"), Katakana(ctx);
         final => ctx.reset();
     }

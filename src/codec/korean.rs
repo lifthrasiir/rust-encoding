@@ -27,8 +27,8 @@ pub struct Windows949Encoding;
 impl Encoding for Windows949Encoding {
     fn name(&self) -> &'static str { "windows-949" }
     fn whatwg_name(&self) -> Option<&'static str> { Some("euc-kr") } // WHATWG compatibility
-    fn raw_encoder(&self) -> Box<RawEncoder> { Windows949Encoder::new() }
-    fn raw_decoder(&self) -> Box<RawDecoder> { Windows949Decoder::new() }
+    fn raw_encoder(&self) -> Box<dyn RawEncoder> { Windows949Encoder::new() }
+    fn raw_decoder(&self) -> Box<dyn RawDecoder> { Windows949Decoder::new() }
 }
 
 /// An encoder for Windows code page 949.
@@ -36,14 +36,14 @@ impl Encoding for Windows949Encoding {
 pub struct Windows949Encoder;
 
 impl Windows949Encoder {
-    pub fn new() -> Box<RawEncoder> { Box::new(Windows949Encoder) }
+    pub fn new() -> Box<dyn RawEncoder> { Box::new(Windows949Encoder) }
 }
 
 impl RawEncoder for Windows949Encoder {
-    fn from_self(&self) -> Box<RawEncoder> { Windows949Encoder::new() }
+    fn from_self(&self) -> Box<dyn RawEncoder> { Windows949Encoder::new() }
     fn is_ascii_compatible(&self) -> bool { true }
 
-    fn raw_feed(&mut self, input: &str, output: &mut ByteWriter) -> (usize, Option<CodecError>) {
+    fn raw_feed(&mut self, input: &str, output: &mut dyn ByteWriter) -> (usize, Option<CodecError>) {
         output.writer_hint(input.len());
 
         for ((i,j), ch) in input.index_iter() {
@@ -64,7 +64,7 @@ impl RawEncoder for Windows949Encoder {
         (input.len(), None)
     }
 
-    fn raw_finish(&mut self, _output: &mut ByteWriter) -> Option<CodecError> {
+    fn raw_finish(&mut self, _output: &mut dyn ByteWriter) -> Option<CodecError> {
         None
     }
 }
@@ -76,22 +76,22 @@ struct Windows949Decoder {
 }
 
 impl Windows949Decoder {
-    pub fn new() -> Box<RawDecoder> {
+    pub fn new() -> Box<dyn RawDecoder> {
         Box::new(Windows949Decoder { st: Default::default() })
     }
 }
 
 impl RawDecoder for Windows949Decoder {
-    fn from_self(&self) -> Box<RawDecoder> { Windows949Decoder::new() }
+    fn from_self(&self) -> Box<dyn RawDecoder> { Windows949Decoder::new() }
     fn is_ascii_compatible(&self) -> bool { true }
 
-    fn raw_feed(&mut self, input: &[u8], output: &mut StringWriter) -> (usize, Option<CodecError>) {
+    fn raw_feed(&mut self, input: &[u8], output: &mut dyn StringWriter) -> (usize, Option<CodecError>) {
         let (st, processed, err) = windows949::raw_feed(self.st, input, output, &());
         self.st = st;
         (processed, err)
     }
 
-    fn raw_finish(&mut self, output: &mut StringWriter) -> Option<CodecError> {
+    fn raw_finish(&mut self, output: &mut dyn StringWriter) -> Option<CodecError> {
         let (st, err) = windows949::raw_finish(self.st, output, &());
         self.st = st;
         err
@@ -107,7 +107,7 @@ stateful_decoder! {
         let lead = lead as u16;
         let trail = trail as u16;
         let index = match (lead, trail) {
-            (0x81...0xfe, 0x41...0xfe) => (lead - 0x81) * 190 + (trail - 0x41),
+            (0x81..=0xfe, 0x41..=0xfe) => (lead - 0x81) * 190 + (trail - 0x41),
             (_, _) => 0xffff,
         };
         index::euc_kr::forward(index)
@@ -116,8 +116,8 @@ stateful_decoder! {
 initial:
     // euc-kr lead = 0x00
     state S0(ctx: Context) {
-        case b @ 0x00...0x7f => ctx.emit(b as u32);
-        case b @ 0x81...0xfe => S1(ctx, b);
+        case b @ 0x00..=0x7f => ctx.emit(b as u32);
+        case b @ 0x81..=0xfe => S1(ctx, b);
         case _ => ctx.err("invalid sequence");
     }
 
